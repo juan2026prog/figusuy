@@ -13,29 +13,29 @@ serve(async (req: Request) => {
     const body = await req.json()
     console.log("📥 MercadoPago Webhook:", body.action, body.type, body.data?.id)
 
-    // Only handle payment notifications
-    if (body.type === "payment" && (body.action === "payment.created" || body.action === "payment.updated")) {
-      const paymentId = body.data.id
-      
+    // Handle subscription_preapproval notifications
+    if (body.type === "subscription_preapproval" || body.topic === "subscription_preapproval") {
+      const subId = body.data?.id
+      if (!subId) throw new Error("No subscription ID in webhook payload")
+
       const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? ""
       const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
       const mpAccessToken = Deno.env.get("MERCADOPAGO_ACCESS_TOKEN") ?? ""
-      
-      if (!mpAccessToken) throw new Error("Mercado Pago Access Token no configurado.")
 
+      if (!mpAccessToken) throw new Error("Mercado Pago Access Token no configurado.")
       const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
 
-      // 1. Verify payment status with MP
-      const mpResponse = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
+      // 1. Verify subscription status with MP
+      const mpResponse = await fetch(`https://api.mercadopago.com/preapproval/${subId}`, {
         headers: { "Authorization": `Bearer ${mpAccessToken}` }
       })
-      const paymentData = await mpResponse.json()
+      const subData = await mpResponse.json()
       
-      if (!mpResponse.ok) throw new Error(`Fetch failed from MP: ${JSON.stringify(paymentData)}`)
-      
-      const orderId = paymentData.external_reference
+      if (!mpResponse.ok) throw new Error(`Fetch failed from MP Preapproval: ${JSON.stringify(subData)}`)
+
+      const orderId = subData.external_reference
       if (!orderId) {
-        console.warn("[MP Webhook] No external_reference (Order ID) found.")
+        console.warn("[MP Webhook] No external_reference (Order ID) found in subscription.")
         return new Response(JSON.stringify({ received: true }), { status: 200 })
       }
 
@@ -48,40 +48,66 @@ serve(async (req: Request) => {
 
       if (orderError || !order) throw new Error(`Orden ${orderId} no encontrada.`)
 
-      // 3. If APPROVED, upgrade user to Premium
-      if (paymentData.status === "approved" || paymentData.status === "authorized") {
-        if (order.status !== 'paid') {
-          console.log(`[MP Webhook] Marking Order ${orderId} as PAID and upgrading user ${order.user_id}`)
-          
-          // Update Order
-          await supabaseAdmin
-            .from("plan_orders")
-            .update({ 
-              status: "paid", 
-              payment_id: paymentId.toString(),
-              updated_at: new Date().toISOString()
-            })
-            .eq("id", orderId)
-
-          // Upgrade User Profile
-          await supabaseAdmin
-            .from("profiles")
-            .update({ 
-              is_premium: true,
-              premium_plan_id: order.plan_id,
-              last_active: new Date().toISOString() // Optional: update activity
-            })
-            .eq("id", order.user_id)
-            
-          console.log(`[MP Webhook] User ${order.user_id} is now PREMIUM!`)
-        }
-      } 
-      // CANCELLED or REJECTED STATUS
-      else if (paymentData.status === "cancelled" || paymentData.status === "rejected") {
+      // 3. Update status based on subscription
+      if (subData.status === "authorized") {
+        console.log(`[MP Webhook] Subscription ${subId} AUTHORIZED. Upgrading user ${order.user_id}`)
+        
         await supabaseAdmin
           .from("plan_orders")
-          .update({ status: "cancelled", updated_at: new Date().toISOString() })
+          .update({ 
+            status: "paid", 
+            payment_id: subId.toString(),
+            updated_at: new Date().toISOString()
+          })
           .eq("id", orderId)
+
+        await supabaseAdmin
+          .from("profiles")
+          .update({ 
+            is_premium: true,
+            premium_plan_id: order.plan_id,
+            last_active: new Date().toISOString()
+          })
+          .eq("id", order.user_id)
+      } else if (subData.status === "cancelled" || subData.status === "paused") {
+        console.log(`[MP Webhook] Subscription ${subId} CANCELLED/PAUSED. Downgrading user ${order.user_id}`)
+        
+        await supabaseAdmin
+          .from("plan_orders")
+          .update({ 
+            status: subData.status, 
+            updated_at: new Date().toISOString()
+          })
+          .eq("id", orderId)
+
+        await supabaseAdmin
+          .from("profiles")
+          .update({ 
+            is_premium: false,
+            premium_plan_id: null,
+            last_active: new Date().toISOString()
+          })
+          .eq("id", order.user_id)
+      }
+    }
+    // Also handle regular payments (for first charge or subsequent charges)
+    else if (body.type === "payment" && (body.action === "payment.created" || body.action === "payment.updated")) {
+      const paymentId = body.data?.id
+      if (!paymentId) return new Response(JSON.stringify({ received: true }), { status: 200 })
+
+      const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? ""
+      const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+      const mpAccessToken = Deno.env.get("MERCADOPAGO_ACCESS_TOKEN") ?? ""
+      
+      const mpResponse = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
+        headers: { "Authorization": `Bearer ${mpAccessToken}` }
+      })
+      const paymentData = await mpResponse.json()
+      
+      if (mpResponse.ok && paymentData.status === "approved") {
+         // Some subscriptions use 'external_reference' directly on payments.
+         // If it's a sub payment, we just acknowledge it (the sub_preapproval webhook handles the main logic)
+         console.log(`[MP Webhook] Payment ${paymentId} approved.`)
       }
     }
 

@@ -48,54 +48,46 @@ serve(async (req: Request) => {
 
     if (orderError) throw new Error(`Error al crear la orden: ${orderError.message}`)
 
-    // 4. Create Mercado Pago Preference
+    // 4. Create Mercado Pago Preapproval (Subscription)
     const origin = req.headers.get('origin') || 'http://localhost:5173'
     const isSandbox = mpAccessToken.startsWith('TEST-')
-    const webhookUrl = `${supabaseUrl}/functions/v1/mercadopago-webhook`
-
-    const preferencePayload = {
-      items: [
-        {
-          id: plan.id,
-          title: `Plan ${plan.name} - FigusUy`,
-          quantity: 1,
-          unit_price: Number(plan.price),
-          currency_id: plan.currency || 'UYU',
-        }
-      ],
-      payer: {
-        email: user.email,
-      },
-      back_urls: {
-        success: `${origin}/profile?payment=success&order_id=${order.id}`,
-        failure: `${origin}/premium?payment=failure`,
-        pending: `${origin}/profile?payment=pending`,
-      },
-      auto_return: 'approved',
+    // Nota: Para suscripciones (preapproval), Mercado Pago a veces usa la URL base en el init_point
+    // y no provee un sandbox_init_point directamente en la misma estructura.
+    
+    const preapprovalPayload = {
+      reason: `Plan ${plan.name} - FigusUy`,
       external_reference: order.id,
-      notification_url: webhookUrl,
-      statement_descriptor: 'FIGUSUY PREMIUM',
+      payer_email: user.email,
+      auto_recurring: {
+        frequency: 1,
+        frequency_type: "months",
+        transaction_amount: Number(plan.price),
+        currency_id: plan.currency || "UYU"
+      },
+      back_url: `${origin}/profile?payment=success&order_id=${order.id}`,
+      status: "pending"
     }
 
-    const mpResponse = await fetch('https://api.mercadopago.com/checkout/preferences', {
+    const mpResponse = await fetch('https://api.mercadopago.com/preapproval', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${mpAccessToken}`,
       },
-      body: JSON.stringify(preferencePayload),
+      body: JSON.stringify(preapprovalPayload),
     })
 
     const mpResult = await mpResponse.json()
-    if (!mpResponse.ok) throw new Error(`Error de Mercado Pago: ${JSON.stringify(mpResult)}`)
+    if (!mpResponse.ok) throw new Error(`Error de Mercado Pago Subscriptions: ${JSON.stringify(mpResult)}`)
 
-    // 5. Update order with preference ID
+    // 5. Update order with subscription ID
     await supabaseAdmin
       .from('plan_orders')
       .update({ payment_id: mpResult.id })
       .eq('id', order.id)
 
-    const checkoutUrl = isSandbox ? mpResult.sandbox_init_point : mpResult.init_point
+    // Mercado Pago Preapproval returns init_point
+    const checkoutUrl = mpResult.init_point
 
     return new Response(JSON.stringify({ checkout_url: checkoutUrl }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
