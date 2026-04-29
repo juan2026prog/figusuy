@@ -4,6 +4,7 @@ import { useAppStore } from '../stores/appStore'
 import { useAuthStore } from '../stores/authStore'
 import { trackEvent } from '../lib/meta'
 import { useToast } from './Toast'
+import { usePremiumAccess } from '../hooks/usePremiumAccess'
 
 export default function PlansModal({ isOpen, onClose }) {
   const [plans, setPlans] = useState([])
@@ -11,7 +12,7 @@ export default function PlansModal({ isOpen, onClose }) {
   const toast = useToast()
   const { matches } = useAppStore()
   const { profile } = useAuthStore()
-  const isPremium = profile?.is_premium === true || (profile?.plan_name && profile.plan_name !== 'gratis')
+  const { isPremium } = usePremiumAccess()
   const hiddenMatches = isPremium ? 0 : Math.max(0, (matches?.length || 0) - 3)
 
   useEffect(() => {

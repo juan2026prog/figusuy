@@ -3,12 +3,13 @@ import { useNavigate } from 'react-router-dom'
 import { useAppStore } from '../stores/appStore'
 import { useAuthStore } from '../stores/authStore'
 import { supabase } from '../lib/supabase'
+import { usePremiumAccess } from '../hooks/usePremiumAccess'
 
 export default function PremiumCTA({ variant = 'inline' }) {
   const navigate = useNavigate()
   const { matches } = useAppStore()
   const { profile } = useAuthStore()
-  const isPremium = profile?.is_premium === true || (profile?.plan_name && profile.plan_name !== 'gratis')
+  const { isPremium } = usePremiumAccess()
   const hiddenMatches = isPremium ? 0 : Math.max(0, (matches?.length || 0) - 3)
   const [userCount, setUserCount] = useState(null)
 

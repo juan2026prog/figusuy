@@ -7,12 +7,14 @@ import ConfirmDialog from '../components/ConfirmDialog'
 import { useToast } from '../components/Toast'
 import { useFavoritesStore } from '../stores/favoritesStore'
 import AlphaWelcomeModal from '../components/AlphaWelcomeModal'
+import { usePremiumAccess } from '../hooks/usePremiumAccess'
 
 export default function ProfilePage() {
   const navigate = useNavigate()
   const { profile, signOut } = useAuthStore()
   const { userAlbums, missingStickers, duplicateStickers, matches } = useAppStore()
   const { favorites, fetchFavorites } = useFavoritesStore()
+  const { isPremium, planName } = usePremiumAccess()
   const toast = useToast()
 
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false)
@@ -22,8 +24,6 @@ export default function ProfilePage() {
   const [geoLoading, setGeoLoading] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
   const [showAlphaModal, setShowAlphaModal] = useState(false)
-
-  const isPremium = profile?.is_premium === true || (profile?.plan_name && profile.plan_name !== 'gratis')
   const initial = profile?.name?.[0]?.toUpperCase() || '?'
   const name = profile?.name || 'Usuario'
 
@@ -405,7 +405,7 @@ export default function ProfilePage() {
             <div className="avatar-circle">{initial}</div>
             <div className="profile-text">
               <div className="badge-row">
-                {isPremium && <span className="badge-premium">💎 {profile?.plan_name || 'Premium'}</span>}
+                {isPremium && <span className="badge-premium">💎 {planName === 'gratis' ? 'Premium' : planName}</span>}
                 {profile?.is_verified && <span className="badge-trust">✓ Usuario confiable</span>}
               </div>
               <h1>{name}</h1>
@@ -505,11 +505,11 @@ export default function ProfilePage() {
           {/* Subscription Card */}
           <div className="card premium-card">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <h2 style={{ fontSize: '1.5rem', fontWeight: 900, margin: 0 }}>{isPremium ? (profile?.plan_name || 'Premium') : 'Plan Gratuito'}</h2>
+              <h2 style={{ fontSize: '1.5rem', fontWeight: 900, margin: 0 }}>{isPremium ? (planName === 'gratis' ? 'Premium' : planName) : 'Plan Gratuito'}</h2>
               <span style={{ padding: '0.25rem 0.75rem', borderRadius: '9999px', background: 'white', color: '#ea580c', fontSize: '0.625rem', fontWeight: 900 }}>ACTIVO</span>
             </div>
             <p style={{ fontSize: '0.8125rem', marginBottom: '1.5rem', opacity: 0.9 }}>
-              {isPremium ? `Disfrutás de todos los beneficios de ${profile?.plan_name || 'Premium'}.` : 'Subí a Premium para ver intercambios ilimitados y chatear sin restricciones.'}
+              {isPremium ? `Disfrutás de todos los beneficios de ${planName === 'gratis' ? 'Premium' : planName}.` : 'Subí a Premium para ver intercambios ilimitados y chatear sin restricciones.'}
             </p>
             <button className="btn-white" onClick={() => navigate('/premium')}>
               {isPremium ? 'Gestionar suscripción' : 'Mejorar a Pro'}

@@ -5,6 +5,7 @@ import { useAppStore } from '../stores/appStore'
 import { supabase } from '../lib/supabase'
 import MatchCard from '../components/MatchCard'
 import { useFavoritesStore } from '../stores/favoritesStore'
+import { usePremiumAccess } from '../hooks/usePremiumAccess'
 
 const TABS = [
   { id: 'all',     label: 'Todos' },
@@ -69,8 +70,8 @@ export default function MatchesPage() {
     return list
   })()
 
-  const isPremium  = profile?.is_premium || false
-  const planName   = (profile?.plan_name || 'gratis').toLowerCase()
+  const { isPremium, planName: rawPlanName } = usePremiumAccess()
+  const planName = rawPlanName.toLowerCase()
   const isPro      = planName.includes('pro')
   const isPlus     = planName.includes('plus')
 

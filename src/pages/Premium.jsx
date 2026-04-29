@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
 import { supabase } from '../lib/supabase'
 import PlansModal from '../components/PlansModal'
+import { usePremiumAccess } from '../hooks/usePremiumAccess'
 
 export default function PremiumPage() {
   const navigate = useNavigate()
@@ -10,11 +11,7 @@ export default function PremiumPage() {
   const [showPlans, setShowPlans] = useState(false)
   const [plans, setPlans] = useState([])
 
-  const isPremium =
-    profile?.is_premium === true ||
-    (profile?.plan_name && profile.plan_name !== 'gratis')
-
-  const currentTier = profile?.plan_name || 'gratis'
+  const { isPremium, planName: currentTier } = usePremiumAccess()
 
   useEffect(() => {
     async function load() {
