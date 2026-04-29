@@ -38,19 +38,21 @@ serve(async (req) => {
       if (payment.status === 'approved' && payment.external_reference) {
         const userId = payment.external_reference
         
-        // Asignamos plan PRO por defecto si es un pago exitoso (lógica simplificada)
-        // Idealmente, sacaríamos el plan exacto leyendo la descripción o el monto
+        // Inferir plan por el monto (99 = plus, 199 = pro)
+        let planAssigned = 'plus'
+        if (payment.transaction_amount >= 199) planAssigned = 'pro'
+
         await supabaseAdmin
           .from('profiles')
-          .update({ is_premium: true, plan_name: 'pro' })
+          .update({ is_premium: true, plan_name: planAssigned })
           .eq('id', userId)
           
         await supabaseAdmin.from('audit_log').insert({
-          user_id: userId,
+          module: 'monetization',
           action: 'subscription_payment',
-          entity_type: 'payment',
-          entity_id: payment.id.toString(),
-          details: `Mercado Pago success. Amount: ${payment.transaction_amount}`
+          target_id: userId,
+          changer_id: null,
+          new_value: { payment_id: payment.id, amount: payment.transaction_amount, plan: planAssigned }
         })
       }
     }
