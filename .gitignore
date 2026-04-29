@@ -26,3 +26,7 @@ dist-ssr
 *.sw?
 
 supabase/.temp/
+.vercel
+
+recursos/Google Auth credencials
+recursos/errores

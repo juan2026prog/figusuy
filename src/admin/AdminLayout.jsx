@@ -59,6 +59,7 @@ const menuSections = [
   {
     title: 'Sistema',
     items: [
+      { path: '/admin/feature-flags', icon: 'toggle_on', label: 'Release Control', perm: 'admin.settings' },
       { path: '/admin/settings', icon: 'settings', label: 'Configuración', perm: 'admin.settings' },
       { path: '/admin/algorithm', icon: 'psychology', label: 'Algoritmo', perm: 'admin.algorithm' },
       { path: '/admin/roles', icon: 'admin_panel_settings', label: 'Roles', perm: 'admin.roles' },

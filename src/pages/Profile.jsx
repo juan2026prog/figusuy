@@ -6,6 +6,7 @@ import { supabase } from '../lib/supabase'
 import ConfirmDialog from '../components/ConfirmDialog'
 import { useToast } from '../components/Toast'
 import { useFavoritesStore } from '../stores/favoritesStore'
+import AlphaWelcomeModal from '../components/AlphaWelcomeModal'
 
 export default function ProfilePage() {
   const navigate = useNavigate()
@@ -20,6 +21,7 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false)
   const [geoLoading, setGeoLoading] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
+  const [showAlphaModal, setShowAlphaModal] = useState(false)
 
   const isPremium = profile?.is_premium === true || (profile?.plan_name && profile.plan_name !== 'gratis')
   const initial = profile?.name?.[0]?.toUpperCase() || '?'
@@ -558,6 +560,9 @@ export default function ProfilePage() {
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', borderTop: '1px solid #1e293b', paddingTop: '0.5rem' }}>
+              <button className="logout-btn" style={{ color: '#94a3b8' }} onClick={() => setShowAlphaModal(true)}>
+                🧪 Ver aviso Alpha
+              </button>
               <button className="logout-btn" style={{ color: '#10b981' }} onClick={() => navigate('/business')}>
                 🏪 FigusUY Negocios (Mi local)
               </button>
@@ -585,6 +590,13 @@ export default function ProfilePage() {
         onCancel={() => setShowSignOutConfirm(false)} 
         variant="danger" 
       />
+
+      {showAlphaModal && (
+        <AlphaWelcomeModal
+          forceOpen={true}
+          onClose={() => setShowAlphaModal(false)}
+        />
+      )}
     </div>
   )
 }

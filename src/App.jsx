@@ -58,6 +58,7 @@ import AdminSecurity from './admin/AdminSecurity'
 import AdminSubscriptions from './admin/AdminSubscriptions'
 import AdminBusinessPlans from './admin/AdminBusinessPlans'
 import AdminSponsored from './admin/AdminSponsored'
+import AdminFeatureFlags from './admin/AdminFeatureFlags'
 
 function LoadingScreen() {
   return (
@@ -97,6 +98,7 @@ function GlobalHooks() {
 }
 
 import Sidebar from './components/Sidebar'
+import AlphaWelcomeModal from './components/AlphaWelcomeModal'
 
 function AppLayout({ children }) {
   return (
@@ -215,10 +217,12 @@ export default function App() {
           <Route path="logs" element={<AdminLogs />} />
           <Route path="config" element={<AdminConfig />} />
           <Route path="sponsored" element={<AdminSponsored />} />
+          <Route path="feature-flags" element={<AdminFeatureFlags />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      <AlphaWelcomeModal />
     </BrowserRouter>
   )
 }

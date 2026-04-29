@@ -1,57 +1,34 @@
 import React, { useEffect, useState } from 'react'
 import { useAdminStore } from '../stores/adminStore'
+import { useAuthStore } from '../stores/authStore'
 
-const card = { background: 'white', borderRadius: '0.75rem', padding: '1.25rem', border: '1px solid #e7e5e4' }
-const inputStyle = { width: '100%', padding: '0.5rem 0.75rem', borderRadius: '0.5rem', border: '1px solid #e7e5e4', fontSize: '0.8125rem', outline: 'none', boxSizing: 'border-box' }
-const labelStyle = { display: 'block', fontSize: '0.6875rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase', marginBottom: '0.25rem', letterSpacing: '0.04em' }
-const btn = (bg) => ({ padding: '0.5rem 1rem', borderRadius: '0.5rem', background: bg, color: 'white', border: 'none', fontSize: '0.8125rem', fontWeight: 600, cursor: 'pointer', transition: 'opacity 0.2s' })
+const card = { background: 'white', borderRadius: '1rem', padding: '1.5rem', border: '1px solid #e7e5e4', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }
+
+const planColors = { gratis: '#64748b', plus: '#3b82f6', pro: '#ea580c' }
+const planIcons = { gratis: 'person', plus: 'star', pro: 'workspace_premium' }
 
 export default function AdminPlans() {
-  const { plans, fetchPlans, updatePlan } = useAdminStore()
+  const { plans, fetchPlans, updatePlan, loading } = useAdminStore()
+  const { user } = useAuthStore()
   const [editingId, setEditingId] = useState(null)
   const [editForm, setEditForm] = useState({})
   const [saving, setSaving] = useState(false)
-  const [saved, setSaved] = useState(null) // planId that was just saved
+  const [saved, setSaved] = useState(null)
 
   useEffect(() => { fetchPlans() }, [])
 
-  const intervalLabels = { monthly: 'Mensual', quarterly: 'Trimestral', yearly: 'Anual', lifetime: 'Vitalicio' }
-
   const startEditing = (plan) => {
     setEditingId(plan.id)
-    setEditForm({
-      name: plan.name,
-      price: plan.price,
-      currency: plan.currency || 'UYU',
-      interval: plan.interval,
-      features: JSON.stringify(plan.features || {}, null, 2),
-      limits: JSON.stringify(plan.limits || {}, null, 2),
-    })
+    setEditForm({ ...plan })
   }
 
-  const cancelEditing = () => {
-    setEditingId(null)
-    setEditForm({})
-  }
-
-  const handleSave = async (planId) => {
+  const handleSave = async () => {
     setSaving(true)
     try {
-      let features, limits
-      try { features = JSON.parse(editForm.features) } catch { features = {} }
-      try { limits = JSON.parse(editForm.limits) } catch { limits = {} }
-
-      await updatePlan(planId, {
-        name: editForm.name,
-        price: Number(editForm.price),
-        currency: editForm.currency,
-        interval: editForm.interval,
-        features,
-        limits,
-      })
-      setSaved(planId)
+      const { id, created_at, ...updates } = editForm
+      await updatePlan(editingId, updates)
+      setSaved(editingId)
       setEditingId(null)
-      setEditForm({})
       setTimeout(() => setSaved(null), 3000)
     } catch (e) {
       console.error('Error saving plan:', e)
@@ -61,161 +38,176 @@ export default function AdminPlans() {
   }
 
   return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-        <div>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#1c1917' }}>💎 Gestión de Planes</h1>
-          <p style={{ fontSize: '0.875rem', color: '#78716c' }}>Editá precios, features y límites. Los cambios se reflejan en la landing page automáticamente.</p>
-        </div>
+    <div style={{ paddingBottom: '2rem' }}>
+      <div style={{ marginBottom: '2rem' }}>
+        <h1 style={{ fontSize: '1.875rem', fontWeight: 900, color: '#020617', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <span className="material-symbols-outlined" style={{ color: '#ea580c', fontSize: '2rem' }}>diamond</span>
+          Planes de Usuarios
+        </h1>
+        <p style={{ fontSize: '0.9375rem', color: '#64748b', marginTop: '0.25rem' }}>
+          Editá los límites, features y reglas de matching de cada plan. Los cambios se aplican inmediatamente.
+        </p>
       </div>
 
       {saved && (
-        <div style={{
-          background: '#dcfce7', border: '1px solid #86efac', borderRadius: '0.5rem',
-          padding: '0.75rem 1rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem',
-          fontSize: '0.8125rem', fontWeight: 600, color: '#166534',
-          animation: 'fadeIn 0.3s ease',
-        }}>
-          ✅ Plan guardado exitosamente. Los cambios se reflejan en la landing.
+        <div style={{ background: '#dcfce7', border: '1px solid #86efac', borderRadius: '0.5rem', padding: '0.75rem 1rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', fontWeight: 600, color: '#166534' }}>
+          ✅ Plan guardado exitosamente.
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(18rem, 1fr))', gap: '1rem' }}>
-        {plans.map(plan => {
-          const isEditing = editingId === plan.id
-          const justSaved = saved === plan.id
+      {plans.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '4rem', color: '#94a3b8' }}>
+          {loading ? 'Cargando planes...' : 'No se encontraron planes en plan_rules. Verificá que la tabla exista y tenga datos.'}
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(22rem, 1fr))', gap: '1.5rem' }}>
+          {plans.map(plan => {
+            const isEditing = editingId === plan.id
+            const justSaved = saved === plan.id
+            const color = planColors[plan.plan_name] || '#64748b'
+            const icon = planIcons[plan.plan_name] || 'person'
 
-          return (
-            <div key={plan.id} style={{
-              ...card,
-              borderColor: justSaved ? '#10b981' : plan.price > 0 ? '#ea580c' : '#e7e5e4',
-              position: 'relative',
-              boxShadow: justSaved ? '0 0 0 3px rgba(16, 185, 129, 0.2)' : 'none',
-              transition: 'all 0.3s ease',
-            }}>
-              {plan.price > 0 && (
-                <div style={{
-                  position: 'absolute', top: '0.75rem', right: '0.75rem',
-                  background: '#ea580c', color: 'white', padding: '0.125rem 0.5rem',
-                  borderRadius: '1rem', fontSize: '0.625rem', fontWeight: 700,
-                }}>PREMIUM</div>
-              )}
-
-              {isEditing ? (
-                /* ===== EDIT MODE ===== */
-                <div>
-                  <div style={{ marginBottom: '0.75rem' }}>
-                    <label style={labelStyle}>Nombre del plan</label>
-                    <input style={inputStyle} value={editForm.name}
-                      onChange={e => setEditForm({ ...editForm, name: e.target.value })} />
+            return (
+              <div key={plan.id} style={{
+                ...card, borderTop: `4px solid ${color}`, position: 'relative',
+                boxShadow: justSaved ? '0 0 0 3px rgba(16, 185, 129, 0.3)' : card.boxShadow,
+                transition: 'all 0.3s'
+              }}>
+                {/* Header */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
+                  <div style={{ width: '3rem', height: '3rem', borderRadius: '0.75rem', background: `${color}15`, color, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: '1.5rem' }}>{icon}</span>
                   </div>
+                  <div>
+                    <h3 style={{ fontSize: '1.25rem', fontWeight: 900, color: '#0f172a', textTransform: 'capitalize', margin: 0 }}>{plan.plan_name}</h3>
+                    <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: 0 }}>
+                      Boost: +{((plan.priority_boost || 0) * 100).toFixed(0)}% · Ranking: {plan.match_depth}
+                    </p>
+                  </div>
+                </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginBottom: '0.75rem' }}>
-                    <div>
-                      <label style={labelStyle}>Precio</label>
-                      <input type="number" style={inputStyle} value={editForm.price}
-                        onChange={e => setEditForm({ ...editForm, price: e.target.value })} />
+                {isEditing ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    {/* Limits */}
+                    <h4 style={{ fontSize: '0.6875rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>Límites</h4>
+                    {[
+                      { key: 'max_active_albums', label: 'Máx álbumes activos', type: 'number' },
+                      { key: 'favorite_limit', label: 'Límite de favoritos', type: 'number' },
+                      { key: 'chat_expiration_hours', label: 'Expiración chat (horas)', type: 'number' },
+                    ].map(f => (
+                      <div key={f.key}>
+                        <label style={{ display: 'block', fontSize: '0.6875rem', fontWeight: 700, color: '#475569', marginBottom: '0.25rem' }}>{f.label}</label>
+                        <input type={f.type} value={editForm[f.key] ?? ''} onChange={e => setEditForm({ ...editForm, [f.key]: e.target.value === '' ? null : Number(e.target.value) })}
+                          placeholder="Sin límite"
+                          style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: '0.5rem', border: '1px solid #e2e8f0', fontSize: '0.8125rem' }} />
+                      </div>
+                    ))}
+
+                    {/* Ranking */}
+                    <h4 style={{ fontSize: '0.6875rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0.5rem 0 0' }}>Ranking</h4>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.6875rem', fontWeight: 700, color: '#475569', marginBottom: '0.25rem' }}>Profundidad Match</label>
+                        <select value={editForm.match_depth || 'basic'} onChange={e => setEditForm({ ...editForm, match_depth: e.target.value })}
+                          style={{ width: '100%', padding: '0.5rem', borderRadius: '0.5rem', border: '1px solid #e2e8f0', fontSize: '0.8125rem' }}>
+                          <option value="basic">Basic</option>
+                          <option value="optimized">Optimized</option>
+                          <option value="advanced">Advanced</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.6875rem', fontWeight: 700, color: '#475569', marginBottom: '0.25rem' }}>Refresh Level</label>
+                        <select value={editForm.match_refresh_level || 'low'} onChange={e => setEditForm({ ...editForm, match_refresh_level: e.target.value })}
+                          style={{ width: '100%', padding: '0.5rem', borderRadius: '0.5rem', border: '1px solid #e2e8f0', fontSize: '0.8125rem' }}>
+                          <option value="low">Low</option>
+                          <option value="medium">Medium</option>
+                          <option value="high">High</option>
+                        </select>
+                      </div>
                     </div>
                     <div>
-                      <label style={labelStyle}>Moneda</label>
-                      <select style={inputStyle} value={editForm.currency}
-                        onChange={e => setEditForm({ ...editForm, currency: e.target.value })}>
-                        <option value="UYU">UYU</option>
-                        <option value="USD">USD</option>
-                        <option value="ARS">ARS</option>
-                      </select>
+                      <label style={{ display: 'block', fontSize: '0.6875rem', fontWeight: 700, color: '#475569', marginBottom: '0.25rem' }}>Priority Boost (0.00 - 0.20)</label>
+                      <input type="number" step="0.01" min="0" max="0.20" value={editForm.priority_boost ?? 0}
+                        onChange={e => setEditForm({ ...editForm, priority_boost: Number(e.target.value) })}
+                        style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: '0.5rem', border: '1px solid #e2e8f0', fontSize: '0.8125rem' }} />
+                    </div>
+
+                    {/* Feature Flags */}
+                    <h4 style={{ fontSize: '0.6875rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0.5rem 0 0' }}>Features</h4>
+                    {[
+                      { key: 'can_use_optimized_ranking', label: 'Ranking Optimizado' },
+                      { key: 'can_use_advanced_ranking', label: 'Ranking Avanzado' },
+                      { key: 'can_receive_match_alerts', label: 'Alertas de Match' },
+                      { key: 'can_receive_realtime_alerts', label: 'Alertas Realtime' },
+                      { key: 'can_use_smart_suggestions', label: 'Sugerencias Smart' },
+                      { key: 'can_use_early_features', label: 'Early Access' },
+                    ].map(f => (
+                      <label key={f.key} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem', fontWeight: 600, cursor: 'pointer' }}>
+                        <input type="checkbox" checked={editForm[f.key] || false} onChange={e => setEditForm({ ...editForm, [f.key]: e.target.checked })} />
+                        {f.label}
+                      </label>
+                    ))}
+
+                    <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
+                      <button onClick={handleSave} disabled={saving} style={{ flex: 1, background: '#10b981', color: 'white', border: 'none', padding: '0.625rem', borderRadius: '0.5rem', fontWeight: 700, cursor: 'pointer', opacity: saving ? 0.6 : 1 }}>
+                        {saving ? '⏳ Guardando...' : '💾 Guardar'}
+                      </button>
+                      <button onClick={() => setEditingId(null)} style={{ background: '#f1f5f9', color: '#64748b', border: 'none', padding: '0.625rem 1rem', borderRadius: '0.5rem', fontWeight: 700, cursor: 'pointer' }}>Cancelar</button>
                     </div>
                   </div>
+                ) : (
+                  <>
+                    {/* View Mode */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1.25rem' }}>
+                      {[
+                        { label: 'Máx álbumes', value: plan.max_active_albums ?? '∞', icon: 'menu_book' },
+                        { label: 'Favoritos', value: plan.favorite_limit ?? '∞', icon: 'favorite' },
+                        { label: 'Chat expira', value: plan.chat_expiration_hours ? `${plan.chat_expiration_hours}h` : 'Nunca', icon: 'timer' },
+                        { label: 'Match depth', value: plan.match_depth, icon: 'search' },
+                        { label: 'Refresh', value: plan.match_refresh_level, icon: 'sync' },
+                        { label: 'Boost', value: `+${((plan.priority_boost || 0) * 100).toFixed(0)}%`, icon: 'trending_up' },
+                      ].map(item => (
+                        <div key={item.label} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0.75rem', background: '#f8fafc', borderRadius: '0.5rem', fontSize: '0.8125rem' }}>
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', color: '#475569' }}>
+                            <span className="material-symbols-outlined" style={{ fontSize: '1rem', color: '#94a3b8' }}>{item.icon}</span>
+                            {item.label}
+                          </span>
+                          <span style={{ fontWeight: 800, color: '#0f172a' }}>{item.value}</span>
+                        </div>
+                      ))}
+                    </div>
 
-                  <div style={{ marginBottom: '0.75rem' }}>
-                    <label style={labelStyle}>Período</label>
-                    <select style={inputStyle} value={editForm.interval}
-                      onChange={e => setEditForm({ ...editForm, interval: e.target.value })}>
-                      <option value="monthly">Mensual</option>
-                      <option value="quarterly">Trimestral</option>
-                      <option value="yearly">Anual</option>
-                      <option value="lifetime">Vitalicio</option>
-                    </select>
-                  </div>
+                    {/* Feature badges */}
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem', marginBottom: '1.25rem' }}>
+                      {[
+                        { key: 'can_use_optimized_ranking', label: 'Optimizado' },
+                        { key: 'can_use_advanced_ranking', label: 'Avanzado' },
+                        { key: 'can_receive_match_alerts', label: 'Alertas' },
+                        { key: 'can_receive_realtime_alerts', label: 'Realtime' },
+                        { key: 'can_use_smart_suggestions', label: 'Smart' },
+                        { key: 'can_use_early_features', label: 'Early' },
+                      ].map(f => (
+                        <span key={f.key} style={{
+                          padding: '0.25rem 0.5rem', borderRadius: '0.375rem', fontSize: '0.6875rem', fontWeight: 700,
+                          background: plan[f.key] ? '#ecfdf5' : '#f1f5f9', color: plan[f.key] ? '#10b981' : '#94a3b8'
+                        }}>{plan[f.key] ? '✓' : '✕'} {f.label}</span>
+                      ))}
+                    </div>
 
-                  <div style={{ marginBottom: '0.75rem' }}>
-                    <label style={labelStyle}>Features (JSON)</label>
-                    <textarea style={{ ...inputStyle, fontFamily: 'monospace', fontSize: '0.6875rem', minHeight: '5rem', resize: 'vertical' }}
-                      value={editForm.features}
-                      onChange={e => setEditForm({ ...editForm, features: e.target.value })} />
-                  </div>
-
-                  <div style={{ marginBottom: '1rem' }}>
-                    <label style={labelStyle}>Límites (JSON)</label>
-                    <textarea style={{ ...inputStyle, fontFamily: 'monospace', fontSize: '0.6875rem', minHeight: '3rem', resize: 'vertical' }}
-                      value={editForm.limits}
-                      onChange={e => setEditForm({ ...editForm, limits: e.target.value })} />
-                  </div>
-
-                  <div style={{ display: 'flex', gap: '0.375rem' }}>
-                    <button onClick={() => handleSave(plan.id)} disabled={saving} style={{
-                      ...btn('#10b981'),
-                      opacity: saving ? 0.6 : 1,
+                    <button onClick={() => startEditing(plan)} style={{
+                      width: '100%', padding: '0.625rem', borderRadius: '0.5rem',
+                      background: `${color}10`, color, border: `1px solid ${color}30`,
+                      fontWeight: 700, cursor: 'pointer', fontSize: '0.8125rem'
                     }}>
-                      {saving ? '⏳ Guardando...' : '💾 Guardar'}
+                      ✏️ Editar Plan
                     </button>
-                    <button onClick={cancelEditing} style={btn('#78716c')}>
-                      Cancelar
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                /* ===== VIEW MODE ===== */
-                <div>
-                  <h3 style={{ fontSize: '1.125rem', fontWeight: 800, marginBottom: '0.25rem' }}>{plan.name}</h3>
-                  <p style={{ fontSize: '0.75rem', color: '#78716c', marginBottom: '0.75rem' }}>{intervalLabels[plan.interval] || plan.interval}</p>
-
-                  <div style={{ marginBottom: '1rem' }}>
-                    <span style={{ fontSize: '2rem', fontWeight: 900, color: plan.price > 0 ? '#ea580c' : '#10b981' }}>
-                      ${plan.price}
-                    </span>
-                    <span style={{ fontSize: '0.75rem', color: '#a8a29e' }}>
-                      /{plan.interval === 'monthly' ? 'mes' : plan.interval === 'quarterly' ? 'trim' : plan.interval === 'yearly' ? 'año' : '∞'}
-                    </span>
-                    <span style={{ fontSize: '0.625rem', color: '#a8a29e', marginLeft: '0.25rem' }}>{plan.currency || 'UYU'}</span>
-                  </div>
-
-                  {/* Features */}
-                  <div style={{ marginBottom: '0.75rem' }}>
-                    <p style={{ ...labelStyle, marginBottom: '0.375rem' }}>Features</p>
-                    {Object.entries(plan.features || {}).map(([k, v]) => (
-                      <p key={k} style={{ fontSize: '0.75rem', color: '#78716c', marginBottom: '0.125rem' }}>
-                        <span style={{ color: '#10b981', marginRight: '0.25rem' }}>✓</span>
-                        {k.replace(/_/g, ' ')}: <strong>{String(v)}</strong>
-                      </p>
-                    ))}
-                  </div>
-
-                  {/* Limits */}
-                  <div style={{ marginBottom: '1rem' }}>
-                    <p style={{ ...labelStyle, marginBottom: '0.375rem' }}>Límites</p>
-                    {Object.entries(plan.limits || {}).map(([k, v]) => (
-                      <p key={k} style={{ fontSize: '0.75rem', color: '#78716c', marginBottom: '0.125rem' }}>
-                        {k.replace(/_/g, ' ')}: <strong>{v}</strong>
-                      </p>
-                    ))}
-                  </div>
-
-                  <div style={{ display: 'flex', gap: '0.375rem', flexWrap: 'wrap' }}>
-                    <button onClick={() => startEditing(plan)} style={btn('#ea580c')}>
-                      ✏️ Editar
-                    </button>
-                    <button onClick={() => updatePlan(plan.id, { is_active: !plan.is_active })}
-                      style={btn(plan.is_active ? '#ef4444' : '#10b981')}>
-                      {plan.is_active ? '⏸️ Desactivar' : '▶️ Activar'}
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          )
-        })}
-      </div>
+                  </>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }

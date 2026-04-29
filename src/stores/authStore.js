@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { supabase } from '../lib/supabase'
+import { useFeatureFlagStore } from './featureFlagStore'
 
 export const useAuthStore = create((set, get) => ({
   user: null,
@@ -21,6 +22,9 @@ export const useAuthStore = create((set, get) => ({
         const { data: planRules } = await supabase.rpc('get_user_plan_rules', { user_id: session.user.id })
 
         set({ user: session.user, session, profile, planRules, loading: false })
+
+        // Initialize feature flags for this user
+        useFeatureFlagStore.getState().initializeFlags(session.user.id)
 
         // Auto-update last_active
         supabase.from('profiles').update({ last_active: new Date().toISOString() }).eq('id', session.user.id).then(() => {})

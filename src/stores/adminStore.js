@@ -237,19 +237,20 @@ export const useAdminStore = create((set, get) => ({
     get().fetchSettings()
   },
 
-  // ========== PLANS ==========
+  // ========== PLANS (user plans from plan_rules) ==========
   fetchPlans: async () => {
-    const { data } = await supabase.from('premium_plans').select('*').order('sort_order')
+    const { data } = await supabase.from('plan_rules').select('*').order('priority_boost')
     set({ plans: data || [] })
   },
 
   updatePlan: async (id, updates) => {
-    await supabase.from('premium_plans').update(updates).eq('id', id)
+    const { error } = await supabase.from('plan_rules').update(updates).eq('id', id)
+    if (error) console.error('Error updating plan:', error)
     get().fetchPlans()
   },
 
   createPlan: async (plan) => {
-    await supabase.from('premium_plans').insert(plan)
+    await supabase.from('plan_rules').insert(plan)
     get().fetchPlans()
   },
 
