@@ -1,53 +1,54 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useAppStore } from '../stores/appStore'
+import { useAuthStore } from '../stores/authStore'
+import { supabase } from '../lib/supabase'
 
 export default function PremiumCTA({ variant = 'inline' }) {
   const navigate = useNavigate()
+  const { matches } = useAppStore()
+  const { profile } = useAuthStore()
+  const isPremium = profile?.is_premium === true || (profile?.plan_name && profile.plan_name !== 'gratis')
+  const hiddenMatches = isPremium ? 0 : Math.max(0, (matches?.length || 0) - 3)
+  const [userCount, setUserCount] = useState(null)
+
+  useEffect(() => {
+    supabase.from('profiles').select('id', { count: 'exact', head: true }).then(({ count }) => {
+      if (count) setUserCount(count)
+    })
+  }, [])
+
+  if (isPremium) return null
 
   if (variant === 'banner') {
     return (
-      <div
-        className="animate-fade-in-up"
-        style={{
-          background: 'linear-gradient(135deg, #1e1b4b, #312e81)',
-          borderRadius: 'var(--radius-2xl)',
-          padding: '1.5rem',
-          color: 'white',
-          position: 'relative',
-          overflow: 'hidden',
-        }}
-      >
-        {/* Decorative circles */}
-        <div style={{
-          position: 'absolute', right: '-1rem', top: '-1rem',
-          width: '5rem', height: '5rem', borderRadius: '50%',
-          background: 'rgba(139, 92, 246, 0.2)',
-        }} />
-        <div style={{
-          position: 'absolute', right: '2rem', bottom: '-0.5rem',
-          width: '3rem', height: '3rem', borderRadius: '50%',
-          background: 'rgba(59, 130, 246, 0.2)',
-        }} />
+      <div className="card-premium animate-fade-in-up" style={{ padding: '1.5rem' }}>
+        <div className="deco-circle deco-circle-orange-sm" style={{ right: '-1rem', top: '-1rem', width: '5rem', height: '5rem' }} />
+        <div className="deco-circle deco-circle-amber-sm" style={{ right: '2rem', bottom: '-0.5rem', width: '3rem', height: '3rem' }} />
 
         <div style={{ position: 'relative', zIndex: 1 }}>
-          <span style={{ fontSize: '1.75rem', display: 'block', marginBottom: '0.5rem' }}>👑</span>
-          <h3 style={{ fontSize: '1.125rem', fontWeight: 700, marginBottom: '0.375rem' }}>
-            Desbloquear todos los matches
+          <span className="block text-3xl mb-sm">👑</span>
+          <h3 className="text-lg font-bold mb-xs">
+            {hiddenMatches > 0
+              ? `Tenés ${hiddenMatches} intercambio${hiddenMatches > 1 ? 's' : ''} oculto${hiddenMatches > 1 ? 's' : ''}`
+              : 'Desbloquear todos los intercambios'
+            }
           </h3>
-          <p style={{ fontSize: '0.8125rem', opacity: 0.85, marginBottom: '1rem', lineHeight: 1.5 }}>
-            Accedé a intercambios ilimitados, filtros avanzados y prioridad en el ranking.
+          <p className="text-sm mb-lg leading-relaxed" style={{ opacity: 0.85 }}>
+            {hiddenMatches > 0
+              ? 'Desbloqueá Premium para ver todos los resultados y contactar sin límites.'
+              : 'Accedé a intercambios ilimitados, filtros avanzados y prioridad en el ranking.'
+            }
           </p>
-          <button
-            className="btn"
-            onClick={() => navigate('/premium')}
-            style={{
-              background: 'linear-gradient(135deg, #f59e0b, #d97706)',
-              color: 'white',
-              width: '100%',
-              fontWeight: 700,
-              boxShadow: '0 4px 12px rgba(245, 158, 11, 0.4)',
-            }}
-          >
+
+          {/* Social proof */}
+          {userCount && (
+            <p className="text-xs mb-lg" style={{ opacity: 0.7 }}>
+              +{userCount.toLocaleString()} usuarios ya confían en FigusUy
+            </p>
+          )}
+
+          <button className="btn btn-premium w-full" onClick={() => navigate('/premium')}>
             ⭐ Desbloquear Premium
           </button>
         </div>
@@ -55,28 +56,25 @@ export default function PremiumCTA({ variant = 'inline' }) {
     )
   }
 
-  // Inline variant (smaller)
+  // Inline variant
   return (
-    <div
-      className="animate-fade-in"
+    <div className="animate-fade-in card-interactive"
+      onClick={() => navigate('/premium')}
       style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '0.75rem',
+        display: 'flex', alignItems: 'center', gap: '0.75rem',
         padding: '0.875rem 1rem',
         background: 'linear-gradient(135deg, #fef3c7, #fde68a)',
-        borderRadius: 'var(--radius-xl)',
         border: '1px solid #fcd34d',
-        cursor: 'pointer',
-      }}
-      onClick={() => navigate('/premium')}
-    >
-      <span style={{ fontSize: '1.25rem' }}>👑</span>
+      }}>
+      <span className="text-xl">👑</span>
       <div style={{ flex: 1 }}>
-        <p style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#92400e' }}>
-          Hay más matches disponibles
+        <p className="text-sm font-bold" style={{ color: '#92400e' }}>
+          {hiddenMatches > 0
+            ? `${hiddenMatches} intercambio${hiddenMatches > 1 ? 's' : ''} oculto${hiddenMatches > 1 ? 's' : ''}`
+            : 'Hay más intercambios disponibles'
+          }
         </p>
-        <p style={{ fontSize: '0.75rem', color: '#a16207' }}>
+        <p className="text-xs" style={{ color: '#a16207' }}>
           Desbloquear con Premium →
         </p>
       </div>

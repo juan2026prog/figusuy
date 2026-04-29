@@ -1,0 +1,74 @@
+# FigusUY Full Platform Audit & Diagnostic Report
+
+This document contains the exhaustive inspection of the FigusUY platform across all layers (Frontend, Backend, Database, Security, Monetization, and UX). No new features have been built. The focus is strictly on detecting errors, inconsistencies, risks, and priority improvements.
+
+## 🚨 User Review Required
+
+Please review the findings below. Several critical security and performance issues require immediate intervention at the database level. Once you approve this diagnostic report, we will execute the remediation steps.
+
+## Open Questions
+
+> [!WARNING]
+> 1. **Match Limits (Monetization)**: Currently, the frontend hides matches if the user is not Premium. Does the backend `find_matches` RPC also truncate the results to enforce this limit securely, or is it strictly a frontend UI hiding mechanism?
+> 2. **Admin Panel Security**: The frontend routes for `/admin/*` are protected by a client-side role check. Are the corresponding Supabase tables (e.g., `user_roles`, `reports`) strictly protected by RLS so that standard users cannot query them via the API directly?
+
+---
+
+## 1. Database & Schema Architecture (High Priority)
+
+### [MODIFY] Supabase RLS Policies (Performance)
+- **Issue**: The database linter reported widespread `auth_rls_initplan` warnings. Policies currently use direct function calls like `auth.uid() = id`, which forces PostgreSQL to evaluate the function for *every single row*.
+- **Fix**: Refactor all RLS policies to use scalar subqueries. 
+  - *Example*: Change `auth.uid() = user_id` to `(select auth.uid()) = user_id`.
+- **Issue**: Redundant and overlapping permissive RLS policies are degrading the query planner's performance.
+- **Fix**: Consolidate and simplify RLS policies for `profiles`, `albums`, and `stickers_owned`.
+
+### [MODIFY] Database Indexes (Performance)
+- **Issue**: Several critical foreign keys (e.g., in `stickers_owned`, `trades`, `messages`) are unindexed. This will cause massive latency spikes (sequential scans) as the user base and sticker inventory grow.
+- **Fix**: Create B-Tree indexes on all foreign key columns.
+  - `CREATE INDEX idx_stickers_owned_profile_id ON stickers_owned(profile_id);`
+  - `CREATE INDEX idx_stickers_owned_album_id ON stickers_owned(album_id);`
+  - `CREATE INDEX idx_trades_sender_id ON trades(sender_id);`
+
+---
+
+## 2. Security & Access Control (Critical)
+
+### [MODIFY] Postgres Views & RPCs (Security Escalation)
+- **Issue**: Several Postgres Views (e.g., `public.chats_with_preview`) and RPC functions (e.g., `find-matches`) are configured with `SECURITY DEFINER`. This means they execute with the privileges of the user who created them (usually a superuser), bypassing RLS. If exposed to the `anon` or `authenticated` roles without strict internal checks, this is a massive data leak risk.
+- **Fix**: 
+  1. Audit all `SECURITY DEFINER` functions.
+  2. Switch them to `SECURITY INVOKER` where possible so they respect the calling user's RLS policies.
+  3. If `SECURITY DEFINER` must be kept (e.g., for system-level bypassing), explicitly `REVOKE EXECUTE ON FUNCTION ... FROM public;` and `GRANT EXECUTE` only to the specific required roles, adding strict internal `auth.uid()` validation inside the function body.
+
+---
+
+## 3. Frontend & UX Architecture (Medium Priority)
+
+### [MODIFY] Location Onboarding Flow (`Profile.jsx`, `Matches.jsx`)
+- **Issue**: The "Cercanos" (Near) match sorting relies on geolocation (`profile.lat` / `profile.lng`). Currently, obtaining the location relies on the user manually clicking "Actualizar ubicación" in their profile.
+- **Fix**: Implement an automatic, graceful geolocation prompt during the onboarding flow or the first time they visit the "Intercambios" tab to ensure the proximity algorithm has sufficient data to work effectively.
+
+### [MODIFY] Client-Side Monetization Gating
+- **Issue**: Premium UI gating exists (`!isPremium` checks in `Matches.jsx`), but client-side gating can be trivially bypassed by modifying local state or intercepting API responses.
+- **Fix**: Ensure the Supabase backend limits the payload returned to free users.
+
+---
+
+## 4. Admin & Operational Control
+
+### [MODIFY] Admin Role Enforcement (`AdminLayout.jsx`, Supabase RLS)
+- **Issue**: Admin components fetch data that should be strictly confidential.
+- **Fix**: Ensure that the RLS policies for administrative tables check against the `user_roles` table. 
+  - *Implementation*: Create a secure Postgres function `is_admin()` that checks the role, and apply it to RLS policies for sensitive tables like `reports` and `audit_logs`.
+
+---
+
+## Verification Plan
+
+### Automated Tests
+- Run `EXPLAIN ANALYZE` on heavily used queries (like matching and fetching stickers) to verify that the query planner is using the new indexes and that `initplan` nodes are removed from RLS checks.
+
+### Manual Verification
+- Attempt to fetch data from protected views using an unauthorized `anon` token to verify that `SECURITY INVOKER` and RLS blocks the request.
+- Log in as a Free user and attempt to fetch hidden matches directly via the Supabase client to ensure backend truncation is working.

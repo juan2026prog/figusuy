@@ -1,0 +1,35 @@
+# FigusUY Implementation Plan - Phase 2 (Product, Realtime & Growth)
+
+Este plan de implementación detalla los pasos a seguir tras haber completado y blindado la arquitectura de base de datos y la seguridad (RLS/Edge Functions) en la Fase 1.
+
+## 1. Realtime & Chat System (Alta Prioridad)
+*Agente a cargo: Realtime / Chat Agent*
+
+- **Auditoría de Suscripciones (Supabase Realtime)**: Verificar que el frontend (`appStore.js` o los componentes de Chat) cancele correctamente las suscripciones a canales de Supabase cuando un usuario desmonta la vista de chat, para evitar fugas de memoria y exceso de conexiones concurrentes.
+- **Privacidad de Perfiles**: Asegurar que en la lista de chats (`ChatsList.jsx`) y en la vista de mensajería (`Chat.jsx`), los usuarios no puedan acceder a datos sensibles (email, lat, lng) del otro usuario. Solo se deben exponer datos públicos.
+- **Ordenamiento y Estado "No Leído"**: Validar que la lista de chats se ordene estrictamente por `last_message_at` y que exista un indicador claro de mensajes no leídos en la interfaz.
+
+## 2. Admin & Operations Panel (Frontend)
+*Agente a cargo: Admin / Operations Agent*
+
+- **Manejo de Errores de Permisos**: Tras aplicar el blindaje RLS estricto en la base de datos, el frontend del panel GodAdmin/Admin (`AdminPage.jsx`) debe capturar correctamente los errores de lectura y mostrar un mensaje de "Acceso Denegado" elegante si un usuario intenta forzar la ruta `/admin`.
+- **Integración de Reportes e Intervenciones**: Validar que las interfaces para moderar reportes, banear usuarios y ver métricas (`reports`, `user_blocks`, `audit_log`) funcionen correctamente bajo el nuevo RLS `is_admin()`.
+
+## 3. SEO & Meta Growth (Media Prioridad)
+*Agente a cargo: SEO Agent / Meta Growth Agent*
+
+- **Metadatos Dinámicos (React Helmet o similar)**: Auditar que las rutas clave (`/`, `/album`, `/premium`) tengan etiquetas `<title>` descriptivas, `meta description` y etiquetas `OpenGraph` (og:image, og:title) configuradas para maximizar el CTR al compartir links en WhatsApp y redes sociales.
+- **Enrutamiento Amigable para Crawlers**: Revisar la estructura semántica de HTML (uso de `<h1>`, `<h2>`) en la landing page para optimización de motores de búsqueda.
+
+## 4. Notifications & Engagement (Baja/Media Prioridad)
+*Agente a cargo: Notification / CRM Agent*
+
+- **Flujo de Onboarding de Notificaciones**: Revisar dónde y cómo se solicitan permisos de notificaciones push al usuario. Evitar solicitar permisos inmediatamente al cargar la app; pedirlo contextualmente (por ejemplo, al encontrar un "Match Perfecto").
+- **Integración de Analytics**: Verificar que la función de inicialización de Analytics (si existe) y las llamadas a la tabla `user_events` o `analytics_daily` no presenten fallas críticas ni bloqueen la renderización principal de la app.
+
+---
+
+## 🛠 Proceso de Ejecución
+1. El usuario debe confirmar este plan.
+2. Iniciaremos con **Realtime & Chat System** auditando `Chat.jsx`, `ChatsList.jsx` y `appStore.js`.
+3. Informaremos los hallazgos al usuario antes de modificar código crítico.

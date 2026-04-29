@@ -53,8 +53,19 @@ export default function HomePage() {
     )
   }
 
-  const handleSelectAlbum = (album) => {
-    selectAlbum(album, profile?.id)
+  const handleSelectAlbum = async (album) => {
+    const res = await selectAlbum(album, profile?.id)
+    if (res?.error) {
+      if (res.error.message.includes('límite de álbumes activos')) {
+        const upgrade = window.confirm('Tu plan permite un número limitado de álbumes activos.\n\n¿Querés mejorar tu plan?')
+        if (upgrade) {
+          navigate('/premium')
+        }
+      } else {
+        alert(res.error.message)
+      }
+      return
+    }
     navigate('/album')
   }
 
@@ -124,8 +135,8 @@ export default function HomePage() {
           padding: '1rem',
           fontSize: '1.0625rem',
           borderRadius: 'var(--radius-2xl)',
-          background: 'linear-gradient(135deg, #2563eb, #7c3aed)',
-          boxShadow: '0 8px 24px rgba(37, 99, 235, 0.35)',
+          background: 'linear-gradient(135deg, var(--color-brand-600), var(--color-brand-500))',
+          boxShadow: 'var(--shadow-brand)',
         }}
       >
         🔍 Buscar intercambios
@@ -144,7 +155,7 @@ export default function HomePage() {
           <StatCard
             label="Progreso"
             value={`${selectedAlbum.total_stickers > 0 ? Math.round(((selectedAlbum.total_stickers - missingStickers.length) / selectedAlbum.total_stickers) * 100) : 0}%`}
-            color="#3b82f6"
+            color="#ea580c"
             icon="📊"
           />
         </div>

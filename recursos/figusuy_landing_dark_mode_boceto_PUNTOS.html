@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FigusUY — Puntos</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#fff7ed',
+              100: '#ffedd5',
+              500: '#f97316',
+              600: '#ea580c',
+              700: '#c2410c'
+            }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-slate-100 text-slate-900 dark:bg-slate-950 dark:text-white transition-colors duration-300">
+
+  <div class="min-h-screen flex">
+
+    <!-- Sidebar -->
+    <aside class="hidden md:flex w-52 bg-slate-900 text-white flex-col border-r border-slate-800">
+      <div class="h-24 px-5 flex items-center gap-3 border-b border-slate-800">
+        <div class="w-11 h-11 rounded-2xl bg-brand-600 flex items-center justify-center text-white font-black text-xl">F</div>
+        <div>
+          <p class="font-black text-lg tracking-tight">FigusUY</p>
+          <p class="text-xs text-slate-400">Coleccioná mejor</p>
+        </div>
+      </div>
+
+      <nav class="flex-1 py-5 px-3 space-y-2">
+        <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-2xl hover:bg-slate-800 font-bold text-sm text-slate-300"><span class="text-lg">📚</span> Álbumes</a>
+        <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-2xl hover:bg-slate-800 font-bold text-sm text-slate-300"><span class="text-lg">🔄</span> Cruces</a>
+        <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-2xl hover:bg-slate-800 font-bold text-sm text-slate-300"><span class="text-lg">💬</span> Chats</a>
+        <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-2xl bg-brand-600 text-white font-black text-sm"><span class="text-lg">📍</span> Puntos</a>
+        <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-2xl hover:bg-slate-800 font-bold text-sm text-slate-300"><span class="text-lg">👤</span> Mi Perfil</a>
+      </nav>
+    </aside>
+
+    <!-- Main -->
+    <main class="flex-1 min-w-0">
+
+      <!-- Topbar -->
+      <header class="sticky top-0 z-40 bg-white/90 dark:bg-slate-950/90 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800">
+        <div class="h-20 px-4 md:px-6 flex items-center justify-between gap-4">
+          <div>
+            <p class="text-xs text-slate-500 dark:text-slate-400 font-bold">Lugares seguros</p>
+            <h1 class="text-2xl font-black tracking-tight">Puntos</h1>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button id="themeToggle" class="w-10 h-10 rounded-2xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">🌙</button>
+            <button class="px-4 py-2 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-950 font-black text-sm">Sumar mi local</button>
+          </div>
+        </div>
+      </header>
+
+      <section class="max-w-6xl mx-auto px-4 py-6 md:py-8 pb-28 md:pb-8 space-y-5">
+
+        <div class="rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm p-5 md:p-6">
+          <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div>
+              <h2 class="text-3xl font-black">Puntos cercanos</h2>
+              <p class="text-slate-500 dark:text-slate-400 mt-1">Encontrá lugares seguros para intercambiar o comprar figuritas cerca tuyo.</p>
+            </div>
+            <div class="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
+              <input type="text" placeholder="Buscar barrio, punto o tienda..." class="px-4 py-3 rounded-2xl bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-sm font-bold outline-none focus:ring-2 focus:ring-brand-600 w-full sm:w-72" />
+              <button class="px-4 py-3 rounded-2xl bg-brand-600 text-white font-black text-sm">Cerca mío</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex flex-wrap gap-2">
+          <button class="px-4 py-2 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-950 font-black text-sm">Todos</button>
+          <button class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 font-black text-sm">🏪 Tiendas</button>
+          <button class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 font-black text-sm">☕ Puntos seguros</button>
+          <button class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 font-black text-sm">⭐ Destacados</button>
+          <button class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 font-black text-sm">Abierto ahora</button>
+        </div>
+
+        <div class="grid xl:grid-cols-[1.35fr_.65fr] gap-5">
+          <div class="space-y-4">
+
+            <article class="rounded-3xl bg-white dark:bg-slate-900 border-2 border-brand-600 shadow-sm p-5">
+              <div class="flex items-start justify-between gap-4">
+                <div>
+                  <div class="flex flex-wrap gap-2 mb-2">
+                    <span class="px-3 py-1 rounded-full bg-orange-100 dark:bg-orange-950 text-orange-700 dark:text-orange-300 text-xs font-black">⭐ Destacado</span>
+                    <span class="px-3 py-1 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 text-xs font-black">🏪 Tienda aliada</span>
+                  </div>
+                  <h3 class="text-2xl font-black">Collectibles</h3>
+                  <p class="text-sm text-slate-500 dark:text-slate-400">Cordón · 1.2 km</p>
+                </div>
+                <span class="text-xs font-black px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800">10:00–19:00</span>
+              </div>
+              <div class="mt-4 flex flex-wrap gap-2 text-xs font-black">
+                <span class="px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800">✅ Punto seguro</span>
+                <span class="px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800">✅ Vende sobres</span>
+                <span class="px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800">Mundial 2026</span>
+              </div>
+              <div class="mt-4 flex gap-2">
+                <button class="px-4 py-3 rounded-2xl bg-brand-600 text-white font-black text-sm">WhatsApp</button>
+                <button class="px-4 py-3 rounded-2xl bg-slate-100 dark:bg-slate-800 font-black text-sm">Ver mapa</button>
+              </div>
+            </article>
+
+            <article class="rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm p-5">
+              <div class="flex items-start justify-between gap-4">
+                <div>
+                  <div class="flex flex-wrap gap-2 mb-2">
+                    <span class="px-3 py-1 rounded-full bg-sky-100 dark:bg-sky-950 text-sky-700 dark:text-sky-300 text-xs font-black">☕ Punto de intercambio</span>
+                  </div>
+                  <h3 class="text-2xl font-black">Café Centro</h3>
+                  <p class="text-sm text-slate-500 dark:text-slate-400">Centro · 850m</p>
+                </div>
+                <span class="text-xs font-black px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800">09:00–20:00</span>
+              </div>
+              <div class="mt-4 flex flex-wrap gap-2 text-xs font-black">
+                <span class="px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800">✅ Lugar público</span>
+                <span class="px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800">✅ Ideal para cambios</span>
+              </div>
+              <div class="mt-4 flex gap-2">
+                <button class="px-4 py-3 rounded-2xl bg-slate-900 dark:bg-white text-white dark:text-slate-950 font-black text-sm">Cómo llegar</button>
+                <button class="px-4 py-3 rounded-2xl bg-slate-100 dark:bg-slate-800 font-black text-sm">Ver mapa</button>
+              </div>
+            </article>
+
+            <article class="rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm p-5">
+              <div class="flex items-start justify-between gap-4">
+                <div>
+                  <div class="flex flex-wrap gap-2 mb-2">
+                    <span class="px-3 py-1 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 text-xs font-black">🏪 Tienda aliada</span>
+                  </div>
+                  <h3 class="text-2xl font-black">Kiosco Pocitos</h3>
+                  <p class="text-sm text-slate-500 dark:text-slate-400">Pocitos · 400m</p>
+                </div>
+                <span class="text-xs font-black px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800">08:00–22:00</span>
+              </div>
+              <div class="mt-4 flex flex-wrap gap-2 text-xs font-black">
+                <span class="px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800">✅ Vende sobres</span>
+                <span class="px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800">Mundial 2026</span>
+              </div>
+              <div class="mt-4 flex gap-2">
+                <button class="px-4 py-3 rounded-2xl bg-slate-900 dark:bg-white text-white dark:text-slate-950 font-black text-sm">WhatsApp</button>
+                <button class="px-4 py-3 rounded-2xl bg-slate-100 dark:bg-slate-800 font-black text-sm">Ver mapa</button>
+              </div>
+            </article>
+          </div>
+
+          <div class="space-y-4">
+            <div class="rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm p-5">
+              <h3 class="text-xl font-black mb-3">Mapa</h3>
+              <div class="h-72 rounded-2xl bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex items-center justify-center text-slate-400 font-bold">Mapa de puntos</div>
+            </div>
+
+            <div class="rounded-3xl bg-slate-900 text-white p-5 shadow-sm">
+              <h3 class="text-xl font-black">¿Tenés un local?</h3>
+              <p class="text-sm text-slate-300 mt-2">Sumate como punto aliado y aparecé cuando alguien busque dónde cambiar o comprar figuritas cerca.</p>
+              <button class="mt-4 w-full px-4 py-3 rounded-2xl bg-brand-600 text-white font-black">Quiero aparecer</button>
+            </div>
+
+            <div class="rounded-3xl bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-300 dark:border-yellow-800 p-5">
+              <p class="text-sm font-bold text-yellow-900 dark:text-yellow-100">🛡️ Recomendamos realizar intercambios en lugares públicos. Si sos menor, andá acompañado por un adulto responsable.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Mobile bottom nav -->
+      <nav class="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/90 dark:bg-slate-950/90 backdrop-blur-xl border-t border-slate-200 dark:border-slate-800 px-4 py-3">
+        <div class="grid grid-cols-4 gap-2 text-center text-xs font-bold text-slate-500 dark:text-slate-400">
+          <a href="#">📚<br>Álbumes</a>
+          <a href="#">🔄<br>Cruces</a>
+          <a href="#">💬<br>Chats</a>
+          <a href="#" class="text-brand-600">👤<br>Perfil</a>
+        </div>
+      </nav>
+    </main>
+  </div>
+
+  <script>
+    const toggle = document.getElementById('themeToggle');
+    const root = document.documentElement;
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'dark') {
+      root.classList.add('dark');
+      toggle.textContent = '☀️';
+    }
+    toggle.addEventListener('click', () => {
+      root.classList.toggle('dark');
+      const isDark = root.classList.contains('dark');
+      localStorage.setItem('theme', isDark ? 'dark' : 'light');
+      toggle.textContent = isDark ? '☀️' : '🌙';
+    });
+  </script>
+</body>
+</html>

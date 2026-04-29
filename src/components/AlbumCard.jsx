@@ -1,70 +1,76 @@
 import React from 'react'
+import { useThemeStore } from '../stores/themeStore'
 
 export default function AlbumCard({ album, progress, onClick, isSelected }) {
+  const { isDark } = useThemeStore()
   const pct = album.total_stickers > 0 ? Math.round((progress / album.total_stickers) * 100) : 0
 
   const coverImage = album.cover_url || (album.images && album.images.length > 0 ? album.images[0] : null)
 
+  const cardStyle = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '1rem',
+    width: '100%',
+    padding: '1rem',
+    borderRadius: '1.25rem',
+    background: isSelected 
+      ? (isDark ? 'rgba(234, 88, 12, 0.15)' : '#fff7ed')
+      : (isDark ? '#0f172a' : '#ffffff'), // slate-900 / white
+    border: isSelected 
+      ? `2px solid ${isDark ? '#ea580c' : '#f97316'}` 
+      : `1px solid ${isDark ? '#1e293b' : '#e2e8f0'}`, // slate-800 / slate-200
+    cursor: 'pointer',
+    textAlign: 'left',
+    transition: 'all 0.2s',
+  }
+
+  const iconStyle = {
+    width: '3.5rem',
+    height: '4rem',
+    borderRadius: '0.75rem',
+    background: coverImage ? 'transparent' : 'linear-gradient(135deg, #fb923c, #f59e0b)', // Orange gradient
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '1.5rem',
+    color: 'white',
+    flexShrink: 0,
+    overflow: 'hidden',
+    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+  }
+
   return (
-    <button
-      onClick={onClick}
-      className="animate-fade-in-up"
-      style={{
-        display: 'block',
-        width: '100%',
-        background: isSelected
-          ? 'linear-gradient(135deg, #eff6ff, #f5f3ff)'
-          : 'var(--color-surface)',
-        borderRadius: 'var(--radius-2xl)',
-        padding: '1.25rem',
-        boxShadow: isSelected ? '0 0 0 2px var(--color-primary)' : 'var(--shadow-sm)',
-        border: isSelected ? '1px solid var(--color-primary-light)' : '1px solid var(--color-border-light)',
-        cursor: 'pointer',
-        transition: 'all 0.2s ease',
-        textAlign: 'left',
-      }}
-    >
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
-        {/* Album icon */}
-        <div style={{
-          width: '3.5rem',
-          height: '3.5rem',
-          borderRadius: 'var(--radius-xl)',
-          background: coverImage ? 'transparent' : 'linear-gradient(135deg, var(--color-primary), var(--color-accent))',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontSize: '1.5rem',
-          flexShrink: 0,
-          overflow: 'hidden',
-          border: coverImage ? '1px solid var(--color-border)' : 'none',
-        }}>
-          {coverImage ? (
-            <img src={coverImage} alt={album.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-          ) : '📖'}
-        </div>
+    <button onClick={onClick} style={cardStyle} className="hover:scale-[1.01] transition-transform">
+      <div style={iconStyle}>
+        {coverImage ? (
+          <img src={coverImage} alt={album.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        ) : '⚽'}
+      </div>
 
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <h3 style={{ fontSize: '0.9375rem', fontWeight: 700, marginBottom: '0.125rem' }}>
-            {album.name}
-          </h3>
-          <p style={{ fontSize: '0.8125rem', color: 'var(--color-text-muted)' }}>
-            {album.total_stickers} figuritas • {album.year}
-          </p>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <h3 style={{ fontSize: '1rem', fontWeight: 900, marginBottom: '0.125rem', color: isDark ? 'white' : '#0f172a' }}>
+          {album.name}
+        </h3>
+        <p style={{ fontSize: '0.8125rem', color: isDark ? '#94a3b8' : '#64748b' }}>
+          {album.total_stickers} figuritas • {album.year}
+        </p>
 
-          {/* Progress bar */}
-          <div style={{ marginTop: '0.5rem' }}>
-            <div className="progress-bar">
-              <div className="progress-bar-fill" style={{ width: `${pct}%` }} />
-            </div>
-            <p style={{ fontSize: '0.6875rem', color: 'var(--color-text-muted)', marginTop: '0.25rem', fontWeight: 600 }}>
-              {pct}% completado
-            </p>
+        {/* Progress bar */}
+        <div style={{ marginTop: '0.75rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+            <span style={{ fontSize: '0.6875rem', fontWeight: 800, color: isDark ? '#ea580c' : '#f97316' }}>{pct}% completado</span>
+            <span style={{ fontSize: '0.6875rem', fontWeight: 700, color: isDark ? '#94a3b8' : '#64748b' }}>{progress} / {album.total_stickers}</span>
+          </div>
+          <div style={{ height: '0.5rem', borderRadius: '9999px', background: isDark ? '#1e293b' : '#f1f5f9', overflow: 'hidden' }}>
+            <div style={{ height: '100%', width: `${pct}%`, background: isDark ? '#ea580c' : '#f97316', transition: 'width 0.5s ease' }} />
           </div>
         </div>
+      </div>
 
-        {/* Chevron */}
-        <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="var(--color-text-muted)" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      {/* Chevron */}
+      <div style={{ padding: '0.5rem', color: isDark ? '#475569' : '#cbd5e1' }}>
+        <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
           <polyline points="9 18 15 12 9 6" />
         </svg>
       </div>

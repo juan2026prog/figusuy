@@ -2,152 +2,226 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
 import { supabase } from '../lib/supabase'
+import PlansModal from '../components/PlansModal'
 
 export default function PremiumPage() {
   const navigate = useNavigate()
   const { profile } = useAuthStore()
+  const [showPlans, setShowPlans] = useState(false)
   const [plans, setPlans] = useState([])
-  const [loading, setLoading] = useState(false)
+
+  const isPremium =
+    profile?.is_premium === true ||
+    (profile?.plan_name && profile.plan_name !== 'gratis')
+
+  const currentTier = profile?.plan_name || 'gratis'
 
   useEffect(() => {
-    async function fetchPlans() {
+    async function load() {
       const { data } = await supabase.from('premium_plans').select('*').eq('is_active', true).order('price')
       if (data) setPlans(data)
     }
-    fetchPlans()
+    load()
   }, [])
 
-  const handleBuyPlan = async (planId) => {
-    setLoading(true)
-    try {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) {
-        navigate('/login')
-        return
-      }
-
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/mercadopago-checkout`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY
-        },
-        body: JSON.stringify({ planId })
-      })
-
-      const data = await response.json()
-      if (data.checkout_url) {
-        window.location.href = data.checkout_url
-      } else {
-        throw new Error(data.error || 'No se pudo generar el link de pago')
-      }
-    } catch (error) {
-      console.error(error)
-      alert('Error: ' + error.message)
-    } finally {
-      setLoading(false)
+  const handleSubscribe = (planName) => {
+    const plan = plans.find(p => p.name.includes(planName))
+    if (plan && plan.mp_payment_link) {
+      // Pasar el ID del usuario como referencia para el webhook de Mercado Pago
+      const url = new URL(plan.mp_payment_link)
+      if (profile?.id) url.searchParams.append('external_reference', profile.id)
+      window.location.href = url.toString()
+    } else {
+      setShowPlans(true)
     }
   }
 
   const features = [
-    { free: '3 matches', plus: '10 matches seleccionados', pro: 'Matches ilimitados', icon: '🔍' },
-    { free: '1 álbum', plus: 'Hasta 3 álbumes', pro: 'Álbumes ilimitados', icon: '📖' },
-    { free: 'Chat 3 días', plus: 'Chat ilimitado', pro: 'Chat ilimitado', icon: '💬' },
-    { free: 'A más de 500m', plus: 'Desde 250m', pro: 'Todo Uruguay', icon: '📍' },
-    { free: 'Sin alertas', plus: 'Alerta (+20 faltantes)', pro: 'Alertas en tiempo real', icon: '🔔' },
-    { free: 'Oculto', plus: 'Ver interesados (+10)', pro: 'Ver interesados siempre', icon: '👀' },
-    { free: 'Normal', plus: 'Mayor visibilidad', pro: 'Alta visibilidad + Badge', icon: '👑' },
+    { name: 'Calidad de cruces', free: 'Básicos', plus: 'Optimizados', pro: 'Avanzados' },
+    { name: 'Álbumes activos', free: '1', plus: '3', pro: 'Ilimitados' },
+    { name: 'Chat', free: 'Vence en 3 días', plus: 'Sin vencimiento', pro: 'Sin vencimiento' },
+    { name: 'Favoritos', free: '10', plus: '50', pro: 'Ilimitados' },
+    { name: 'Alertas', free: '—', plus: 'Nuevos relevantes', pro: 'Tiempo real' },
+    { name: 'Sugerencias inteligentes', free: '—', plus: '—', pro: '✓' },
+    { name: 'Acceso anticipado', free: '—', plus: '—', pro: '✓' },
   ]
 
-  const premiumPlans = plans.filter(p => p.price > 0).sort((a, b) => a.price - b.price)
-
   return (
-    <div className="page" style={{ maxWidth: '800px', margin: '0 auto' }}>
-      {/* Back */}
-      <button className="btn btn-ghost btn-sm" onClick={() => navigate(-1)} style={{ marginBottom: '1rem' }}>
-        ← Volver
-      </button>
-
-      {/* Hero */}
-      <div className="animate-fade-in-up" style={{
-        textAlign: 'center', marginBottom: '2rem',
-        background: 'linear-gradient(135deg, #1e1b4b, #312e81)',
-        borderRadius: 'var(--radius-2xl)', padding: '2rem 1.5rem', color: 'white',
-        position: 'relative', overflow: 'hidden',
-      }}>
-        <div style={{ position: 'absolute', right: '-2rem', top: '-2rem', width: '8rem', height: '8rem', borderRadius: '50%', background: 'rgba(139, 92, 246, 0.15)' }} />
-        <div style={{ position: 'absolute', left: '-1rem', bottom: '-1rem', width: '5rem', height: '5rem', borderRadius: '50%', background: 'rgba(59, 130, 246, 0.1)' }} />
-        <div style={{ position: 'relative', zIndex: 1 }}>
-          <span style={{ fontSize: '3rem', display: 'block', marginBottom: '0.75rem' }}>👑</span>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: 800, marginBottom: '0.5rem' }}>Elegí tu Plan Premium</h1>
-          <p style={{ fontSize: '0.9375rem', opacity: 0.85, lineHeight: 1.6 }}>
-            Encontrá intercambios que realmente valen la pena o accedé sin límites.
-          </p>
-        </div>
-      </div>
-
-      {/* Comparison Table */}
-      <div className="animate-fade-in-up" style={{
-        background: 'var(--color-surface)', borderRadius: 'var(--radius-2xl)',
-        overflow: 'hidden', marginBottom: '2rem',
-        boxShadow: 'var(--shadow-lg)', border: '1px solid var(--color-border-light)',
-      }}>
-        {/* Header row */}
-        <div style={{
-          display: 'grid', gridTemplateColumns: '1fr 1.5fr 1.5fr 1.5fr',
-          padding: '1rem', borderBottom: '1px solid var(--color-border-light)',
-          fontSize: '0.8125rem', fontWeight: 700, textAlign: 'center', alignItems: 'center'
-        }}>
-          <span></span>
-          <span style={{ color: 'var(--color-text-muted)' }}>Gratis</span>
-          <span style={{ color: '#3b82f6' }}>Plus</span>
-          <span style={{ color: '#f59e0b' }}>Pro</span>
-        </div>
-
-        {features.map((feat, i) => (
-          <div key={i} style={{
-            display: 'grid', gridTemplateColumns: '1fr 1.5fr 1.5fr 1.5fr',
-            padding: '0.875rem 1rem', borderBottom: i < features.length - 1 ? '1px solid var(--color-border-light)' : 'none',
-            alignItems: 'center', fontSize: '0.8125rem',
-          }}>
-            <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.25rem' }}>
-              {feat.icon}
-            </span>
-            <span style={{ textAlign: 'center', color: 'var(--color-text-muted)' }}>{feat.free}</span>
-            <span style={{ textAlign: 'center', color: '#3b82f6', fontWeight: 600 }}>{feat.plus}</span>
-            <span style={{ textAlign: 'center', color: '#f59e0b', fontWeight: 800 }}>{feat.pro}</span>
+    <>
+      {/* Topbar */}
+      <header style={{ position: 'sticky', top: 0, zIndex: 40, background: 'rgba(2,6,23,0.9)', backdropFilter: 'blur(16px)', borderBottom: '1px solid #1e293b' }}>
+        <div style={{ height: '5rem', padding: '0 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
+          <div>
+            <p style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 700 }}>Planes</p>
+            <h1 style={{ fontSize: '1.5rem', fontWeight: 900, letterSpacing: '-0.025em', color: 'white', margin: 0 }}>Premium</h1>
           </div>
-        ))}
-      </div>
+          <button
+            onClick={() => navigate(-1)}
+            style={{ padding: '0.5rem 1rem', borderRadius: '0.75rem', background: 'white', color: '#020617', fontWeight: 900, fontSize: '0.875rem', border: 'none', cursor: 'pointer' }}
+          >
+            Volver
+          </button>
+        </div>
+      </header>
 
-      {/* CTA Buttons */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-        {premiumPlans.map(plan => {
-          const isPro = plan.name.toLowerCase().includes('pro');
-          return (
-            <button 
-              key={plan.id}
-              onClick={() => handleBuyPlan(plan.id)}
-              disabled={loading}
-              className="btn btn-lg animate-scale-in" style={{
-                width: '100%', 
-                background: isPro ? 'linear-gradient(135deg, #f59e0b, #d97706)' : 'linear-gradient(135deg, #1e1b4b, #312e81)',
-                color: 'white', fontWeight: 800, fontSize: '1.0625rem',
-                borderRadius: 'var(--radius-2xl)', padding: '1rem',
-                boxShadow: isPro ? '0 8px 24px rgba(245, 158, 11, 0.4)' : '0 8px 24px rgba(30, 27, 75, 0.4)', 
-                border: 'none', cursor: 'pointer',
-              }}>
-              {loading ? 'Procesando...' : `⭐ Desbloquear ${plan.name} por $${plan.price}`}
-            </button>
-          )
-        })}
-      </div>
+      {/* Content */}
+      <section style={{ maxWidth: '80rem', margin: '0 auto', padding: '1.5rem 1rem 7rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
 
-      <p style={{ textAlign: 'center', fontSize: '0.75rem', color: 'var(--color-text-muted)', marginTop: '1.5rem' }}>
-        Cancelá cuando quieras • Sin compromiso
-      </p>
-    </div>
+          {/* Hero */}
+          <div style={{ borderRadius: '2rem', background: 'linear-gradient(135deg, #0f172a 0%, #020617 50%, #431407 100%)', border: '1px solid #1e293b', padding: '1.5rem 2rem', color: 'white', overflow: 'hidden', position: 'relative' }}>
+            <div style={{ position: 'absolute', right: '-6rem', top: '-6rem', width: '16rem', height: '16rem', background: 'rgba(234,88,12,0.15)', borderRadius: '50%', filter: 'blur(60px)', pointerEvents: 'none' }}></div>
+            <div style={{ position: 'relative', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '1.5rem' }}>
+              <div>
+                <div style={{ width: '3.5rem', height: '3.5rem', borderRadius: '1rem', background: '#ea580c', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', marginBottom: '1.25rem', boxShadow: '0 10px 25px rgba(234,88,12,0.3)' }}>👑</div>
+                <h2 style={{ fontSize: 'clamp(1.75rem, 4vw, 3rem)', fontWeight: 900, letterSpacing: '-0.03em', margin: 0 }}>
+                  {isPremium ? 'Ya sos Premium' : 'Desbloqueá más intercambios'}
+                </h2>
+                <p style={{ marginTop: '0.75rem', color: '#cbd5e1', maxWidth: '40rem' }}>
+                  Elegí el plan que mejor se adapte a cómo completás tus álbumes. Más cruces, más alertas y menos tiempo perdido.
+                </p>
+              </div>
+              <div style={{ borderRadius: '1.5rem', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.1)', padding: '1.25rem', minWidth: '260px' }}>
+                <p style={{ fontSize: '0.875rem', color: '#cbd5e1', fontWeight: 700 }}>Tu plan actual</p>
+                <p style={{ fontSize: '1.875rem', fontWeight: 900, marginTop: '0.25rem', textTransform: 'uppercase' }}>{currentTier}</p>
+                <p style={{ fontSize: '0.875rem', color: '#94a3b8', marginTop: '0.5rem' }}>
+                  {isPremium ? 'Beneficios activos.' : 'Te quedan 1 de 3 cruces este mes.'}
+                </p>
+                {!isPremium && (
+                  <div style={{ marginTop: '1rem', height: '0.75rem', borderRadius: '9999px', background: 'rgba(255,255,255,0.1)', overflow: 'hidden' }}>
+                    <div style={{ height: '100%', width: '66%', background: '#ea580c', borderRadius: '9999px' }}></div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Plan cards */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.25rem' }}>
+
+            {/* Free */}
+            <article style={{ borderRadius: '2rem', background: '#0f172a', border: '1px solid #1e293b', padding: '1.5rem', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ width: '3rem', height: '3rem', borderRadius: '1rem', background: '#1e293b', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', marginBottom: '1rem' }}>🎒</div>
+              <h3 style={{ fontSize: '1.5rem', fontWeight: 900, color: 'white', margin: 0 }}>Gratis</h3>
+              <p style={{ color: '#94a3b8', fontSize: '0.875rem', marginTop: '0.25rem' }}>Para empezar a probar la app.</p>
+              <div style={{ marginTop: '1.5rem', display: 'flex', alignItems: 'flex-end', gap: '0.25rem' }}>
+                <span style={{ fontSize: '3rem', fontWeight: 900, color: 'white', lineHeight: 1 }}>$0</span>
+                <span style={{ marginBottom: '0.5rem', color: '#64748b', fontWeight: 700 }}>/mes</span>
+              </div>
+              <div style={{ marginTop: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', fontSize: '0.875rem', color: '#cbd5e1', flex: 1 }}>
+                <p style={{ margin: 0 }}>✓ <b>1</b> álbum activo</p>
+                <p style={{ margin: 0 }}>✓ Cruces <b>básicos</b></p>
+                <p style={{ margin: 0 }}>✓ Chat por <b>3 días</b></p>
+                <p style={{ margin: 0 }}>✓ Favoritos <b>básicos</b></p>
+                <p style={{ margin: 0 }}>✓ Puntos y tiendas</p>
+              </div>
+              <button style={{ marginTop: '2rem', width: '100%', padding: '1rem', borderRadius: '1rem', background: '#1e293b', color: 'white', fontWeight: 900, border: 'none', cursor: 'default' }}>Plan actual</button>
+            </article>
+
+            {/* Plus */}
+            <article style={{ position: 'relative', borderRadius: '2rem', background: '#0f172a', border: '2px solid #ea580c', boxShadow: '0 20px 25px -5px rgba(234,88,12,0.1)', padding: '1.5rem', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '0.5rem', background: '#ea580c' }}></div>
+              <div style={{ position: 'absolute', top: '1.25rem', right: '1.25rem', padding: '0.25rem 0.75rem', borderRadius: '9999px', background: '#ea580c', color: 'white', fontSize: '0.75rem', fontWeight: 900 }}>RECOMENDADO</div>
+              <div style={{ width: '3rem', height: '3rem', borderRadius: '1rem', background: '#431407', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', marginBottom: '1rem' }}>💎</div>
+              <h3 style={{ fontSize: '1.5rem', fontWeight: 900, color: 'white', margin: 0 }}>Plus</h3>
+              <p style={{ color: '#94a3b8', fontSize: '0.875rem', marginTop: '0.25rem' }}>Para completar el álbum más fácil y cómodo.</p>
+              <div style={{ marginTop: '1.5rem', display: 'flex', alignItems: 'flex-end', gap: '0.25rem' }}>
+                <span style={{ fontSize: '3rem', fontWeight: 900, color: 'white', lineHeight: 1 }}>$99</span>
+                <span style={{ marginBottom: '0.5rem', color: '#64748b', fontWeight: 700 }}>/mes</span>
+              </div>
+              <div style={{ marginTop: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', fontSize: '0.875rem', color: '#cbd5e1', flex: 1 }}>
+                <p style={{ margin: 0 }}>✓ Hasta <b>3</b> álbumes activos</p>
+                <p style={{ margin: 0 }}>✓ Cruces <b>optimizados</b></p>
+                <p style={{ margin: 0 }}>✓ Chat <b>sin vencimiento</b></p>
+                <p style={{ margin: 0 }}>✓ Favoritos <b>ampliados</b></p>
+                <p style={{ margin: 0 }}>✓ Alertas de <b>nuevos cruces</b> relevantes</p>
+                <p style={{ margin: 0 }}>✓ Menos ruido, <b>mejores oportunidades</b></p>
+              </div>
+              <button
+                onClick={() => handleSubscribe('Plus')}
+                style={{ marginTop: '2rem', width: '100%', padding: '1rem', borderRadius: '1rem', background: '#ea580c', color: 'white', fontWeight: 900, border: 'none', cursor: 'pointer', boxShadow: '0 10px 25px rgba(234,88,12,0.2)' }}
+              >
+                Elegir Plus
+              </button>
+            </article>
+
+            {/* Pro */}
+            <article style={{ borderRadius: '2rem', background: '#0f172a', border: '1px solid #1e293b', padding: '1.5rem', display: 'flex', flexDirection: 'column', color: 'white' }}>
+              <div style={{ width: '3rem', height: '3rem', borderRadius: '1rem', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', marginBottom: '1rem' }}>🚀</div>
+              <h3 style={{ fontSize: '1.5rem', fontWeight: 900, margin: 0 }}>Pro</h3>
+              <p style={{ color: '#cbd5e1', fontSize: '0.875rem', marginTop: '0.25rem' }}>Ventaja para usuarios intensivos.</p>
+              <div style={{ marginTop: '1.5rem', display: 'flex', alignItems: 'flex-end', gap: '0.25rem' }}>
+                <span style={{ fontSize: '3rem', fontWeight: 900, lineHeight: 1 }}>$199</span>
+                <span style={{ marginBottom: '0.5rem', color: '#94a3b8', fontWeight: 700 }}>/mes</span>
+              </div>
+              <div style={{ marginTop: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', fontSize: '0.875rem', color: '#e2e8f0', flex: 1 }}>
+                <p style={{ margin: 0 }}>✓ Álbumes activos <b>ilimitados</b></p>
+                <p style={{ margin: 0 }}>✓ Cruces <b>avanzados</b></p>
+                <p style={{ margin: 0 }}>✓ Alertas en <b>tiempo real</b></p>
+                <p style={{ margin: 0 }}>✓ Favoritos <b>ilimitados</b></p>
+                <p style={{ margin: 0 }}>✓ Sugerencias <b>inteligentes</b></p>
+                <p style={{ margin: 0 }}>✓ Mejores oportunidades <b>primero</b></p>
+                <p style={{ margin: 0 }}>✓ Acceso <b>anticipado</b> a funciones</p>
+              </div>
+              <button
+                onClick={() => handleSubscribe('Pro')}
+                style={{ marginTop: '2rem', width: '100%', padding: '1rem', borderRadius: '1rem', background: 'white', color: '#0f172a', fontWeight: 900, border: 'none', cursor: 'pointer' }}
+              >
+                Elegir Pro
+              </button>
+            </article>
+          </div>
+
+          {/* Comparison table */}
+          <div style={{ borderRadius: '2rem', background: '#0f172a', border: '1px solid #1e293b', overflow: 'hidden' }}>
+            <div style={{ padding: '1.5rem', borderBottom: '1px solid #1e293b', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem' }}>
+              <div>
+                <h3 style={{ fontSize: '1.5rem', fontWeight: 900, color: 'white', margin: 0 }}>Comparar planes</h3>
+                <p style={{ fontSize: '0.875rem', color: '#94a3b8', margin: '0.25rem 0 0' }}>La diferencia real entre Gratis, Plus y Pro.</p>
+              </div>
+              <button
+                onClick={() => setShowPlans(true)}
+                style={{ padding: '0.75rem 1.25rem', borderRadius: '1rem', background: '#ea580c', color: 'white', fontWeight: 900, fontSize: '0.875rem', border: 'none', cursor: 'pointer' }}
+              >
+                Ver tabla compacta
+              </button>
+            </div>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', fontSize: '0.875rem', minWidth: '760px', borderCollapse: 'collapse' }}>
+                <thead style={{ background: '#020617' }}>
+                  <tr style={{ textAlign: 'left', color: 'white' }}>
+                    <th style={{ padding: '1.25rem', fontWeight: 900 }}>Funcionalidad</th>
+                    <th style={{ padding: '1.25rem', fontWeight: 900 }}>Gratis</th>
+                    <th style={{ padding: '1.25rem', fontWeight: 900, color: '#ea580c' }}>Plus</th>
+                    <th style={{ padding: '1.25rem', fontWeight: 900 }}>Pro</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {features.map((f, i) => (
+                    <tr key={f.name} style={{ borderTop: '1px solid #1e293b' }}>
+                      <td style={{ padding: '1.25rem', fontWeight: 700, color: 'white' }}>{f.name}</td>
+                      <td style={{ padding: '1.25rem', color: '#94a3b8' }}>{f.free}</td>
+                      <td style={{ padding: '1.25rem', color: '#ea580c', fontWeight: 900 }}>{f.plus}</td>
+                      <td style={{ padding: '1.25rem', color: 'white', fontWeight: 900 }}>{f.pro}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Trust bar */}
+          <div style={{ borderRadius: '1.5rem', background: '#0f172a', border: '1px solid #1e293b', padding: '1.25rem', display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '1.5rem', fontSize: '0.75rem', fontWeight: 900, color: '#94a3b8' }}>
+            <span>🔒 Pago seguro</span>
+            <span>❌ Sin compromiso</span>
+            <span>💳 Mercado Pago</span>
+            <span>⚙️ Cancelás cuando quieras</span>
+          </div>
+
+        </div>
+      </section>
+
+      <PlansModal isOpen={showPlans} onClose={() => setShowPlans(false)} />
+    </>
   )
 }
-

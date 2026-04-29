@@ -130,8 +130,8 @@ export function findMatches(currentUser, otherUsers) {
  */
 export function getCompatibilityLevel(score) {
   if (score >= 80) return { label: 'Perfecto', stars: 5, color: '#10b981' }
-  if (score >= 60) return { label: 'Excelente', stars: 4, color: '#3b82f6' }
-  if (score >= 40) return { label: 'Bueno', stars: 3, color: '#8b5cf6' }
+  if (score >= 60) return { label: 'Excelente', stars: 4, color: '#ea580c' }
+  if (score >= 40) return { label: 'Bueno', stars: 3, color: '#f59e0b' }
   if (score >= 20) return { label: 'Regular', stars: 2, color: '#f59e0b' }
   return { label: 'Bajo', stars: 1, color: '#94a3b8' }
 }

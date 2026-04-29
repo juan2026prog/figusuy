@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { useAuthStore } from '../stores/authStore'
+import { supabase } from '../lib/supabase'
 
 export default function LoginPage() {
   const { signInWithGoogle, signInWithEmail, signUpWithEmail } = useAuthStore()
@@ -9,6 +10,11 @@ export default function LoginPage() {
   const [name, setName] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+  const [showForgot, setShowForgot] = useState(false)
+  const [forgotEmail, setForgotEmail] = useState('')
+  const [forgotSent, setForgotSent] = useState(false)
+  const [forgotLoading, setForgotLoading] = useState(false)
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -26,39 +32,80 @@ export default function LoginPage() {
     setLoading(false)
   }
 
+  const handleForgotPassword = async (e) => {
+    e.preventDefault()
+    if (!forgotEmail) return
+    setForgotLoading(true)
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
+        redirectTo: `${window.location.origin}/login`,
+      })
+      if (error) throw error
+      setForgotSent(true)
+    } catch (err) {
+      setError(err.message || 'Error al enviar el email')
+    }
+    setForgotLoading(false)
+  }
+
+  if (showForgot) {
+    return (
+    <div className="flex-center flex-col" style={{ minHeight: '100vh', padding: '2rem 1rem', background: 'linear-gradient(135deg, var(--color-bg) 0%, var(--color-brand-50) 50%, #fffbeb 100%)' }}>
+        <div className="animate-fade-in-up" style={{ width: '100%', maxWidth: '24rem' }}>
+          <div className="text-center mb-2xl">
+            <div className="logo-icon-lg" style={{ margin: '0 auto 1rem' }}>F</div>
+            <h1 className="text-3xl font-black tracking-tight">
+              <span className="gradient-text">Recuperar contraseña</span>
+            </h1>
+            <p className="text-base text-secondary mt-xs">Te enviaremos un email para resetear tu contraseña</p>
+          </div>
+
+          <div className="card-elevated">
+            {forgotSent ? (
+              <div className="text-center">
+                <span className="block text-4xl mb-lg">📧</span>
+                <h3 className="text-lg font-bold mb-sm">¡Email enviado!</h3>
+                <p className="text-sm text-muted mb-xl">Revisá tu bandeja de entrada en <strong>{forgotEmail}</strong></p>
+                <button className="btn btn-primary w-full" onClick={() => { setShowForgot(false); setForgotSent(false) }}>Volver al login</button>
+              </div>
+            ) : (
+              <form onSubmit={handleForgotPassword}>
+                <div className="form-group">
+                  <label className="form-label" htmlFor="forgot-email">Email</label>
+                  <input id="forgot-email" className="input" type="email" placeholder="tu@email.com" value={forgotEmail}
+                    onChange={e => setForgotEmail(e.target.value)} required />
+                </div>
+                {error && <p className="form-error mb-md animate-shake">{error}</p>}
+                <button className={`btn btn-primary btn-lg w-full ${forgotLoading ? 'btn-loading' : ''}`} type="submit" disabled={forgotLoading}>
+                  Enviar email de recuperación
+                </button>
+                <button type="button" className="btn btn-ghost w-full mt-md" onClick={() => { setShowForgot(false); setError('') }}>
+                  ← Volver al login
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div style={{
-      minHeight: '100vh', display: 'flex', flexDirection: 'column',
-      alignItems: 'center', justifyContent: 'center', padding: '2rem 1rem',
-      background: 'linear-gradient(135deg, #f8fafc 0%, #eff6ff 50%, #f5f3ff 100%)',
-    }}>
+    <div className="flex-center flex-col" style={{ minHeight: '100vh', padding: '2rem 1rem', background: 'linear-gradient(135deg, var(--color-bg) 0%, var(--color-brand-50) 50%, #fffbeb 100%)' }}>
       <div className="animate-fade-in-up" style={{ width: '100%', maxWidth: '24rem' }}>
         {/* Logo */}
-        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <div style={{
-            width: '4rem', height: '4rem', borderRadius: 'var(--radius-xl)',
-            background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            margin: '0 auto 1rem', fontSize: '1.75rem', fontWeight: 900, color: 'white',
-          }}>F</div>
-          <h1 style={{ fontSize: '2rem', fontWeight: 900, letterSpacing: '-0.03em' }}>
-            <span className="gradient-text">FigusUy</span>
+        <div className="text-center mb-2xl">
+          <div className="logo-icon-lg" style={{ margin: '0 auto 1rem' }}>F</div>
+          <h1 className="text-3xl font-black tracking-tight">
+            <span style={{ color: 'var(--color-brand-600)', fontWeight: 900 }}>FigusUY</span>
           </h1>
-          <p style={{ fontSize: '0.9375rem', color: 'var(--color-text-secondary)', marginTop: '0.25rem' }}>
-            Intercambiá figuritas fácil y rápido
-          </p>
+          <p className="text-base text-secondary mt-xs">Intercambiá figuritas fácil y rápido</p>
         </div>
 
         {/* Card */}
-        <div style={{
-          background: 'var(--color-surface)', borderRadius: 'var(--radius-2xl)',
-          padding: '1.5rem', boxShadow: 'var(--shadow-lg)',
-          border: '1px solid var(--color-border-light)',
-        }}>
+        <div className="card-elevated">
           {/* Google Sign In */}
-          <button onClick={signInWithGoogle} className="btn btn-secondary btn-lg" style={{
-            width: '100%', marginBottom: '1rem', fontWeight: 600,
-          }}>
+          <button onClick={signInWithGoogle} className="btn btn-secondary btn-lg w-full mb-lg font-semibold">
             <svg width={20} height={20} viewBox="0 0 24 24">
               <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
               <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
@@ -68,7 +115,7 @@ export default function LoginPage() {
             Continuar con Google
           </button>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', margin: '0.5rem 0', color: 'var(--color-text-muted)', fontSize: '0.8125rem' }}>
+          <div className="flex-center gap-md mb-sm text-muted text-sm">
             <div style={{ flex: 1, height: '1px', background: 'var(--color-border)' }} />
             <span>o</span>
             <div style={{ flex: 1, height: '1px', background: 'var(--color-border)' }} />
@@ -77,22 +124,49 @@ export default function LoginPage() {
           {/* Email Form */}
           <form onSubmit={handleSubmit}>
             {isSignUp && (
-              <input className="input" type="text" placeholder="Nombre" value={name}
-                onChange={e => setName(e.target.value)} style={{ marginBottom: '0.75rem' }} required />
+              <div className="form-group">
+                <label className="form-label" htmlFor="signup-name">Nombre</label>
+                <input id="signup-name" className="input" type="text" placeholder="Tu nombre" value={name}
+                  onChange={e => setName(e.target.value)} required />
+              </div>
             )}
-            <input className="input" type="email" placeholder="Email" value={email}
-              onChange={e => setEmail(e.target.value)} style={{ marginBottom: '0.75rem' }} required />
-            <input className="input" type="password" placeholder="Contraseña" value={password}
-              onChange={e => setPassword(e.target.value)} style={{ marginBottom: '0.75rem' }} required minLength={6} />
+            <div className="form-group">
+              <label className="form-label" htmlFor="login-email">Email</label>
+              <input id="login-email" className="input" type="email" placeholder="tu@email.com" value={email}
+                onChange={e => setEmail(e.target.value)} required />
+            </div>
+            <div className="form-group">
+              <label className="form-label" htmlFor="login-password">Contraseña</label>
+              <div className="password-wrapper">
+                <input id="login-password" className={`input ${error ? 'input-error' : ''}`}
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Mínimo 6 caracteres" value={password}
+                  onChange={e => setPassword(e.target.value)} required minLength={6}
+                  style={{ paddingRight: '2.75rem' }} />
+                <button type="button" className="password-toggle" onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}>
+                  {showPassword ? '🙈' : '👁️'}
+                </button>
+              </div>
+            </div>
 
-            {error && <p style={{ fontSize: '0.8125rem', color: 'var(--color-danger)', marginBottom: '0.75rem' }}>{error}</p>}
+            {!isSignUp && (
+              <div className="mb-md" style={{ textAlign: 'right' }}>
+                <button type="button" onClick={() => { setShowForgot(true); setError(''); setForgotEmail(email) }}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.8125rem', color: 'var(--color-primary)', fontWeight: 500 }}>
+                  ¿Olvidaste tu contraseña?
+                </button>
+              </div>
+            )}
 
-            <button className="btn btn-primary btn-lg" type="submit" style={{ width: '100%' }} disabled={loading}>
-              {loading ? '...' : (isSignUp ? 'Crear cuenta' : 'Iniciar sesión')}
+            {error && <p className="form-error mb-md animate-shake">⚠️ {error}</p>}
+
+            <button className={`btn btn-primary btn-lg w-full ${loading ? 'btn-loading' : ''}`} type="submit" disabled={loading}>
+              {isSignUp ? 'Crear cuenta' : 'Iniciar sesión'}
             </button>
           </form>
 
-          <p style={{ textAlign: 'center', fontSize: '0.8125rem', color: 'var(--color-text-muted)', marginTop: '1rem' }}>
+          <p className="text-center text-sm text-muted mt-lg">
             {isSignUp ? '¿Ya tenés cuenta? ' : '¿No tenés cuenta? '}
             <button onClick={() => { setIsSignUp(!isSignUp); setError('') }}
               style={{ color: 'var(--color-primary)', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', fontSize: 'inherit' }}>
@@ -100,6 +174,12 @@ export default function LoginPage() {
             </button>
           </p>
         </div>
+
+        <p className="text-center text-xs text-muted mt-xl">
+          Al continuar, aceptás nuestros{' '}
+          <a href="#" style={{ color: 'var(--color-primary)', textDecoration: 'none' }}>Términos</a> y{' '}
+          <a href="#" style={{ color: 'var(--color-primary)', textDecoration: 'none' }}>Privacidad</a>
+        </p>
       </div>
     </div>
   )

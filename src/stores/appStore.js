@@ -3,89 +3,171 @@ import { supabase } from '../lib/supabase'
 import { findMatches } from '../lib/matching'
 
 export const useAppStore = create((set, get) => ({
-  // Albums
   albums: [],
   selectedAlbum: null,
   userAlbums: [],
 
-  // Stickers
+  ownedStickers: [],
   missingStickers: [],
   duplicateStickers: [],
+  albumStickers: [],
 
-  // Matches
   matches: [],
   matchesLoading: false,
 
-  // Chats
   chats: [],
   currentChat: null,
   messages: [],
 
-  // UI
   loading: false,
 
-  // ==================
-  //  ALBUMS
-  // ==================
   fetchAlbums: async () => {
-    const { data } = await supabase.from('albums').select('*').eq('is_active', true).order('year', { ascending: false })
+    const { data } = await supabase
+      .from('albums')
+      .select('*')
+      .eq('is_active', true)
+      .order('year', { ascending: false })
+
     set({ albums: data || [] })
   },
 
   fetchUserAlbums: async (userId) => {
     if (!userId) return
+
     const { data } = await supabase
       .from('user_albums')
       .select('*, album:albums(*)')
       .eq('user_id', userId)
-    set({ userAlbums: data || [] })
+
+    const albumsWithProgress = await Promise.all(
+      (data || []).map(async (ua) => {
+        const { count } = await supabase
+          .from('stickers_missing')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', userId)
+          .eq('album_id', ua.album_id)
+
+        return { ...ua, missingCount: count || 0 }
+      })
+    )
+
+    set({ userAlbums: albumsWithProgress })
+
+    const currentSelected = get().selectedAlbum
+    if (!currentSelected && albumsWithProgress.length > 0) {
+      await get().selectAlbum(albumsWithProgress[0].album, userId)
+    }
   },
 
   selectAlbum: async (album, userId) => {
     set({ selectedAlbum: album, loading: true })
 
-    // Ensure user_album exists
     if (userId) {
-      await supabase
+      const { error } = await supabase
         .from('user_albums')
-        .upsert({ user_id: userId, album_id: album.id }, { onConflict: 'user_id,album_id' })
+        .upsert(
+          { user_id: userId, album_id: album.id },
+          { onConflict: 'user_id,album_id' }
+        )
+      
+      if (error) {
+        set({ loading: false })
+        return { error }
+      }
     }
 
-    // Fetch stickers
     await get().fetchStickers(userId, album.id)
     set({ loading: false })
+    return { error: null }
   },
 
-  // ==================
-  //  STICKERS
-  // ==================
   fetchStickers: async (userId, albumId) => {
     if (!userId || !albumId) return
 
-    const [missingRes, dupRes] = await Promise.all([
-      supabase.from('stickers_missing').select('*').eq('user_id', userId).eq('album_id', albumId).order('sticker_number'),
-      supabase.from('stickers_duplicate').select('*').eq('user_id', userId).eq('album_id', albumId).order('sticker_number'),
+    const [ownedRes, missingRes, dupRes, albumStickersRes] = await Promise.all([
+      supabase
+        .from('stickers_owned')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('album_id', albumId)
+        .order('sticker_number'),
+      supabase
+        .from('stickers_missing')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('album_id', albumId)
+        .order('sticker_number'),
+      supabase
+        .from('stickers_duplicate')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('album_id', albumId)
+        .order('sticker_number'),
+      supabase
+        .from('album_stickers')
+        .select('*')
+        .eq('album_id', albumId)
     ])
 
     set({
+      ownedStickers: ownedRes.data || [],
       missingStickers: missingRes.data || [],
       duplicateStickers: dupRes.data || [],
+      albumStickers: albumStickersRes.data || [],
     })
+  },
+
+  addOwnedSticker: async (userId, albumId, stickerNumber) => {
+    const { error } = await supabase
+      .from('stickers_owned')
+      .upsert(
+        { user_id: userId, album_id: albumId, sticker_number: stickerNumber },
+        { onConflict: 'user_id,album_id,sticker_number' }
+      )
+
+    if (!error) {
+      await Promise.all([
+        supabase
+          .from('stickers_missing')
+          .delete()
+          .eq('user_id', userId)
+          .eq('album_id', albumId)
+          .eq('sticker_number', stickerNumber),
+        supabase
+          .from('stickers_duplicate')
+          .delete()
+          .eq('user_id', userId)
+          .eq('album_id', albumId)
+          .eq('sticker_number', stickerNumber),
+      ])
+
+      await get().fetchStickers(userId, albumId)
+    }
   },
 
   addMissingSticker: async (userId, albumId, stickerNumber) => {
     const { error } = await supabase
       .from('stickers_missing')
-      .upsert({ user_id: userId, album_id: albumId, sticker_number: stickerNumber }, { onConflict: 'user_id,album_id,sticker_number' })
+      .upsert(
+        { user_id: userId, album_id: albumId, sticker_number: stickerNumber },
+        { onConflict: 'user_id,album_id,sticker_number' }
+      )
 
     if (!error) {
-      // Remove from duplicates if it was there
-      await supabase
-        .from('stickers_duplicate')
-        .delete()
-        .eq('user_id', userId)
-        .eq('album_id', albumId)
-        .eq('sticker_number', stickerNumber)
+      await Promise.all([
+        supabase
+          .from('stickers_duplicate')
+          .delete()
+          .eq('user_id', userId)
+          .eq('album_id', albumId)
+          .eq('sticker_number', stickerNumber),
+        supabase
+          .from('stickers_owned')
+          .delete()
+          .eq('user_id', userId)
+          .eq('album_id', albumId)
+          .eq('sticker_number', stickerNumber),
+      ])
 
       await get().fetchStickers(userId, albumId)
     }
@@ -94,16 +176,26 @@ export const useAppStore = create((set, get) => ({
   addDuplicateSticker: async (userId, albumId, stickerNumber) => {
     const { error } = await supabase
       .from('stickers_duplicate')
-      .upsert({ user_id: userId, album_id: albumId, sticker_number: stickerNumber }, { onConflict: 'user_id,album_id,sticker_number' })
+      .upsert(
+        { user_id: userId, album_id: albumId, sticker_number: stickerNumber },
+        { onConflict: 'user_id,album_id,sticker_number' }
+      )
 
     if (!error) {
-      // Remove from missing if it was there
-      await supabase
-        .from('stickers_missing')
-        .delete()
-        .eq('user_id', userId)
-        .eq('album_id', albumId)
-        .eq('sticker_number', stickerNumber)
+      await Promise.all([
+        supabase
+          .from('stickers_missing')
+          .delete()
+          .eq('user_id', userId)
+          .eq('album_id', albumId)
+          .eq('sticker_number', stickerNumber),
+        supabase
+          .from('stickers_owned')
+          .delete()
+          .eq('user_id', userId)
+          .eq('album_id', albumId)
+          .eq('sticker_number', stickerNumber),
+      ])
 
       await get().fetchStickers(userId, albumId)
     }
@@ -111,123 +203,122 @@ export const useAppStore = create((set, get) => ({
 
   removeStickerStatus: async (userId, albumId, stickerNumber) => {
     await Promise.all([
-      supabase.from('stickers_missing').delete().eq('user_id', userId).eq('album_id', albumId).eq('sticker_number', stickerNumber),
-      supabase.from('stickers_duplicate').delete().eq('user_id', userId).eq('album_id', albumId).eq('sticker_number', stickerNumber),
+      supabase
+        .from('stickers_owned')
+        .delete()
+        .eq('user_id', userId)
+        .eq('album_id', albumId)
+        .eq('sticker_number', stickerNumber),
+      supabase
+        .from('stickers_missing')
+        .delete()
+        .eq('user_id', userId)
+        .eq('album_id', albumId)
+        .eq('sticker_number', stickerNumber),
+      supabase
+        .from('stickers_duplicate')
+        .delete()
+        .eq('user_id', userId)
+        .eq('album_id', albumId)
+        .eq('sticker_number', stickerNumber),
     ])
+
     await get().fetchStickers(userId, albumId)
   },
 
-  // Bulk add stickers
   bulkAddStickers: async (userId, albumId, numbers, type) => {
-    const table = type === 'missing' ? 'stickers_missing' : 'stickers_duplicate'
-    const otherTable = type === 'missing' ? 'stickers_duplicate' : 'stickers_missing'
+    const tableByType = {
+      have: 'stickers_owned',
+      missing: 'stickers_missing',
+      duplicate: 'stickers_duplicate',
+    }
 
-    const rows = numbers.map(n => ({
+    const targetTable = tableByType[type]
+    if (!targetTable) return
+
+    const rows = numbers.map((n) => ({
       user_id: userId,
       album_id: albumId,
       sticker_number: n,
     }))
 
-    // Remove from opposite table
-    for (const n of numbers) {
-      await supabase.from(otherTable).delete().eq('user_id', userId).eq('album_id', albumId).eq('sticker_number', n)
-    }
+    await Promise.all(
+      numbers.map((n) =>
+        Promise.all([
+          supabase
+            .from('stickers_owned')
+            .delete()
+            .eq('user_id', userId)
+            .eq('album_id', albumId)
+            .eq('sticker_number', n),
+          supabase
+            .from('stickers_missing')
+            .delete()
+            .eq('user_id', userId)
+            .eq('album_id', albumId)
+            .eq('sticker_number', n),
+          supabase
+            .from('stickers_duplicate')
+            .delete()
+            .eq('user_id', userId)
+            .eq('album_id', albumId)
+            .eq('sticker_number', n),
+        ])
+      )
+    )
 
-    await supabase.from(table).upsert(rows, { onConflict: 'user_id,album_id,sticker_number' })
+    await supabase
+      .from(targetTable)
+      .upsert(rows, { onConflict: 'user_id,album_id,sticker_number' })
+
     await get().fetchStickers(userId, albumId)
   },
 
-  // ==================
-  //  MATCHES
-  // ==================
   findMatches: async (userId, albumId, userProfile) => {
     set({ matchesLoading: true })
 
     try {
-      // Get current user's stickers
-      const [myMissingRes, myDuplicatesRes] = await Promise.all([
-        supabase.from('stickers_missing').select('*').eq('user_id', userId).eq('album_id', albumId),
-        supabase.from('stickers_duplicate').select('*').eq('user_id', userId).eq('album_id', albumId),
-      ])
+      const { data, error } = await supabase.functions.invoke('find-matches', {
+        body: { albumId },
+      })
 
-      const myMissing = myMissingRes.data || []
-      const myDuplicates = myDuplicatesRes.data || []
+      if (error) throw error
 
-      if (myMissing.length === 0 && myDuplicates.length === 0) {
-        set({ matches: [], matchesLoading: false })
-        return
-      }
-
-      // Get all other users who have this album
-      const { data: otherUserAlbums } = await supabase
-        .from('user_albums')
-        .select('user_id')
-        .eq('album_id', albumId)
-        .neq('user_id', userId)
-
-      if (!otherUserAlbums || otherUserAlbums.length === 0) {
-        set({ matches: [], matchesLoading: false })
-        return
-      }
-
-      const otherUserIds = otherUserAlbums.map(ua => ua.user_id)
-
-      // Get profiles + stickers for all other users
-      const [profilesRes, otherMissingRes, otherDuplicatesRes] = await Promise.all([
-        supabase.from('profiles').select('*').in('id', otherUserIds),
-        supabase.from('stickers_missing').select('*').eq('album_id', albumId).in('user_id', otherUserIds),
-        supabase.from('stickers_duplicate').select('*').eq('album_id', albumId).in('user_id', otherUserIds),
-      ])
-
-      const profiles = profilesRes.data || []
-      const otherMissing = otherMissingRes.data || []
-      const otherDuplicates = otherDuplicatesRes.data || []
-
-      // Build user objects for matching
-      const otherUsers = profiles.map(p => ({
-        ...p,
-        missing: otherMissing.filter(s => s.user_id === p.id),
-        duplicates: otherDuplicates.filter(s => s.user_id === p.id),
-      }))
-
-      const currentUserData = {
-        ...userProfile,
-        missing: myMissing,
-        duplicates: myDuplicates,
-      }
-
-      const matchResults = findMatches(currentUserData, otherUsers)
-      set({ matches: matchResults, matchesLoading: false })
+      set({ matches: data.matches || [], matchesLoading: false })
     } catch (err) {
       console.error('Match error:', err)
       set({ matchesLoading: false })
     }
   },
 
-  // ==================
-  //  CHATS
-  // ==================
   fetchChats: async (userId) => {
     if (!userId) return
+
     const { data } = await supabase
       .from('chats')
       .select(`
         *,
-        profile1:profiles!chats_user_1_fkey(*),
-        profile2:profiles!chats_user_2_fkey(*)
+        profile1:profiles!chats_user_1_fkey(id,name,avatar_url,city,department,is_premium,plan_name,is_verified),
+        profile2:profiles!chats_user_2_fkey(id,name,avatar_url,city,department,is_premium,plan_name,is_verified)
       `)
       .or(`user_1.eq.${userId},user_2.eq.${userId}`)
-      .order('created_at', { ascending: false })
 
-    set({ chats: data || [] })
+    const sortedData = (data || []).sort((a, b) => {
+      const timeA = new Date(a.last_message_at || a.created_at).getTime()
+      const timeB = new Date(b.last_message_at || b.created_at).getTime()
+      return timeB - timeA
+    })
+
+    set({ chats: sortedData })
   },
 
   createOrGetChat: async (userId, otherUserId, albumId) => {
-    // Check if chat exists
     const { data: existing } = await supabase
       .from('chats')
       .select('*')
-      .or(`and(user_1.eq.${userId},user_2.eq.${otherUserId}),and(user_1.eq.${otherUserId},user_2.eq.${userId})`)
+      .or(
+        `and(user_1.eq.${userId},user_2.eq.${otherUserId}),and(user_1.eq.${otherUserId},user_2.eq.${userId})`
+      )
       .eq('album_id', albumId)
       .maybeSingle()
 
@@ -267,20 +358,23 @@ export const useAppStore = create((set, get) => ({
     }
   },
 
-  // Realtime subscriptions
   subscribeToMessages: (chatId) => {
     const channel = supabase
       .channel(`chat-${chatId}`)
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'messages',
-        filter: `chat_id=eq.${chatId}`,
-      }, (payload) => {
-        set(state => ({
-          messages: [...state.messages, payload.new],
-        }))
-      })
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `chat_id=eq.${chatId}`,
+        },
+        (payload) => {
+          set((state) => ({
+            messages: [...state.messages, payload.new],
+          }))
+        }
+      )
       .subscribe()
 
     return () => {

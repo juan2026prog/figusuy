@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react'
 import { useAdminStore } from '../stores/adminStore'
 
-const card = { background: 'white', borderRadius: '0.75rem', padding: '1.25rem', border: '1px solid #e2e8f0' }
-const inputStyle = { width: '100%', padding: '0.5rem 0.75rem', borderRadius: '0.5rem', border: '1px solid #e2e8f0', fontSize: '0.8125rem', outline: 'none', boxSizing: 'border-box' }
+const card = { background: 'white', borderRadius: '0.75rem', padding: '1.25rem', border: '1px solid #e7e5e4' }
+const inputStyle = { width: '100%', padding: '0.5rem 0.75rem', borderRadius: '0.5rem', border: '1px solid #e7e5e4', fontSize: '0.8125rem', outline: 'none', boxSizing: 'border-box' }
 const labelStyle = { display: 'block', fontSize: '0.6875rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase', marginBottom: '0.25rem', letterSpacing: '0.04em' }
 const btn = (bg) => ({ padding: '0.5rem 1rem', borderRadius: '0.5rem', background: bg, color: 'white', border: 'none', fontSize: '0.8125rem', fontWeight: 600, cursor: 'pointer', transition: 'opacity 0.2s' })
 
@@ -64,8 +64,8 @@ export default function AdminPlans() {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
         <div>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0f172a' }}>💎 Gestión de Planes</h1>
-          <p style={{ fontSize: '0.875rem', color: '#64748b' }}>Editá precios, features y límites. Los cambios se reflejan en la landing page automáticamente.</p>
+          <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#1c1917' }}>💎 Gestión de Planes</h1>
+          <p style={{ fontSize: '0.875rem', color: '#78716c' }}>Editá precios, features y límites. Los cambios se reflejan en la landing page automáticamente.</p>
         </div>
       </div>
 
@@ -88,7 +88,7 @@ export default function AdminPlans() {
           return (
             <div key={plan.id} style={{
               ...card,
-              borderColor: justSaved ? '#10b981' : plan.price > 0 ? '#8b5cf6' : '#e2e8f0',
+              borderColor: justSaved ? '#10b981' : plan.price > 0 ? '#ea580c' : '#e7e5e4',
               position: 'relative',
               boxShadow: justSaved ? '0 0 0 3px rgba(16, 185, 129, 0.2)' : 'none',
               transition: 'all 0.3s ease',
@@ -96,7 +96,7 @@ export default function AdminPlans() {
               {plan.price > 0 && (
                 <div style={{
                   position: 'absolute', top: '0.75rem', right: '0.75rem',
-                  background: '#8b5cf6', color: 'white', padding: '0.125rem 0.5rem',
+                  background: '#ea580c', color: 'white', padding: '0.125rem 0.5rem',
                   borderRadius: '1rem', fontSize: '0.625rem', fontWeight: 700,
                 }}>PREMIUM</div>
               )}
@@ -159,7 +159,7 @@ export default function AdminPlans() {
                     }}>
                       {saving ? '⏳ Guardando...' : '💾 Guardar'}
                     </button>
-                    <button onClick={cancelEditing} style={btn('#64748b')}>
+                    <button onClick={cancelEditing} style={btn('#78716c')}>
                       Cancelar
                     </button>
                   </div>
@@ -168,23 +168,23 @@ export default function AdminPlans() {
                 /* ===== VIEW MODE ===== */
                 <div>
                   <h3 style={{ fontSize: '1.125rem', fontWeight: 800, marginBottom: '0.25rem' }}>{plan.name}</h3>
-                  <p style={{ fontSize: '0.75rem', color: '#64748b', marginBottom: '0.75rem' }}>{intervalLabels[plan.interval] || plan.interval}</p>
+                  <p style={{ fontSize: '0.75rem', color: '#78716c', marginBottom: '0.75rem' }}>{intervalLabels[plan.interval] || plan.interval}</p>
 
                   <div style={{ marginBottom: '1rem' }}>
-                    <span style={{ fontSize: '2rem', fontWeight: 900, color: plan.price > 0 ? '#8b5cf6' : '#10b981' }}>
+                    <span style={{ fontSize: '2rem', fontWeight: 900, color: plan.price > 0 ? '#ea580c' : '#10b981' }}>
                       ${plan.price}
                     </span>
-                    <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                    <span style={{ fontSize: '0.75rem', color: '#a8a29e' }}>
                       /{plan.interval === 'monthly' ? 'mes' : plan.interval === 'quarterly' ? 'trim' : plan.interval === 'yearly' ? 'año' : '∞'}
                     </span>
-                    <span style={{ fontSize: '0.625rem', color: '#94a3b8', marginLeft: '0.25rem' }}>{plan.currency || 'UYU'}</span>
+                    <span style={{ fontSize: '0.625rem', color: '#a8a29e', marginLeft: '0.25rem' }}>{plan.currency || 'UYU'}</span>
                   </div>
 
                   {/* Features */}
                   <div style={{ marginBottom: '0.75rem' }}>
                     <p style={{ ...labelStyle, marginBottom: '0.375rem' }}>Features</p>
                     {Object.entries(plan.features || {}).map(([k, v]) => (
-                      <p key={k} style={{ fontSize: '0.75rem', color: '#64748b', marginBottom: '0.125rem' }}>
+                      <p key={k} style={{ fontSize: '0.75rem', color: '#78716c', marginBottom: '0.125rem' }}>
                         <span style={{ color: '#10b981', marginRight: '0.25rem' }}>✓</span>
                         {k.replace(/_/g, ' ')}: <strong>{String(v)}</strong>
                       </p>
@@ -195,14 +195,14 @@ export default function AdminPlans() {
                   <div style={{ marginBottom: '1rem' }}>
                     <p style={{ ...labelStyle, marginBottom: '0.375rem' }}>Límites</p>
                     {Object.entries(plan.limits || {}).map(([k, v]) => (
-                      <p key={k} style={{ fontSize: '0.75rem', color: '#64748b', marginBottom: '0.125rem' }}>
+                      <p key={k} style={{ fontSize: '0.75rem', color: '#78716c', marginBottom: '0.125rem' }}>
                         {k.replace(/_/g, ' ')}: <strong>{v}</strong>
                       </p>
                     ))}
                   </div>
 
                   <div style={{ display: 'flex', gap: '0.375rem', flexWrap: 'wrap' }}>
-                    <button onClick={() => startEditing(plan)} style={btn('#3b82f6')}>
+                    <button onClick={() => startEditing(plan)} style={btn('#ea580c')}>
                       ✏️ Editar
                     </button>
                     <button onClick={() => updatePlan(plan.id, { is_active: !plan.is_active })}

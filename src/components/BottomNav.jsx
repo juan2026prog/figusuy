@@ -1,105 +1,44 @@
 import React from 'react'
-import { NavLink, useLocation } from 'react-router-dom'
-
-const navItems = [
-  { path: '/home', icon: HomeIcon, label: 'Inicio' },
-  { path: '/album', icon: AlbumIcon, label: 'Álbum' },
-  { path: '/matches', icon: MatchIcon, label: 'Matches' },
-  { path: '/chats', icon: ChatIcon, label: 'Chat' },
-  { path: '/profile', icon: ProfileIcon, label: 'Perfil' },
-]
+import { NavLink } from 'react-router-dom'
+import { useAppStore } from '../stores/appStore'
 
 export default function BottomNav() {
-  const location = useLocation()
+  const { matches, chats } = useAppStore()
+
+  const matchCount = matches?.length || 0
+  const unreadChats = chats?.filter(c => c.has_unread)?.length || 0
+
+  const navItems = [
+    { path: '/album', icon: 'menu_book', label: 'Álbum' },
+    { path: '/matches', icon: 'swap_horiz', label: 'Intercambios', badge: matchCount },
+    { path: '/chats', icon: 'chat', label: 'Chats', badge: unreadChats },
+    { path: '/favorites', icon: 'favorite', label: 'Favoritos' },
+    { path: '/profile', icon: 'person', label: 'Perfil' },
+  ]
 
   return (
-    <nav className="bottom-nav">
-      <div style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'center', maxWidth: '32rem', margin: '0 auto' }}>
-        {navItems.map(item => {
-          const isActive = location.pathname === item.path ||
-            (item.path !== '/home' && location.pathname.startsWith(item.path))
-          return (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: '0.125rem',
-                padding: '0.25rem 0.75rem',
-                textDecoration: 'none',
-                color: isActive ? 'var(--color-primary)' : 'var(--color-text-muted)',
-                transition: 'color 0.2s ease',
-                fontSize: '0.625rem',
-                fontWeight: isActive ? 600 : 500,
-                position: 'relative',
-              }}
-            >
-              {isActive && (
-                <span style={{
-                  position: 'absolute',
-                  top: '-0.5rem',
-                  width: '1.25rem',
-                  height: '0.1875rem',
-                  borderRadius: 'var(--radius-full)',
-                  background: 'linear-gradient(135deg, var(--color-primary), var(--color-accent))',
-                }} />
-              )}
-              <item.icon size={22} active={isActive} />
-              <span>{item.label}</span>
-            </NavLink>
-          )
-        })}
+    <nav className="bottom-nav" style={{ zIndex: 100 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: `repeat(${navItems.length}, 1fr)`, gap: '0.5rem', textAlign: 'center', padding: '0.5rem 1rem 0.25rem', fontSize: '0.75rem', fontWeight: 700 }}>
+        {navItems.map(item => (
+          <NavLink key={item.path} to={item.path}
+            style={({ isActive }) => ({
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.125rem',
+              textDecoration: 'none', position: 'relative',
+              color: isActive ? 'var(--color-brand-600)' : 'var(--color-text-muted)',
+              transition: 'color 0.2s',
+            })}>
+            {({ isActive }) => (
+              <>
+                <div style={{ position: 'relative', fontSize: '1.25rem', lineHeight: 1 }}>
+                  <span className="material-symbols-outlined" style={{ fontSize: '1.5rem' }}>{item.icon}</span>
+                  {item.badge > 0 && <span className="nav-badge">{item.badge > 9 ? '9+' : item.badge}</span>}
+                </div>
+                <span style={{ fontSize: '0.6875rem', fontWeight: isActive ? 900 : 500 }}>{item.label}</span>
+              </>
+            )}
+          </NavLink>
+        ))}
       </div>
     </nav>
-  )
-}
-
-function HomeIcon({ size, active }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2.5 : 2} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-      <polyline points="9 22 9 12 15 12 15 22" />
-    </svg>
-  )
-}
-
-function AlbumIcon({ size, active }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2.5 : 2} strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="3" width="7" height="7" rx="1" />
-      <rect x="14" y="3" width="7" height="7" rx="1" />
-      <rect x="3" y="14" width="7" height="7" rx="1" />
-      <rect x="14" y="14" width="7" height="7" rx="1" />
-    </svg>
-  )
-}
-
-function MatchIcon({ size, active }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2.5 : 2} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-      <circle cx="9" cy="7" r="4" />
-      <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-    </svg>
-  )
-}
-
-function ChatIcon({ size, active }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2.5 : 2} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-    </svg>
-  )
-}
-
-function ProfileIcon({ size, active }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2.5 : 2} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-      <circle cx="12" cy="7" r="4" />
-    </svg>
   )
 }

@@ -2,105 +2,121 @@ import React, { useEffect, useState } from 'react'
 import { useAdminStore } from '../stores/adminStore'
 import { useAuthStore } from '../stores/authStore'
 
-const card = { background: 'white', borderRadius: '0.75rem', padding: '1.5rem', border: '1px solid #e2e8f0' }
+const card = { background: '#ffffff', borderRadius: '1rem', padding: '1.5rem', border: '1px solid #e7e5e4', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }
 
-const sliders = [
-  { key: 'match_weight_compatibility', label: 'Peso de compatibilidad', desc: 'Puntos por cada figurita coincidente', min: 1, max: 30, unit: 'pts' },
-  { key: 'match_weight_mutual', label: 'Peso de intercambio mutuo', desc: 'Bonus cuando ambos se benefician', min: 5, max: 50, unit: 'pts' },
-  { key: 'match_weight_active', label: 'Peso de actividad reciente', desc: 'Bonus por usuario activo', min: 0, max: 20, unit: 'pts' },
-  { key: 'match_weight_rating', label: 'Peso de rating', desc: 'Multiplicador por reputación', min: 0, max: 10, unit: 'x' },
-  { key: 'match_weight_premium_boost', label: 'Premium boost', desc: 'Puntos extra para premium', min: 0, max: 20, unit: 'pts' },
-  { key: 'match_max_free', label: 'Matches gratis', desc: 'Cantidad visible para plan gratis', min: 1, max: 10, unit: '' },
-]
+const categoryLabels = {
+  matching: { icon: 'distance', label: 'Matching y Proximidad', color: '#3b82f6' },
+  ranking: { icon: 'trending_up', label: 'Ranking y Visibilidad', color: '#ea580c' },
+  penalties: { icon: 'gavel', label: 'Penalizaciones', color: '#ef4444' },
+  limits: { icon: 'tune', label: 'Límites y Restricciones', color: '#f59e0b' },
+  business: { icon: 'store', label: 'Negocios', color: '#8b5cf6' },
+  general: { icon: 'settings', label: 'General', color: '#64748b' },
+}
 
 export default function AdminAlgorithm() {
-  const { settings, fetchSettings, updateSetting } = useAdminStore()
-  const { profile } = useAuthStore()
-  const [values, setValues] = useState({})
-  const [saved, setSaved] = useState(false)
+  const { algorithmConfig, fetchAlgorithmConfig, updateAlgorithmConfig } = useAdminStore()
+  const { user } = useAuthStore()
+  const [editingKey, setEditingKey] = useState(null)
+  const [editValue, setEditValue] = useState('')
+  const [saving, setSaving] = useState(false)
 
-  useEffect(() => { fetchSettings() }, [])
+  useEffect(() => { fetchAlgorithmConfig() }, [])
 
-  useEffect(() => {
-    const v = {}
-    settings.forEach(s => {
-      if (s.category === 'algorithm') {
-        v[s.key] = typeof s.value === 'string' ? parseInt(s.value) || 0 : s.value
-      }
-    })
-    setValues(v)
-  }, [settings])
+  const grouped = algorithmConfig.reduce((acc, c) => {
+    acc[c.category] = acc[c.category] || []
+    acc[c.category].push(c)
+    return acc
+  }, {})
 
-  const handleChange = (key, val) => {
-    setValues({ ...values, [key]: parseInt(val) })
-  }
-
-  const handleSave = async () => {
-    for (const [key, val] of Object.entries(values)) {
-      await updateSetting(key, val, profile?.id)
-    }
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2000)
+  const handleSave = async (key) => {
+    setSaving(true)
+    let val = editValue
+    try { val = JSON.parse(editValue) } catch {}
+    await updateAlgorithmConfig(key, val, user.id)
+    setEditingKey(null)
+    setSaving(false)
   }
 
   return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-        <div>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0f172a' }}>🧠 Configuración del Algoritmo</h1>
-          <p style={{ fontSize: '0.875rem', color: '#64748b' }}>Ajustá los pesos del motor de matching sin programar</p>
+    <div style={{ maxWidth: '64rem', margin: '0 auto', paddingBottom: '4rem' }}>
+      <div style={{ marginBottom: '2rem' }}>
+        <h1 style={{ fontSize: '1.875rem', fontWeight: 900, color: '#020617', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <span className="material-symbols-outlined" style={{ color: '#ea580c', fontSize: '2rem' }}>psychology</span>
+          Configuración del Algoritmo
+        </h1>
+        <p style={{ fontSize: '0.9375rem', color: '#64748b', marginTop: '0.25rem', fontWeight: 500 }}>
+          Controla las reglas de visibilidad, ranking, penalizaciones y matching. Los cambios se registran en auditoría.
+        </p>
+      </div>
+
+      {algorithmConfig.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '4rem', color: '#94a3b8' }}>
+          Cargando configuración del algoritmo...
         </div>
-        <button onClick={handleSave} style={{
-          padding: '0.625rem 1.25rem', borderRadius: '0.5rem',
-          background: saved ? '#10b981' : 'linear-gradient(135deg, #3b82f6, #6366f1)',
-          color: 'white', border: 'none', fontSize: '0.875rem', fontWeight: 700, cursor: 'pointer',
-          transition: 'all 0.3s',
-        }}>{saved ? '✅ Guardado!' : '💾 Guardar cambios'}</button>
-      </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          {Object.entries(grouped).map(([cat, items]) => {
+            const meta = categoryLabels[cat] || categoryLabels.general
+            return (
+              <div key={cat} style={card}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem' }}>
+                  <span className="material-symbols-outlined" style={{ color: meta.color }}>{meta.icon}</span>
+                  <h3 style={{ fontWeight: 800, fontSize: '1rem' }}>{meta.label}</h3>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  {items.map(config => {
+                    const isEditing = editingKey === config.config_key
+                    const rawValue = typeof config.config_value === 'string' ? config.config_value : JSON.stringify(config.config_value)
 
-      {/* Formula preview */}
-      <div style={{ ...card, marginBottom: '1.5rem', background: '#0f172a', border: 'none', color: 'white' }}>
-        <h3 style={{ fontSize: '0.875rem', fontWeight: 700, marginBottom: '0.75rem', color: '#94a3b8' }}>📐 Fórmula actual</h3>
-        <code style={{ fontSize: '0.8125rem', lineHeight: 1.8, fontFamily: "'JetBrains Mono', monospace" }}>
-          <span style={{ color: '#7dd3fc' }}>score</span> = (coincidencias × <span style={{ color: '#fbbf24' }}>{values.match_weight_compatibility || 10}</span>)
-          + (mutuo ? <span style={{ color: '#fbbf24' }}>{values.match_weight_mutual || 20}</span> : 5)
-          + (activo ? <span style={{ color: '#fbbf24' }}>{values.match_weight_active || 5}</span> : 0)
-          + (rating × <span style={{ color: '#fbbf24' }}>{values.match_weight_rating || 2}</span>)
-          + (premium ? <span style={{ color: '#fbbf24' }}>{values.match_weight_premium_boost || 8}</span> : 0)
-          − penalización_distancia
-        </code>
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(20rem, 1fr))', gap: '1rem' }}>
-        {sliders.map(s => (
-          <div key={s.key} style={card}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
-              <div>
-                <h4 style={{ fontSize: '0.875rem', fontWeight: 700, color: '#0f172a' }}>{s.label}</h4>
-                <p style={{ fontSize: '0.75rem', color: '#64748b' }}>{s.desc}</p>
+                    return (
+                      <div key={config.config_key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem 1rem', background: '#f8fafc', borderRadius: '0.5rem', gap: '1rem', flexWrap: 'wrap' }}>
+                        <div style={{ flex: 1, minWidth: '12rem' }}>
+                          <p style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#0f172a', margin: 0 }}>{config.config_key.replace(/_/g, ' ')}</p>
+                          {config.description && <p style={{ fontSize: '0.6875rem', color: '#94a3b8', margin: '0.125rem 0 0' }}>{config.description}</p>}
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          {isEditing ? (
+                            <>
+                              <input type="text" value={editValue} onChange={e => setEditValue(e.target.value)}
+                                onKeyDown={e => e.key === 'Enter' && handleSave(config.config_key)}
+                                style={{ width: '8rem', padding: '0.375rem 0.75rem', borderRadius: '0.375rem', border: '1px solid #cbd5e1', fontSize: '0.8125rem', fontWeight: 700 }} />
+                              <button onClick={() => handleSave(config.config_key)} disabled={saving} style={{ padding: '0.375rem 0.625rem', borderRadius: '0.375rem', background: '#10b981', color: 'white', border: 'none', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}>
+                                {saving ? '...' : '✓'}
+                              </button>
+                              <button onClick={() => setEditingKey(null)} style={{ padding: '0.375rem 0.625rem', borderRadius: '0.375rem', background: '#f1f5f9', color: '#64748b', border: 'none', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}>✕</button>
+                            </>
+                          ) : (
+                            <>
+                              <code style={{ fontSize: '0.875rem', fontWeight: 800, color: meta.color, background: 'white', padding: '0.25rem 0.625rem', borderRadius: '0.375rem', border: '1px solid #e2e8f0' }}>
+                                {rawValue.replace(/"/g, '')}
+                              </code>
+                              <button onClick={() => { setEditingKey(config.config_key); setEditValue(rawValue.replace(/"/g, '')) }}
+                                style={{ padding: '0.25rem 0.5rem', borderRadius: '0.375rem', background: '#fff7ed', color: '#ea580c', border: 'none', fontSize: '0.6875rem', fontWeight: 700, cursor: 'pointer' }}>✏️</button>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
               </div>
-              <span style={{
-                fontSize: '1.5rem', fontWeight: 800, color: '#3b82f6',
-                background: '#eff6ff', padding: '0.25rem 0.75rem', borderRadius: '0.5rem',
-                minWidth: '3rem', textAlign: 'center',
-              }}>
-                {values[s.key] || 0}{s.unit}
-              </span>
-            </div>
-            <input
-              type="range"
-              min={s.min}
-              max={s.max}
-              value={values[s.key] || 0}
-              onChange={e => handleChange(s.key, e.target.value)}
-              style={{ width: '100%', accentColor: '#3b82f6', height: '0.375rem' }}
-            />
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.625rem', color: '#94a3b8', marginTop: '0.25rem' }}>
-              <span>{s.min}</span>
-              <span>{s.max}</span>
-            </div>
-          </div>
-        ))}
+            )
+          })}
+        </div>
+      )}
+
+      {/* Warning */}
+      <div style={{ ...card, marginTop: '2rem', background: '#fff7ed', border: '1px solid #ffedd5' }}>
+        <h4 style={{ fontWeight: 800, color: '#9a3412', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <span className="material-symbols-outlined">warning</span>
+          Reglas Críticas del Motor
+        </h4>
+        <ul style={{ fontSize: '0.875rem', color: '#c2410c', lineHeight: 1.8, paddingLeft: '1.25rem', margin: 0 }}>
+          <li><strong>premium_boost</strong> no puede superar <strong>1.20x</strong> — funciona solo como desempate.</li>
+          <li><strong>sponsor_boost</strong> no puede superar <strong>1.15x</strong> — no puede alterar relevancia fuerte.</li>
+          <li>Penalizaciones por reportes se aplican automáticamente cuando un reporte es confirmado.</li>
+          <li>Todos los cambios quedan registrados en auditoría con tu usuario.</li>
+        </ul>
       </div>
     </div>
   )

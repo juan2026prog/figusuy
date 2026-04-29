@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 export const useAuthStore = create((set, get) => ({
   user: null,
   profile: null,
+  planRules: null,
   session: null,
   loading: true,
 
@@ -13,11 +14,13 @@ export const useAuthStore = create((set, get) => ({
       if (session?.user) {
         const { data: profile } = await supabase
           .from('profiles')
-          .select('*, premium_plan:premium_plans(*)')
+          .select('*')
           .eq('id', session.user.id)
           .single()
 
-        set({ user: session.user, session, profile, loading: false })
+        const { data: planRules } = await supabase.rpc('get_user_plan_rules', { user_id: session.user.id })
+
+        set({ user: session.user, session, profile, planRules, loading: false })
 
         // Auto-update last_active
         supabase.from('profiles').update({ last_active: new Date().toISOString() }).eq('id', session.user.id).then(() => {})
@@ -37,7 +40,7 @@ export const useAuthStore = create((set, get) => ({
           )
         }
       } else {
-        set({ user: null, session: null, profile: null, loading: false })
+        set({ user: null, session: null, profile: null, planRules: null, loading: false })
       }
     } catch (err) {
       console.error('Auth init error:', err)
@@ -49,13 +52,15 @@ export const useAuthStore = create((set, get) => ({
       if (session?.user) {
         const { data: profile } = await supabase
           .from('profiles')
-          .select('*, premium_plan:premium_plans(*)')
+          .select('*')
           .eq('id', session.user.id)
           .single()
 
-        set({ user: session.user, session, profile })
+        const { data: planRules } = await supabase.rpc('get_user_plan_rules', { user_id: session.user.id })
+
+        set({ user: session.user, session, profile, planRules })
       } else {
-        set({ user: null, session: null, profile: null })
+        set({ user: null, session: null, profile: null, planRules: null })
       }
     })
   },

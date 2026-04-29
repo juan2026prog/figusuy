@@ -1,0 +1,67 @@
+import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react'
+
+const ToastContext = createContext(null)
+
+export function useToast() {
+  const ctx = useContext(ToastContext)
+  if (!ctx) throw new Error('useToast must be used within ToastProvider')
+  return ctx
+}
+
+export function ToastProvider({ children }) {
+  const [toasts, setToasts] = useState([])
+  const idRef = useRef(0)
+
+  const addToast = useCallback((message, type = 'info', duration = 3500) => {
+    const id = ++idRef.current
+    setToasts(prev => [...prev, { id, message, type, exiting: false }])
+    setTimeout(() => {
+      setToasts(prev => prev.map(t => t.id === id ? { ...t, exiting: true } : t))
+      setTimeout(() => {
+        setToasts(prev => prev.filter(t => t.id !== id))
+      }, 300)
+    }, duration)
+  }, [])
+
+  const toast = useCallback({
+    success: (msg, dur) => addToast(msg, 'success', dur),
+    error: (msg, dur) => addToast(msg, 'error', dur),
+    info: (msg, dur) => addToast(msg, 'info', dur),
+    warning: (msg, dur) => addToast(msg, 'warning', dur),
+  }, [addToast])
+
+  // Fix: useCallback returns a function, not an object. Use useMemo or just pass object.
+  const value = {
+    success: (msg, dur) => addToast(msg, 'success', dur),
+    error: (msg, dur) => addToast(msg, 'error', dur),
+    info: (msg, dur) => addToast(msg, 'info', dur),
+    warning: (msg, dur) => addToast(msg, 'warning', dur),
+  }
+
+  return (
+    <ToastContext.Provider value={value}>
+      {children}
+      <div className="toast-container">
+        {toasts.map(t => (
+          <ToastItem key={t.id} toast={t} />
+        ))}
+      </div>
+    </ToastContext.Provider>
+  )
+}
+
+const icons = {
+  success: '✓',
+  error: '✕',
+  warning: '⚠',
+  info: 'ℹ',
+}
+
+function ToastItem({ toast }) {
+  return (
+    <div className={`toast toast-${toast.type} ${toast.exiting ? 'toast-exit' : 'toast-enter'}`}>
+      <span className={`toast-icon toast-icon-${toast.type}`}>{icons[toast.type]}</span>
+      <span className="toast-message">{toast.message}</span>
+    </div>
+  )
+}

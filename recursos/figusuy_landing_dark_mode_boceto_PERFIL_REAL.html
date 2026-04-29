@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FigusUY — Mi Perfil</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#fff7ed',
+              100: '#ffedd5',
+              500: '#f97316',
+              600: '#ea580c',
+              700: '#c2410c'
+            }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-slate-100 text-slate-900 dark:bg-slate-950 dark:text-white transition-colors duration-300">
+
+  <div class="min-h-screen flex">
+
+    <!-- Sidebar -->
+    <aside class="hidden md:flex w-52 bg-slate-900 text-white flex-col border-r border-slate-800">
+      <div class="h-24 px-5 flex items-center gap-3 border-b border-slate-800">
+        <div class="w-11 h-11 rounded-2xl bg-brand-600 flex items-center justify-center text-white font-black text-xl">F</div>
+        <div>
+          <p class="font-black text-lg tracking-tight">FigusUY</p>
+          <p class="text-xs text-slate-400">Coleccioná mejor</p>
+        </div>
+      </div>
+
+      <nav class="flex-1 py-5 px-3 space-y-2">
+        <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-2xl hover:bg-slate-800 font-bold text-sm text-slate-300"><span class="text-lg">📚</span> Álbumes</a>
+        <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-2xl hover:bg-slate-800 font-bold text-sm text-slate-300"><span class="text-lg">🔄</span> Cruces</a>
+        <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-2xl hover:bg-slate-800 font-bold text-sm text-slate-300"><span class="text-lg">💬</span> Chats</a>
+        <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-2xl hover:bg-slate-800 font-bold text-sm text-slate-300"><span class="text-lg">📍</span> Puntos</a>
+        <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-2xl bg-brand-600 text-white font-black text-sm"><span class="text-lg">👤</span> Mi Perfil</a>
+      </nav>
+    </aside>
+
+    <!-- Main -->
+    <main class="flex-1 min-w-0">
+
+      <!-- Topbar -->
+      <header class="sticky top-0 z-40 bg-white/90 dark:bg-slate-950/90 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800">
+        <div class="h-20 px-4 md:px-6 flex items-center justify-between gap-4">
+          <div>
+            <p class="text-xs text-slate-500 dark:text-slate-400 font-bold">Usuario</p>
+            <h1 class="text-2xl font-black tracking-tight">Mi Perfil</h1>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button id="themeToggle" class="w-10 h-10 rounded-2xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">🌙</button>
+            <button class="px-4 py-2 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-950 font-black text-sm">Editar perfil</button>
+          </div>
+        </div>
+      </header>
+
+      <section class="max-w-5xl mx-auto px-4 py-6 md:py-8 pb-28 md:pb-8 space-y-5">
+
+        <!-- User header -->
+        <div class="rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm p-5 md:p-6">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-5">
+            <div class="flex items-center gap-4">
+              <div class="w-20 h-20 rounded-[1.7rem] bg-brand-600 text-white flex items-center justify-center text-3xl font-black">J</div>
+              <div>
+                <h2 class="text-3xl font-black">Juan Macastill...</h2>
+                <div class="mt-2 flex flex-wrap gap-2">
+                  <span class="px-3 py-1 rounded-full bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 text-xs font-black">Usuario activo</span>
+                  <span class="px-3 py-1 rounded-full bg-orange-100 dark:bg-orange-950 text-orange-700 dark:text-orange-300 text-xs font-black">Mundial 2026</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex gap-2">
+              <button class="px-5 py-3 rounded-2xl bg-brand-600 text-white font-black">Editar</button>
+              <button class="px-5 py-3 rounded-2xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-black">Ajustes</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- About -->
+        <div class="rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+          <div class="p-6 border-b border-slate-200 dark:border-slate-800">
+            <h3 class="text-2xl font-black">Sobre mí</h3>
+            <p class="mt-2 text-slate-500 dark:text-slate-400">Coleccionando figuritas del Mundial 2026.</p>
+          </div>
+
+          <div class="divide-y divide-slate-200 dark:divide-slate-800">
+            <div class="p-5 flex items-center justify-between"><span class="text-slate-500 font-bold uppercase text-sm">Vive en</span><span class="font-black">Uruguay</span></div>
+            <div class="p-5 flex items-center justify-between"><span class="text-slate-500 font-bold uppercase text-sm">Zona</span><span class="font-black">Montevideo</span></div>
+            <div class="p-5 flex items-center justify-between"><span class="text-slate-500 font-bold uppercase text-sm">Edad</span><span class="font-black">-</span></div>
+            <div class="p-5 flex items-center justify-between"><span class="text-slate-500 font-bold uppercase text-sm">Miembro desde</span><span class="font-black">2026</span></div>
+          </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm p-6">
+          <h3 class="text-2xl font-black mb-6">Estadísticas</h3>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+            <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800"><p class="text-4xl font-black">0</p><p class="text-xs text-slate-500 font-black uppercase mt-2">Rating</p></div>
+            <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800"><p class="text-4xl font-black">0</p><p class="text-xs text-slate-500 font-black uppercase mt-2">Intercambios</p></div>
+            <div class="p-4 rounded-2xl bg-red-50 dark:bg-red-950/30 border border-red-100 dark:border-red-900"><p class="text-4xl font-black text-red-600 dark:text-red-400">982</p><p class="text-xs text-slate-500 font-black uppercase mt-2">Buscando</p></div>
+            <div class="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900"><p class="text-4xl font-black text-emerald-600 dark:text-emerald-400">0</p><p class="text-xs text-slate-500 font-black uppercase mt-2">Ofreciendo</p></div>
+          </div>
+        </div>
+
+        <!-- Albums -->
+        <div class="rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+          <div class="p-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3">
+            <div><h3 class="text-2xl font-black">Mis Álbumes</h3><p class="text-sm text-slate-500 dark:text-slate-400">Tus colecciones activas</p></div>
+            <span class="px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-xs font-black">1 activo</span>
+          </div>
+
+          <div class="p-5 md:p-6 grid md:grid-cols-[1fr_130px_130px_120px] gap-4 md:items-center border-t border-slate-200 dark:border-slate-800">
+            <div>
+              <h4 class="font-black text-lg">FIFA World Cup 2026</h4>
+              <p class="text-slate-500 dark:text-slate-400 text-sm">Official Sticker Collection (Panini)</p>
+            </div>
+            <div class="text-left md:text-center"><p class="text-2xl font-black text-emerald-600 dark:text-emerald-400">0</p><p class="text-xs text-slate-500 font-bold uppercase">Ofrece</p></div>
+            <div class="text-left md:text-center"><p class="text-2xl font-black text-red-600 dark:text-red-400">982</p><p class="text-xs text-slate-500 font-bold uppercase">Busca</p></div>
+            <button class="px-5 py-3 rounded-2xl border-2 border-brand-600 text-brand-600 font-black">Ver</button>
+          </div>
+        </div>
+
+        <!-- Blocked users -->
+        <div class="rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm p-6">
+          <div class="flex items-center justify-between gap-3 mb-4">
+            <div>
+              <h3 class="text-2xl font-black">Usuarios bloqueados</h3>
+              <p class="text-sm text-slate-500 dark:text-slate-400">Gestioná usuarios que no pueden contactarte.</p>
+            </div>
+            <span class="px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-xs font-black">0 bloqueados</span>
+          </div>
+          <div class="rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-5 text-center text-slate-500 dark:text-slate-400 font-medium">
+            No tenés usuarios bloqueados.
+          </div>
+        </div>
+      </section>
+
+      <!-- Mobile bottom nav -->
+      <nav class="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/90 dark:bg-slate-950/90 backdrop-blur-xl border-t border-slate-200 dark:border-slate-800 px-4 py-3">
+        <div class="grid grid-cols-4 gap-2 text-center text-xs font-bold text-slate-500 dark:text-slate-400">
+          <a href="#">📚<br>Álbumes</a>
+          <a href="#">🔄<br>Cruces</a>
+          <a href="#">💬<br>Chats</a>
+          <a href="#" class="text-brand-600">👤<br>Perfil</a>
+        </div>
+      </nav>
+    </main>
+  </div>
+
+  <script>
+    const toggle = document.getElementById('themeToggle');
+    const root = document.documentElement;
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'dark') {
+      root.classList.add('dark');
+      toggle.textContent = '☀️';
+    }
+    toggle.addEventListener('click', () => {
+      root.classList.toggle('dark');
+      const isDark = root.classList.contains('dark');
+      localStorage.setItem('theme', isDark ? 'dark' : 'light');
+      toggle.textContent = isDark ? '☀️' : '🌙';
+    });
+  </script>
+</body>
+</html>
