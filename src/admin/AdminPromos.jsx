@@ -75,11 +75,11 @@ export default function AdminPromos() {
               
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginBottom: '1rem' }}>
                  <div style={{ background: '#f8fafc', padding: '0.75rem', borderRadius: '0.5rem' }}>
-                    <p style={{ fontSize: '1rem', fontWeight: 900, color: '#0f172a' }}>{Math.floor(Math.random() * 5000 + 1000)}</p>
+                    <p style={{ fontSize: '1rem', fontWeight: 900, color: '#0f172a' }}>{ev.impressions || 0}</p>
                     <p style={{ fontSize: '0.625rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' }}>Impresiones</p>
                  </div>
                  <div style={{ background: '#f8fafc', padding: '0.75rem', borderRadius: '0.5rem' }}>
-                    <p style={{ fontSize: '1rem', fontWeight: 900, color: '#ea580c' }}>{(Math.random() * 5 + 1).toFixed(2)}%</p>
+                    <p style={{ fontSize: '1rem', fontWeight: 900, color: '#ea580c' }}>{ev.impressions > 0 ? ((ev.clicks_count || 0) / ev.impressions * 100).toFixed(2) : '0.00'}%</p>
                     <p style={{ fontSize: '0.625rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' }}>CTR Global</p>
                  </div>
               </div>

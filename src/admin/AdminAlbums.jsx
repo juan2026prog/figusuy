@@ -388,7 +388,7 @@ export default function AdminAlbums() {
                       </p>
                       <p style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                         <span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>pie_chart</span>
-                        ~{Math.min(99, Math.floor(Math.random() * 50 + 20))}% <span style={{ color: '#94a3b8', fontWeight: 500, fontSize: '0.6875rem' }}>completitud</span>
+                        ~{album.avg_completion != null ? Math.round(album.avg_completion) : '—'}% <span style={{ color: '#94a3b8', fontWeight: 500, fontSize: '0.6875rem' }}>completitud</span>
                       </p>
                     </div>
                   </td>

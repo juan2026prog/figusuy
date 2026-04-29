@@ -241,19 +241,19 @@ export default function AdminUsers() {
                              <p style={{ fontSize: '0.75rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '1rem' }}>Resumen de Actividad</p>
                              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(10rem, 1fr))', gap: '1rem' }}>
                                 <div style={{ background: '#f8fafc', padding: '0.75rem', borderRadius: '0.5rem', textAlign: 'center' }}>
-                                   <p style={{ fontSize: '1.25rem', fontWeight: 900, color: '#0f172a' }}>{Math.floor(Math.random() * 5 + 1)}</p>
+                                   <p style={{ fontSize: '1.25rem', fontWeight: 900, color: '#0f172a' }}>{user.user_albums_count ?? '—'}</p>
                                    <p style={{ fontSize: '0.625rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Álbumes Activos</p>
                                 </div>
                                 <div style={{ background: '#f8fafc', padding: '0.75rem', borderRadius: '0.5rem', textAlign: 'center' }}>
-                                   <p style={{ fontSize: '1.25rem', fontWeight: 900, color: '#0f172a' }}>{Math.floor(Math.random() * 50 + 10)}</p>
+                                   <p style={{ fontSize: '1.25rem', fontWeight: 900, color: '#0f172a' }}>{user.trades_count ?? '—'}</p>
                                    <p style={{ fontSize: '0.625rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Matches Exitosos</p>
                                 </div>
                                 <div style={{ background: '#f8fafc', padding: '0.75rem', borderRadius: '0.5rem', textAlign: 'center' }}>
-                                   <p style={{ fontSize: '1.25rem', fontWeight: 900, color: '#0f172a' }}>{Math.floor(Math.random() * 20 + 5)}</p>
+                                   <p style={{ fontSize: '1.25rem', fontWeight: 900, color: '#0f172a' }}>{user.favorites_count ?? '—'}</p>
                                    <p style={{ fontSize: '0.625rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Puntos Favoritos</p>
                                 </div>
                                 <div style={{ background: '#f8fafc', padding: '0.75rem', borderRadius: '0.5rem', textAlign: 'center' }}>
-                                   <p style={{ fontSize: '1.25rem', fontWeight: 900, color: '#0f172a' }}>{Math.floor(Math.random() * 500 + 100)}</p>
+                                   <p style={{ fontSize: '1.25rem', fontWeight: 900, color: '#0f172a' }}>{user.sticker_count ?? '—'}</p>
                                    <p style={{ fontSize: '0.625rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Figuritas en Colección</p>
                                 </div>
                              </div>

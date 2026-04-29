@@ -105,11 +105,11 @@ export default function AdminLocations() {
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginBottom: '1rem', zIndex: 2 }}>
                <div style={{ background: '#f8fafc', padding: '0.5rem', borderRadius: '0.375rem', textAlign: 'center' }}>
-                  <p style={{ fontSize: '0.875rem', fontWeight: 800 }}>{Math.floor(Math.random() * 200 + 50)}</p>
+                  <p style={{ fontSize: '0.875rem', fontWeight: 800 }}>{loc.views_count || 0}</p>
                   <p style={{ fontSize: '0.625rem', color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase' }}>Visitas</p>
                </div>
                <div style={{ background: '#f8fafc', padding: '0.5rem', borderRadius: '0.375rem', textAlign: 'center' }}>
-                  <p style={{ fontSize: '0.875rem', fontWeight: 800 }}>{Math.floor(Math.random() * 40 + 5)}</p>
+                  <p style={{ fontSize: '0.875rem', fontWeight: 800 }}>{loc.favorites_count || 0}</p>
                   <p style={{ fontSize: '0.625rem', color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase' }}>Favoritos</p>
                </div>
             </div>
