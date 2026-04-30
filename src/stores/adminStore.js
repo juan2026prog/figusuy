@@ -126,12 +126,27 @@ export const useAdminStore = create((set, get) => ({
   fetchUsers: async () => {
     set({ loading: true })
     try {
-      const { data, error } = await supabase
+      // Fetch profiles and roles separately to avoid PostgREST JOIN issues
+      const { data: profiles, error: pErr } = await supabase
         .from('profiles')
-        .select('*, user_roles(role)')
+        .select('*')
         .order('created_at', { ascending: false })
-      if (error) throw error
-      set({ users: data || [] })
+      if (pErr) console.error('fetchUsers profiles error:', pErr)
+      
+      const { data: roles, error: rErr } = await supabase
+        .from('user_roles')
+        .select('user_id, role')
+      if (rErr) console.error('fetchUsers roles error:', rErr)
+      
+      // Merge roles into profiles
+      const roleMap = {}
+      ;(roles || []).forEach(r => { roleMap[r.user_id] = r.role })
+      const merged = (profiles || []).map(p => ({
+        ...p,
+        user_roles: roleMap[p.id] ? { role: roleMap[p.id] } : null
+      }))
+      
+      set({ users: merged })
     } catch (e) {
       console.error('Error fetching users:', e)
       set({ users: [] })
