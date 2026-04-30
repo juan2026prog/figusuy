@@ -250,8 +250,14 @@ export const useAdminStore = create((set, get) => ({
 
   // ========== SETTINGS ==========
   fetchSettings: async () => {
-    const { data } = await supabase.from('app_settings').select('*').order('category')
-    set({ settings: data || [] })
+    try {
+      const { data, error } = await supabase.from('app_settings').select('*').order('category')
+      if (error) { console.error('fetchSettings error:', error); }
+      set({ settings: data || [] })
+    } catch (e) {
+      console.error('fetchSettings exception:', e)
+      set({ settings: [] })
+    }
   },
 
   updateSetting: async (key, value, userId) => {
@@ -493,8 +499,14 @@ export const useAdminStore = create((set, get) => ({
 
   // ========== ALGORITHM CONFIG ==========
   fetchAlgorithmConfig: async () => {
-    const { data } = await supabase.from('algorithm_config').select('*').order('category')
-    set({ algorithmConfig: data || [] })
+    try {
+      const { data, error } = await supabase.from('algorithm_config').select('*').order('category')
+      if (error) { console.error('fetchAlgorithmConfig error:', error); }
+      set({ algorithmConfig: data || [] })
+    } catch (e) {
+      console.error('fetchAlgorithmConfig exception:', e)
+      set({ algorithmConfig: [] })
+    }
   },
 
   updateAlgorithmConfig: async (key, value, adminId) => {
