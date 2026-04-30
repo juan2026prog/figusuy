@@ -170,9 +170,16 @@ export default function AdminFeatureFlags() {
 
   const fetchFlags = async () => {
     setLoading(true)
-    const { data } = await supabase.from('feature_flags').select('*').order('scope').order('name')
-    setFlags(data || [])
-    setLoading(false)
+    try {
+      const { data, error } = await supabase.from('feature_flags').select('*').order('scope').order('name')
+      if (error) throw error
+      setFlags(data || [])
+    } catch (err) {
+      console.error('Error fetching flags:', err)
+      setFlags([])
+    } finally {
+      setLoading(false)
+    }
   }
 
   const fetchAudit = async () => {

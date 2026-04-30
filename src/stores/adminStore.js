@@ -125,11 +125,19 @@ export const useAdminStore = create((set, get) => ({
   // ========== USERS ==========
   fetchUsers: async () => {
     set({ loading: true })
-    const { data } = await supabase
-      .from('profiles')
-      .select('*, user_roles(role)')
-      .order('created_at', { ascending: false })
-    set({ users: data || [], loading: false })
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*, user_roles(role)')
+        .order('created_at', { ascending: false })
+      if (error) throw error
+      set({ users: data || [] })
+    } catch (e) {
+      console.error('Error fetching users:', e)
+      set({ users: [] })
+    } finally {
+      set({ loading: false })
+    }
   },
 
   updateUser: async (userId, updates) => {
