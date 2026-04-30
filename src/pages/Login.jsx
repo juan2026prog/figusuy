@@ -48,6 +48,28 @@ export default function LoginPage() {
     setForgotLoading(false)
   }
 
+  const handleMagicLink = async (e) => {
+    e.preventDefault()
+    if (!email) {
+      setError('Ingresá tu email primero para usar Magic Link')
+      return
+    }
+    setLoading(true)
+    try {
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          emailRedirectTo: window.location.origin,
+        },
+      })
+      if (error) throw error
+      alert('¡Magic Link enviado! Revisá tu correo (y la carpeta de spam).')
+    } catch (err) {
+      setError(err.message || 'Error al enviar Magic Link')
+    }
+    setLoading(false)
+  }
+
   if (showForgot) {
     return (
     <div className="flex-center flex-col" style={{ minHeight: '100vh', padding: '2rem 1rem', background: 'linear-gradient(135deg, var(--color-bg) 0%, var(--color-brand-50) 50%, #fffbeb 100%)' }}>
@@ -164,6 +186,18 @@ export default function LoginPage() {
             <button className={`btn btn-primary btn-lg w-full ${loading ? 'btn-loading' : ''}`} type="submit" disabled={loading}>
               {isSignUp ? 'Crear cuenta' : 'Iniciar sesión'}
             </button>
+
+            {!isSignUp && (
+              <button 
+                type="button" 
+                onClick={handleMagicLink} 
+                className="btn btn-secondary btn-lg w-full mt-sm font-semibold"
+                style={{ background: '#f1f5f9', color: '#0f172a', border: '1px solid #e2e8f0' }}
+                disabled={loading}
+              >
+                ✨ Ingresar con Magic Link (Sin clave)
+              </button>
+            )}
           </form>
 
           <p className="text-center text-sm text-muted mt-lg">
