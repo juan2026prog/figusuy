@@ -101,8 +101,13 @@ export const useAuthStore = create((set, get) => ({
   },
 
   signOut: async () => {
-    await supabase.auth.signOut()
-    set({ user: null, session: null, profile: null })
+    try {
+      await supabase.auth.signOut()
+    } catch (error) {
+      console.error('Error signing out:', error)
+    } finally {
+      set({ user: null, session: null, profile: null, planRules: null })
+    }
   },
 
   updateProfile: async (updates) => {

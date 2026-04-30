@@ -11,7 +11,7 @@ import { usePremiumAccess } from '../hooks/usePremiumAccess'
 
 export default function ProfilePage() {
   const navigate = useNavigate()
-  const { profile, signOut } = useAuthStore()
+  const { profile, signOut, updateProfile } = useAuthStore()
   const { userAlbums, missingStickers, duplicateStickers, matches } = useAppStore()
   const { favorites, fetchFavorites } = useFavoritesStore()
   const { isPremium, planName } = usePremiumAccess()
@@ -19,6 +19,7 @@ export default function ProfilePage() {
 
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false)
   const [locationName, setLocationName] = useState(profile?.city || '')
+  const [displayName, setDisplayName] = useState(profile?.name || '')
   const [notifEnabled, setNotifEnabled] = useState(true)
   const [saving, setSaving] = useState(false)
   const [geoLoading, setGeoLoading] = useState(false)
@@ -29,6 +30,7 @@ export default function ProfilePage() {
 
   useEffect(() => {
     setLocationName(profile?.city || '')
+    setDisplayName(profile?.name || '')
     // Check if user has admin role
     if (profile?.id) {
       supabase.from('user_roles').select('role').eq('user_id', profile.id).maybeSingle()
@@ -43,8 +45,7 @@ export default function ProfilePage() {
     if (!profile?.id) return
     setSaving(true)
     try {
-      const { error } = await supabase.from('profiles').update({ city: locationName }).eq('id', profile.id)
-      if (error) throw error
+      await updateProfile({ city: locationName, name: displayName })
       toast.success('Perfil actualizado correctamente')
     } catch (err) { toast.error('Error al guardar: ' + err.message) }
     setSaving(false)
@@ -536,18 +537,34 @@ export default function ProfilePage() {
           {/* Settings */}
           <div className="card">
             <h2 style={{ fontSize: '1.25rem', fontWeight: 900, marginBottom: '1.5rem', margin: '0 0 1.5rem 0' }}>Configuración</h2>
-            <div style={{ marginBottom: '1.5rem' }}>
-              <label style={{ fontSize: '0.75rem', fontWeight: 900, color: '#64748b', textTransform: 'uppercase', display: 'block', marginBottom: '0.5rem' }}>Mi Zona</label>
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <input 
-                  className="settings-input" 
-                  value={locationName} 
-                  onChange={e => setLocationName(e.target.value)} 
-                  placeholder="Ej: Pocitos, Montevideo"
-                />
-                <button className="btn-settings" onClick={handleSave} disabled={saving}>{saving ? '...' : 'OK'}</button>
-              </div>
+            <div style={{ marginBottom: '1rem' }}>
+              <label style={{ fontSize: '0.75rem', fontWeight: 900, color: '#64748b', textTransform: 'uppercase', display: 'block', marginBottom: '0.5rem' }}>Nombre</label>
+              <input 
+                className="settings-input" 
+                value={displayName} 
+                onChange={e => setDisplayName(e.target.value)} 
+                placeholder="Ej: Juan Pérez"
+                style={{ width: '100%', marginBottom: '0.5rem' }}
+              />
             </div>
+            <div style={{ marginBottom: '1rem' }}>
+              <label style={{ fontSize: '0.75rem', fontWeight: 900, color: '#64748b', textTransform: 'uppercase', display: 'block', marginBottom: '0.5rem' }}>Mi Zona</label>
+              <input 
+                className="settings-input" 
+                value={locationName} 
+                onChange={e => setLocationName(e.target.value)} 
+                placeholder="Ej: Pocitos, Montevideo"
+                style={{ width: '100%', marginBottom: '0.5rem' }}
+              />
+            </div>
+            <button 
+              className="btn-brand" 
+              onClick={handleSave} 
+              disabled={saving}
+              style={{ width: '100%', marginBottom: '1.5rem', borderRadius: '1.25rem' }}
+            >
+              {saving ? 'Guardando...' : 'Guardar Cambios'}
+            </button>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
               <span style={{ fontWeight: 700, fontSize: '0.875rem' }}>Notificaciones</span>

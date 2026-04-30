@@ -1,10 +1,12 @@
 import React from 'react'
 import { NavLink } from 'react-router-dom'
 import { useAppStore } from '../stores/appStore'
+import { useAuthStore } from '../stores/authStore'
 import { supabase } from '../lib/supabase'
 
 export default function Sidebar() {
   const { matches, chats } = useAppStore()
+  const signOut = useAuthStore(state => state.signOut)
   const matchCount = matches?.length || 0
   const unreadChats = chats?.filter(c => c.has_unread)?.length || 0
 
@@ -174,7 +176,7 @@ export default function Sidebar() {
       <div className="sidebar-footer">
         <button 
           className="sidebar-footer-btn btn-logout"
-          onClick={() => supabase.auth.signOut()}
+          onClick={() => signOut()}
         >
           <span className="sidebar-icon material-symbols-outlined">logout</span> Salir
         </button>
