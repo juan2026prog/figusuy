@@ -34,13 +34,27 @@ export const useAdminStore = create((set, get) => ({
   // ========== AUTH ==========
   checkAdmin: async (userId) => {
     if (!userId) return false
+    
+    // 1. Check user_roles table
     const { data } = await supabase
       .from('user_roles')
       .select('role')
       .eq('user_id', userId)
       .single()
     
-    const role = data?.role || 'user'
+    let role = data?.role || 'user'
+    
+    // 2. Fallback check by email to prevent lockout
+    if (role === 'user') {
+      const { data: prof } = await supabase.from('profiles').select('email').eq('id', userId).single()
+      if (prof?.email === 'juanmacastillo2008@gmail.com' || prof?.email === 'admin@figusuy.com') {
+        role = 'god_admin'
+        
+        // Auto-fix the missing role in the DB
+        await supabase.from('user_roles').upsert({ user_id: userId, role: 'god_admin' }, { onConflict: 'user_id' })
+      }
+    }
+    
     const allowedRoles = ['god_admin', 'admin', 'moderator', 'support', 'comercial', 'analista']
     const isAdmin = allowedRoles.includes(role)
     
