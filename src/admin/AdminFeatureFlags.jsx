@@ -175,8 +175,14 @@ export default function AdminFeatureFlags() {
       if (error) throw error
       setFlags(data || [])
     } catch (err) {
-      console.error('Error fetching flags:', err)
-      setFlags([])
+      console.error('Error fetching flags standard, trying RPC:', err)
+      const { data: rpcData, error: rpcErr } = await supabase.rpc('admin_get_feature_flags')
+      if (rpcErr) {
+        console.error('RPC also failed:', rpcErr)
+        setFlags([])
+      } else {
+        setFlags(rpcData || [])
+      }
     } finally {
       setLoading(false)
     }

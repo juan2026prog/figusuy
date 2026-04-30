@@ -31,17 +31,56 @@ export default function AdminSettings() {
   const [locations, setLocations] = useState([])
   const [locSearch, setLocSearch] = useState('')
 
+  const [matchedUsers, setMatchedUsers] = useState([])
+  const [matchedLocations, setMatchedLocations] = useState([])
+
   useEffect(() => {
     fetchSettings()
-    fetchUsers()
-    loadLocationsList()
     loadSpecialSettings()
   }, [])
 
-  const loadLocationsList = async () => {
-    const { data } = await supabase.from('locations').select('id, name, owner_id').order('name')
-    setLocations(data || [])
-  }
+  useEffect(() => {
+    if (planSearch.length > 1 && !planTarget) {
+      const timer = setTimeout(async () => {
+        // Use standard query or RPC
+        const { data, error } = await supabase.from('profiles')
+          .select('id, name, email, plan_name, is_premium')
+          .or(`name.ilike.%${planSearch}%,email.ilike.%${planSearch}%`)
+          .limit(8)
+        
+        if (!error && data) setMatchedUsers(data)
+        else {
+          // Fallback to RPC if RLS blocks
+          const { data: rpcData } = await supabase.rpc('admin_search_users', { search_term: planSearch })
+          if (rpcData) setMatchedUsers(rpcData)
+        }
+      }, 400)
+      return () => clearTimeout(timer)
+    } else {
+      setMatchedUsers([])
+    }
+  }, [planSearch, planTarget])
+
+  useEffect(() => {
+    if (locSearch.length > 1 && !planTarget) {
+      const timer = setTimeout(async () => {
+        const { data, error } = await supabase.from('locations')
+          .select('id, name, business_plan')
+          .ilike('name', `%${locSearch}%`)
+          .limit(8)
+        
+        if (!error && data) setMatchedLocations(data)
+        else {
+          // Fallback to RPC if RLS blocks
+          const { data: rpcData } = await supabase.rpc('admin_search_locations', { search_term: locSearch })
+          if (rpcData) setMatchedLocations(rpcData)
+        }
+      }, 400)
+      return () => clearTimeout(timer)
+    } else {
+      setMatchedLocations([])
+    }
+  }, [locSearch, planTarget])
 
   const loadSpecialSettings = async () => {
     const { data } = await supabase.from('app_settings').select('key, value').in('key', ['checklist_images_enabled', 'premium_free_mode', 'premium_free_days'])
@@ -60,15 +99,6 @@ export default function AdminSettings() {
     logAction(profile?.id, 'TOGGLE_CHECKLIST_IMAGES', 'setting', 'checklist_images_enabled', { enabled: newVal })
   }
 
-  // ======== MANUAL PLAN CHANGE ========
-  const matchedUsers = users.filter(u =>
-    planSearch.length > 1 && (u.name?.toLowerCase().includes(planSearch.toLowerCase()) || u.email?.toLowerCase().includes(planSearch.toLowerCase()))
-  ).slice(0, 8)
-
-  const matchedLocations = locations.filter(l =>
-    locSearch.length > 1 && l.name?.toLowerCase().includes(locSearch.toLowerCase())
-  ).slice(0, 8)
-
   const handlePlanChange = async () => {
     if (!planTarget) return
     setPlanSaving(true)
@@ -76,27 +106,32 @@ export default function AdminSettings() {
 
     try {
       if (planTarget.type === 'user') {
-        // Update plan_name on profiles or subscription
-        await supabase.from('profiles').update({
+        const isPrem = planValue !== 'gratis'
+        const { error } = await supabase.from('profiles').update({
           plan_name: planValue,
-          is_premium: planValue !== 'gratis'
+          is_premium: isPrem
         }).eq('id', planTarget.id)
+        
+        if (error) throw error
 
         logAction(profile?.id, 'MANUAL_PLAN_CHANGE', 'user', planTarget.id, { plan: planValue, target_name: planTarget.name })
       } else {
-        // Update location's plan
-        await supabase.from('locations').update({
-          plan: planValue
+        const { error } = await supabase.from('locations').update({
+          business_plan: planValue
         }).eq('id', planTarget.id)
+
+        if (error) throw error
 
         logAction(profile?.id, 'MANUAL_PLAN_CHANGE', 'location', planTarget.id, { plan: planValue, target_name: planTarget.name })
       }
 
       setPlanMsg(`✅ Plan de "${planTarget.name}" cambiado a ${planValue}`)
+      setTimeout(() => setPlanMsg(''), 4000)
       setPlanTarget(null)
       setPlanSearch('')
       setLocSearch('')
     } catch (e) {
+      console.error('Plan change error:', e)
       setPlanMsg(`❌ Error: ${e.message}`)
     } finally {
       setPlanSaving(false)
@@ -212,8 +247,9 @@ export default function AdminSettings() {
               <div style={{ border: '1px solid #e2e8f0', borderRadius: '0.5rem', maxHeight: '10rem', overflowY: 'auto', marginTop: '0.25rem', background: 'white' }}>
                 {matchedLocations.map(l => (
                   <div key={l.id} onClick={() => { setLocSearch(l.name); setPlanTarget({ type: 'business', id: l.id, name: l.name }); setPlanValue(l.plan || 'gratis') }}
-                    style={{ padding: '0.5rem 0.75rem', cursor: 'pointer', fontSize: '0.8125rem', borderBottom: '1px solid #f1f5f9' }}>
-                    {l.name}
+                    style={{ padding: '0.5rem 0.75rem', cursor: 'pointer', fontSize: '0.8125rem', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between' }}>
+                    <span>{l.name}</span>
+                    <span style={{ fontSize: '0.6875rem', fontWeight: 700, color: '#3b82f6', background: '#eff6ff', padding: '0.125rem 0.375rem', borderRadius: '0.375rem' }}>{l.plan || 'gratis'}</span>
                   </div>
                 ))}
               </div>

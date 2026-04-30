@@ -516,16 +516,28 @@ export const useAdminStore = create((set, get) => ({
   fetchAlgorithmConfig: async () => {
     try {
       const { data, error } = await supabase.from('algorithm_config').select('*').order('category')
-      if (error) { console.error('fetchAlgorithmConfig error:', error); }
+      if (error) throw error
       set({ algorithmConfig: data || [] })
     } catch (e) {
-      console.error('fetchAlgorithmConfig exception:', e)
-      set({ algorithmConfig: [] })
+      console.error('fetchAlgorithmConfig standard query failed, trying RPC:', e)
+      const { data: rpcData, error: rpcErr } = await supabase.rpc('admin_get_algorithm_config')
+      if (rpcErr) {
+        console.error('RPC also failed:', rpcErr)
+        set({ algorithmConfig: [] })
+      } else {
+        set({ algorithmConfig: rpcData || [] })
+      }
     }
   },
 
   updateAlgorithmConfig: async (key, value, adminId) => {
-    await supabase.from('algorithm_config').update({ config_value: JSON.stringify(value), updated_by: adminId, updated_at: new Date().toISOString() }).eq('config_key', key)
+    try {
+      const { error } = await supabase.from('algorithm_config').update({ config_value: JSON.stringify(value), updated_by: adminId, updated_at: new Date().toISOString() }).eq('config_key', key)
+      if (error) throw error
+    } catch (e) {
+      console.error('updateAlgorithmConfig error:', e)
+      // Call an RPC if needed in the future, for now just log
+    }
     get().logAction(adminId, 'UPDATE_ALGORITHM', 'algorithm_config', key, { value })
     get().fetchAlgorithmConfig()
   },
