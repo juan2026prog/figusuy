@@ -27,6 +27,18 @@ export default function AlbumPage() {
 
   const [mode, setMode] = useState('have')
   const [viewMode, setViewMode] = useState('numbers') // 'numbers' | 'checklist'
+  const [checklistImagesEnabled, setChecklistImagesEnabled] = useState(true)
+
+  useEffect(() => {
+    // Fetch checklist setting
+    supabase.from('app_settings').select('value').eq('key', 'checklist_images_enabled').single()
+      .then(({ data }) => {
+        if (data) {
+          const val = typeof data.value === 'string' ? data.value.replace(/"/g, '') : data.value
+          setChecklistImagesEnabled(val === true || val === 'true')
+        }
+      })
+  }, [])
   const [searchFilter, setSearchFilter] = useState('')
   const [activeTab, setActiveTab] = useState('base')
   const [showBulk, setShowBulk] = useState(false)
@@ -1371,16 +1383,18 @@ export default function AlbumPage() {
 
                       return (
                         <div key={sticker} onClick={() => handleToggle(sticker)} className={cardCls}>
-                          <div className="checklist-img-wrapper">
-                            {sData?.image_url ? (
-                              <img src={sData.image_url} alt={sData.name || sticker} className="checklist-img" loading="lazy" />
-                            ) : (
-                              <div className="checklist-placeholder">
-                                <span style={{ fontSize: '1.5rem' }}>📷</span>
-                                <span style={{ fontSize: '0.625rem', fontWeight: 700 }}>Sin imagen</span>
-                              </div>
-                            )}
-                          </div>
+                          {checklistImagesEnabled && (
+                            <div className="checklist-img-wrapper">
+                              {sData?.image_url ? (
+                                <img src={sData.image_url} alt={sData.name || sticker} className="checklist-img" loading="lazy" />
+                              ) : (
+                                <div className="checklist-placeholder">
+                                  <span style={{ fontSize: '1.5rem' }}>📷</span>
+                                  <span style={{ fontSize: '0.625rem', fontWeight: 700 }}>Sin imagen</span>
+                                </div>
+                              )}
+                            </div>
+                          )}
                           <div className="checklist-info">
                             <div className="checklist-header">
                               <span className="checklist-num">{sticker}</span>
