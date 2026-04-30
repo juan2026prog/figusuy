@@ -11,7 +11,7 @@ import { usePremiumAccess } from '../hooks/usePremiumAccess'
 
 export default function ProfilePage() {
   const navigate = useNavigate()
-  const { profile, signOut, updateProfile } = useAuthStore()
+  const { profile, user, signOut, updateProfile } = useAuthStore()
   const { userAlbums, missingStickers, duplicateStickers, matches } = useAppStore()
   const { favorites, fetchFavorites } = useFavoritesStore()
   const { isPremium, planName } = usePremiumAccess()
@@ -410,6 +410,7 @@ export default function ProfilePage() {
                 {profile?.is_verified && <span className="badge-trust">✓ Usuario confiable</span>}
               </div>
               <h1>{name}</h1>
+              <p style={{ color: '#cbd5e1', fontSize: '0.875rem', marginBottom: '0.25rem', fontWeight: 600 }}>{user?.email || profile?.email}</p>
               <p className="profile-subtitle">{locationName || profile?.department || 'Sin ubicación'} · Activo hoy</p>
             </div>
           </div>

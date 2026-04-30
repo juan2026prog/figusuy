@@ -28,6 +28,9 @@ import BusinessPromo from './business/BusinessPromo'
 import BusinessMetrics from './business/BusinessMetrics'
 import BusinessBilling from './business/BusinessBilling'
 import BusinessHelp from './business/BusinessHelp'
+import BusinessAccessGuard from './components/BusinessAccessGuard'
+import BusinessApply from './pages/BusinessApply'
+import BusinessPending from './pages/BusinessPending'
 
 // Admin
 import AdminLayout from './admin/AdminLayout'
@@ -178,7 +181,9 @@ export default function App() {
         <Route path="/partners" element={<AppLayout><PartnerPlans /></AppLayout>} />
 
         {/* Business Dashboard */}
-        <Route path="/business" element={<ProtectedRoute><BusinessLayout /></ProtectedRoute>}>
+        <Route path="/business/apply" element={<ProtectedRoute><BusinessApply /></ProtectedRoute>} />
+        <Route path="/business/pending" element={<ProtectedRoute><BusinessPending /></ProtectedRoute>} />
+        <Route path="/business" element={<ProtectedRoute><BusinessAccessGuard><BusinessLayout /></BusinessAccessGuard></ProtectedRoute>}>
           <Route index element={<BusinessDashboard />} />
           <Route path="profile" element={<BusinessProfile />} />
           <Route path="photos" element={<BusinessPhotos />} />

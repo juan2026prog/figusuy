@@ -182,6 +182,12 @@ export default function AdminUsers() {
                               <p style={{ fontSize: '0.8125rem', color: '#64748b', display: 'flex', justifyContent: 'space-between' }}>
                                 <span>Registro:</span> <span style={{ color: '#0f172a', fontWeight: 600 }}>{new Date(user.created_at).toLocaleDateString()}</span>
                               </p>
+                              <p style={{ fontSize: '0.8125rem', color: '#64748b', display: 'flex', justifyContent: 'space-between' }}>
+                                <span>Tipo de Cuenta:</span> <span style={{ color: '#0f172a', fontWeight: 600, textTransform: 'capitalize' }}>{user.account_type || 'user'}</span>
+                              </p>
+                              <p style={{ fontSize: '0.8125rem', color: '#64748b', display: 'flex', justifyContent: 'space-between' }}>
+                                <span>Estado Negocio:</span> <span style={{ color: '#0f172a', fontWeight: 600, textTransform: 'capitalize' }}>{user.business_status || 'none'}</span>
+                              </p>
                             </div>
                           </div>
 
@@ -202,6 +208,22 @@ export default function AdminUsers() {
                               <button onClick={() => toggleUserBlock(user.id, !user.is_blocked)} style={{ ...btn(user.is_blocked ? '#fef2f2' : '#f8fafc', user.is_blocked ? '#ef4444' : '#64748b'), gridColumn: '1 / -1' }}>
                                 <span className="material-symbols-outlined" style={{ fontSize: '1.125rem' }}>block</span>
                                 {user.is_blocked ? 'Desbloquear Usuario' : 'Bloquear Usuario'}
+                              </button>
+                              
+                              <button 
+                                onClick={async () => {
+                                  const newVal = !user.business_access;
+                                  const updates = { 
+                                    business_access: newVal, 
+                                    business_status: newVal ? 'approved' : (user.business_status === 'approved' ? 'suspended' : user.business_status),
+                                    account_type: newVal ? 'business' : 'user'
+                                  };
+                                  await useAdminStore.getState().updateUser(user.id, updates);
+                                }} 
+                                style={{ ...btn(user.business_access ? '#eff6ff' : '#f8fafc', user.business_access ? '#3b82f6' : '#64748b'), gridColumn: '1 / -1' }}
+                              >
+                                <span className="material-symbols-outlined" style={{ fontSize: '1.125rem' }}>storefront</span>
+                                {user.business_access ? 'Revocar Acceso a Negocios' : 'Habilitar Acceso a Negocios'}
                               </button>
                             </div>
                           </div>

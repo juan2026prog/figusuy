@@ -99,7 +99,7 @@ export default function AdminLocations() {
               </p>
               <p style={{ fontSize: '0.75rem', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '0.375rem', marginTop: '0.75rem' }}>
                 <span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>person</span>
-                Propietario: <span style={{ color: '#64748b', fontWeight: 600 }}>{loc.owner_id ? loc.owner_id.substring(0,8) : 'Sistema'}</span>
+                Propietario: <span style={{ color: '#64748b', fontWeight: 600 }}>{loc.owner_user_id ? loc.owner_user_id.substring(0,8) : 'Sistema'}</span>
               </p>
             </div>
 

@@ -392,7 +392,14 @@ export const useAdminStore = create((set, get) => ({
     // 2. Update request status
     await supabase.from('location_requests').update({ status: 'approved' }).eq('id', requestId)
     
-    // 3. Log action
+    // 3. Update user profile to grant business access
+    await supabase.from('profiles').update({
+      business_access: true,
+      business_status: 'approved',
+      account_type: 'business'
+    }).eq('id', request.user_id)
+    
+    // 4. Log action
     get().logAction(adminId, 'APPROVE_LOCATION', 'location_request', requestId, { name: request.name })
     
     get().fetchLocationRequests()

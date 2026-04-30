@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
 import { useAppStore } from '../stores/appStore'
 import { useToast } from '../components/Toast'
+import { supabase } from '../lib/supabase'
 
 export default function AlbumPage() {
   const navigate = useNavigate()
@@ -104,7 +105,7 @@ export default function AlbumPage() {
     const query = searchFilter.trim().toLowerCase()
     return result.filter((n) => {
       if (n.toLowerCase().includes(query)) return true
-      const sData = get().albumStickers?.find(s => String(s.sticker_number) === n)
+      const sData = useAppStore.getState().albumStickers?.find(s => String(s.sticker_number) === n)
       if (sData?.name?.toLowerCase().includes(query)) return true
       if (sData?.team?.toLowerCase().includes(query)) return true
       return false

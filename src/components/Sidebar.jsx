@@ -3,10 +3,12 @@ import { NavLink } from 'react-router-dom'
 import { useAppStore } from '../stores/appStore'
 import { useAuthStore } from '../stores/authStore'
 import { supabase } from '../lib/supabase'
+import { canAccessBusinessDashboard } from '../helpers/businessAccess'
 
 export default function Sidebar() {
   const { matches, chats } = useAppStore()
   const signOut = useAuthStore(state => state.signOut)
+  const profile = useAuthStore(state => state.profile)
   const matchCount = matches?.length || 0
   const unreadChats = chats?.filter(c => c.has_unread)?.length || 0
 
@@ -16,6 +18,7 @@ export default function Sidebar() {
     { path: '/chats', icon: 'chat', label: 'Chats', badge: unreadChats },
     { path: '/favorites', icon: 'favorite', label: 'Favoritos' },
     { path: '/stores', icon: 'location_on', label: '📍 Puntos' },
+    ...(canAccessBusinessDashboard(profile) ? [{ path: '/business', icon: 'storefront', label: 'Mi local' }] : []),
     { path: '/profile', icon: 'person', label: 'Perfil' },
   ]
 
