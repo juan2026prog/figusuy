@@ -41,13 +41,18 @@ export const useAppStore = create((set, get) => ({
 
     const albumsWithProgress = await Promise.all(
       (data || []).map(async (ua) => {
-        const { count } = await supabase
-          .from('stickers_missing')
-          .select('*', { count: 'exact', head: true })
-          .eq('user_id', userId)
-          .eq('album_id', ua.album_id)
+        const [missingRes, ownedRes, duplicateRes] = await Promise.all([
+          supabase.from('stickers_missing').select('*', { count: 'exact', head: true }).eq('user_id', userId).eq('album_id', ua.album_id),
+          supabase.from('stickers_owned').select('*', { count: 'exact', head: true }).eq('user_id', userId).eq('album_id', ua.album_id),
+          supabase.from('stickers_duplicate').select('*', { count: 'exact', head: true }).eq('user_id', userId).eq('album_id', ua.album_id)
+        ])
 
-        return { ...ua, missingCount: count || 0 }
+        return { 
+          ...ua, 
+          missingCount: missingRes.count || 0,
+          ownedCount: ownedRes.count || 0,
+          duplicateCount: duplicateRes.count || 0
+        }
       })
     )
 
@@ -109,11 +114,30 @@ export const useAppStore = create((set, get) => ({
         .eq('album_id', albumId)
     ])
 
+    const newOwned = ownedRes.data || []
+    const newMissing = missingRes.data || []
+    const newDuplicate = dupRes.data || []
+    const newAlbumStickers = albumStickersRes.data || []
+
+    const currentUserAlbums = get().userAlbums || []
+    const updatedUserAlbums = currentUserAlbums.map(ua => {
+      if (ua.album_id === albumId) {
+        return {
+          ...ua,
+          ownedCount: newOwned.length,
+          missingCount: newMissing.length,
+          duplicateCount: newDuplicate.length
+        }
+      }
+      return ua
+    })
+
     set({
-      ownedStickers: ownedRes.data || [],
-      missingStickers: missingRes.data || [],
-      duplicateStickers: dupRes.data || [],
-      albumStickers: albumStickersRes.data || [],
+      ownedStickers: newOwned,
+      missingStickers: newMissing,
+      duplicateStickers: newDuplicate,
+      albumStickers: newAlbumStickers,
+      userAlbums: updatedUserAlbums
     })
   },
 
@@ -142,6 +166,9 @@ export const useAppStore = create((set, get) => ({
       ])
 
       await get().fetchStickers(userId, albumId)
+    } else {
+      console.error('Error in addOwnedSticker:', error)
+      throw error
     }
   },
 
@@ -170,6 +197,9 @@ export const useAppStore = create((set, get) => ({
       ])
 
       await get().fetchStickers(userId, albumId)
+    } else {
+      console.error('Error in addMissingSticker:', error)
+      throw error
     }
   },
 
@@ -198,6 +228,9 @@ export const useAppStore = create((set, get) => ({
       ])
 
       await get().fetchStickers(userId, albumId)
+    } else {
+      console.error('Error in addDuplicateSticker:', error)
+      throw error
     }
   },
 

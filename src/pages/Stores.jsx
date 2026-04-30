@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { SponsoredPointCard } from '../components/sponsored/SponsoredComponents'
+import { getUserLocation } from '../utils/location'
 
 export default function Stores() {
   const [tab, setTab] = useState('all')
@@ -41,13 +42,6 @@ export default function Stores() {
     }
     fetchLocations()
     fetchPromo()
-
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => setUserCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-        () => console.warn("Permiso de ubicación denegado")
-      )
-    }
   }, [])
 
   // Identify real points vs regions
@@ -171,14 +165,12 @@ export default function Stores() {
     return { badge, typeStr, locationStr, description, premiumBadge, isTurbo, isDominio }
   }
 
-  const handleCercaMio = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition((pos) => {
-        setUserCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude })
-        alert('Mostrando puntos más cercanos...')
-      }, () => {
-        alert('No pudimos acceder a tu ubicación. Verificá los permisos de tu navegador.')
-      })
+  const handleCercaMio = async () => {
+    try {
+      const coords = await getUserLocation(10000);
+      setUserCoords(coords);
+    } catch (err) {
+      alert(err);
     }
   }
 

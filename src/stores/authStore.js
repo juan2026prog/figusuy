@@ -29,20 +29,7 @@ export const useAuthStore = create((set, get) => ({
         // Auto-update last_active
         supabase.from('profiles').update({ last_active: new Date().toISOString() }).eq('id', session.user.id).then(() => {})
 
-        // Auto-request geolocation
-        if (navigator.geolocation && (!profile?.lat || !profile?.lng)) {
-          navigator.geolocation.getCurrentPosition(
-            (pos) => {
-              const lat = pos.coords.latitude
-              const lng = pos.coords.longitude
-              supabase.from('profiles').update({ lat, lng }).eq('id', session.user.id).then(({ data }) => {
-                set(state => ({ profile: { ...state.profile, lat, lng } }))
-              })
-            },
-            () => {}, // silently fail
-            { enableHighAccuracy: true, timeout: 10000 }
-          )
-        }
+        // Auto-request geolocation removed per requirements. Requested only on-demand.
       } else {
         set({ user: null, session: null, profile: null, planRules: null, loading: false })
       }

@@ -8,6 +8,8 @@ import { useToast } from '../components/Toast'
 import { useFavoritesStore } from '../stores/favoritesStore'
 import AlphaWelcomeModal from '../components/AlphaWelcomeModal'
 import { usePremiumAccess } from '../hooks/usePremiumAccess'
+import { canAccessBusinessDashboard } from '../helpers/businessAccess'
+import LocationSelector from '../components/LocationSelector'
 
 export default function ProfilePage() {
   const navigate = useNavigate()
@@ -51,28 +53,16 @@ export default function ProfilePage() {
     setSaving(false)
   }
 
-  const handleGeoUpdate = () => {
-    if (!navigator.geolocation) { toast.error('Tu navegador no soporta geolocalización'); return }
-    setGeoLoading(true)
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        try {
-          const { error } = await supabase.from('profiles').update({ lat: pos.coords.latitude, lng: pos.coords.longitude }).eq('id', profile.id)
-          if (error) throw error
-          toast.success('Ubicación actualizada')
-        } catch (err) { toast.error('Error al actualizar ubicación') }
-        setGeoLoading(false)
-      },
-      () => { toast.error('No se pudo obtener la ubicación'); setGeoLoading(false) }
-    )
-  }
-
   const handleSignOut = async () => { setShowSignOutConfirm(false); await signOut(); navigate('/login') }
 
-  const missingCount = missingStickers?.length || 0
-  const duplicateCount = duplicateStickers?.length || 0
-  const mainAlbum = userAlbums[0]?.album
-  const progressPercent = mainAlbum?.total_stickers ? Math.round(((mainAlbum.total_stickers - missingCount) / mainAlbum.total_stickers) * 100) : 0
+  const mainAlbumData = userAlbums[0]
+  const mainAlbum = mainAlbumData?.album
+  const missingCount = mainAlbumData?.missingCount || 0
+  const duplicateCount = mainAlbumData?.duplicateCount || 0
+  const ownedCount = mainAlbumData?.ownedCount || 0
+  const progressPercent = mainAlbum?.total_stickers && mainAlbum.total_stickers > 0 
+    ? Math.round((ownedCount / mainAlbum.total_stickers) * 100) 
+    : 0
 
   return (
     <div className="profile-page-root">
@@ -548,23 +538,17 @@ export default function ProfilePage() {
                 style={{ width: '100%', marginBottom: '0.5rem' }}
               />
             </div>
-            <div style={{ marginBottom: '1rem' }}>
-              <label style={{ fontSize: '0.75rem', fontWeight: 900, color: '#64748b', textTransform: 'uppercase', display: 'block', marginBottom: '0.5rem' }}>Mi Zona</label>
-              <input 
-                className="settings-input" 
-                value={locationName} 
-                onChange={e => setLocationName(e.target.value)} 
-                placeholder="Ej: Pocitos, Montevideo"
-                style={{ width: '100%', marginBottom: '0.5rem' }}
-              />
+            <div style={{ marginBottom: '1.5rem', marginTop: '1rem' }}>
+              <LocationSelector onLocationSaved={() => toast.success('Ubicación guardada.')} />
             </div>
+
             <button 
               className="btn-brand" 
               onClick={handleSave} 
               disabled={saving}
               style={{ width: '100%', marginBottom: '1.5rem', borderRadius: '1.25rem' }}
             >
-              {saving ? 'Guardando...' : 'Guardar Cambios'}
+              {saving ? 'Guardando...' : 'Guardar Perfil'}
             </button>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
@@ -581,9 +565,11 @@ export default function ProfilePage() {
               <button className="logout-btn" style={{ color: '#94a3b8' }} onClick={() => setShowAlphaModal(true)}>
                 🧪 Ver aviso Alpha
               </button>
-              <button className="logout-btn" style={{ color: '#10b981' }} onClick={() => navigate('/business')}>
-                🏪 FigusUY Negocios (Mi local)
-              </button>
+              {canAccessBusinessDashboard(profile) && (
+                <button className="logout-btn" style={{ color: '#10b981' }} onClick={() => navigate('/business')}>
+                  🏪 FigusUY Negocios (Mi local)
+                </button>
+              )}
               {isAdmin && (
                 <button className="logout-btn" style={{ color: '#ea580c' }} onClick={() => navigate('/admin')}>
                   🔐 Panel de Administración

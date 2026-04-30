@@ -54,16 +54,39 @@ export default function AlbumPage() {
 
   const total = selectedAlbum?.total_stickers || 980
 
-  const tabs = useMemo(
-    () => [
-      { key: 'base', label: `Base 1-${total}` },
-      { key: 'special_m', label: 'Especiales M' },
-      { key: 'promos', label: 'Promos' },
-      { key: 'missing', label: 'Faltantes' },
-      { key: 'duplicates', label: 'Repetidas' },
-    ],
-    [total]
-  )
+  const specialGroups = useMemo(() => {
+    if (!selectedAlbum?.special_codes || !Array.isArray(selectedAlbum.special_codes)) return {}
+    const grouped = {}
+    selectedAlbum.special_codes.forEach(code => {
+      const prefix = code.replace(/[0-9]/g, '').toUpperCase() || 'EXTRA'
+      if (!grouped[prefix]) grouped[prefix] = []
+      grouped[prefix].push(code)
+    })
+    return grouped
+  }, [selectedAlbum?.special_codes])
+
+  const tabs = useMemo(() => {
+    const baseTabs = [
+      { key: 'base', label: `Base 1-${total}` }
+    ]
+    
+    // Add dynamic special tabs
+    Object.keys(specialGroups).forEach(prefix => {
+      let label = `Especiales ${prefix}`
+      if (prefix === 'P' || prefix === 'PROMO') label = 'Promos'
+      else if (prefix === 'F') label = 'Extra F'
+      else if (prefix === 'M') label = 'Especiales M'
+      else if (prefix === 'LE' || prefix === 'LEGEND') label = 'Leyendas'
+      else if (prefix === 'EXTRA') label = 'Especiales'
+      
+      baseTabs.push({ key: `special_${prefix}`, label })
+    })
+
+    baseTabs.push({ key: 'missing', label: 'Faltantes' })
+    baseTabs.push({ key: 'duplicates', label: 'Repetidas' })
+
+    return baseTabs
+  }, [total, specialGroups])
 
   const ownedSet = useMemo(
     () => new Set(ownedStickers.map((s) => String(s.sticker_number))),
@@ -90,14 +113,13 @@ export default function AlbumPage() {
 
     if (activeTab === 'base') {
       result = Array.from({ length: total }, (_, i) => String(i + 1))
-    } else if (activeTab === 'special_m') {
-      result = Array.from({ length: 20 }, (_, i) => `M${i + 1}`)
-    } else if (activeTab === 'promos') {
-      result = ['P1', 'P2', 'P3', 'F1', 'F2']
     } else if (activeTab === 'missing') {
       result = Array.from(missingSet)
     } else if (activeTab === 'duplicates') {
       result = Array.from(duplicateSet)
+    } else if (activeTab.startsWith('special_')) {
+      const prefix = activeTab.replace('special_', '')
+      result = specialGroups[prefix] || []
     }
 
     if (!searchFilter.trim()) return result
@@ -110,7 +132,7 @@ export default function AlbumPage() {
       if (sData?.team?.toLowerCase().includes(query)) return true
       return false
     })
-  }, [activeTab, total, missingSet, duplicateSet, searchFilter, useAppStore])
+  }, [activeTab, total, missingSet, duplicateSet, searchFilter, specialGroups, useAppStore])
 
   const albumStickersMap = useMemo(() => {
     const map = {}
@@ -1437,7 +1459,12 @@ export default function AlbumPage() {
                 {[
                   { label: 'Ver faltantes', value: missingCount, colorClass: 'text-red', tab: 'missing' },
                   { label: 'Ver repetidas', value: duplicateCount, colorClass: 'text-emerald', tab: 'duplicates' },
-                  { label: 'Especiales M', value: 'M1+', colorClass: 'text-slate', tab: 'special_m' },
+                  ...Object.keys(specialGroups).map(prefix => ({
+                    label: prefix === 'M' ? 'Especiales M' : prefix === 'P' || prefix === 'PROMO' ? 'Promos' : `Esp. ${prefix}`,
+                    value: specialGroups[prefix].length > 0 ? `${specialGroups[prefix][0]}+` : '0',
+                    colorClass: 'text-slate',
+                    tab: `special_${prefix}`
+                  }))
                 ].map((item) => (
                   <button
                     key={item.tab}

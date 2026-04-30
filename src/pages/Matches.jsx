@@ -6,6 +6,7 @@ import { supabase } from '../lib/supabase'
 import MatchCard from '../components/MatchCard'
 import { useFavoritesStore } from '../stores/favoritesStore'
 import { usePremiumAccess } from '../hooks/usePremiumAccess'
+import LocationSelector from '../components/LocationSelector'
 
 const TABS = [
   { id: 'all',     label: 'Todos' },
@@ -76,24 +77,7 @@ export default function MatchesPage() {
   const isPlus     = planName.includes('plus')
 
   const handleGeoUpdate = () => {
-    if (!navigator.geolocation) {
-      alert('Tu navegador no soporta geolocalización')
-      return
-    }
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        try {
-          await supabase.from('profiles').update({ lat: pos.coords.latitude, lng: pos.coords.longitude }).eq('id', profile.id)
-          // Profile will update via authStore subscription or next reload, but let's refresh matches
-          handleRefresh()
-        } catch (err) {
-          console.error('Error al actualizar ubicación:', err)
-        }
-      },
-      () => {
-        alert('No se pudo obtener la ubicación')
-      }
-    )
+    // handled by LocationSelector now
   }
 
   return (
@@ -308,23 +292,8 @@ export default function MatchesPage() {
         </div>
 
         {tab === 'near' && !hasLocation && (
-          <div className="no-location-banner">
-            <span style={{ flex: 1 }}>📍 Activá tu ubicación para ver intercambios ordenados por distancia.</span>
-            <button 
-              onClick={handleGeoUpdate}
-              style={{
-                background: '#fde047',
-                color: '#422006',
-                border: 'none',
-                padding: '0.4rem 0.75rem',
-                borderRadius: '0.75rem',
-                fontWeight: 800,
-                fontSize: '0.75rem',
-                cursor: 'pointer'
-              }}
-            >
-              Activar ahora
-            </button>
+          <div style={{ marginTop: '1rem' }}>
+            <LocationSelector onLocationSaved={() => handleRefresh()} />
           </div>
         )}
       </div>

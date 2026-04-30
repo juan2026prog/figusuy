@@ -10,7 +10,6 @@ export default function HomePage() {
   const { profile, updateLocation } = useAuthStore()
   const { albums, userAlbums, selectedAlbum, fetchAlbums, fetchUserAlbums, selectAlbum, missingStickers } = useAppStore()
   const [greeting, setGreeting] = useState('')
-  const [geoStatus, setGeoStatus] = useState(null) // null | 'requesting' | 'done' | 'denied'
 
   useEffect(() => {
     fetchAlbums()
@@ -24,34 +23,7 @@ export default function HomePage() {
     else setGreeting('Buenas noches')
   }, [])
 
-  // Auto-request geolocation on Home page
-  useEffect(() => {
-    if (profile && !profile.lat && navigator.geolocation) {
-      setGeoStatus('requesting')
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          updateLocation(pos.coords.latitude, pos.coords.longitude)
-          setGeoStatus('done')
-        },
-        () => setGeoStatus('denied'),
-        { enableHighAccuracy: true, timeout: 10000 }
-      )
-    } else if (profile?.lat) {
-      setGeoStatus('done')
-    }
-  }, [profile?.id])
-
-  const handleRequestLocation = () => {
-    setGeoStatus('requesting')
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        updateLocation(pos.coords.latitude, pos.coords.longitude)
-        setGeoStatus('done')
-      },
-      () => setGeoStatus('denied'),
-      { enableHighAccuracy: true, timeout: 10000 }
-    )
-  }
+  // Geolocation auto-request removed from Home per requirements
 
   const handleSelectAlbum = async (album) => {
     const res = await selectAlbum(album, profile?.id)
@@ -91,39 +63,7 @@ export default function HomePage() {
         </p>
       </div>
 
-      {/* Geolocation Banner */}
-      {geoStatus === 'denied' && (
-        <div className="animate-fade-in" style={{
-          background: 'linear-gradient(135deg, #fef3c7, #fde68a)',
-          borderRadius: 'var(--radius-xl)', padding: '0.875rem 1rem',
-          marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.75rem',
-          border: '1px solid #f59e0b33',
-        }}>
-          <span style={{ fontSize: '1.5rem' }}>📍</span>
-          <div style={{ flex: 1 }}>
-            <p style={{ fontWeight: 700, fontSize: '0.875rem', color: '#92400e' }}>Ubicación desactivada</p>
-            <p style={{ fontSize: '0.75rem', color: '#a16207' }}>Activá la ubicación para encontrar usuarios cerca tuyo.</p>
-          </div>
-          <button onClick={handleRequestLocation} style={{
-            padding: '0.375rem 0.75rem', borderRadius: '0.375rem',
-            background: '#f59e0b', color: 'white', border: 'none',
-            fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer',
-          }}>Activar</button>
-        </div>
-      )}
-
-      {geoStatus === 'done' && profile?.lat && (
-        <div className="animate-fade-in" style={{
-          background: 'var(--color-surface)', borderRadius: 'var(--radius-lg)',
-          padding: '0.625rem 0.875rem', marginBottom: '1rem',
-          display: 'flex', alignItems: 'center', gap: '0.5rem',
-          border: '1px solid var(--color-border-light)', fontSize: '0.75rem',
-        }}>
-          <span>📍</span>
-          <span style={{ color: '#10b981', fontWeight: 600 }}>Ubicación activa</span>
-          <span style={{ color: 'var(--color-text-muted)' }}>· {profile.city || profile.department || `${profile.lat.toFixed(2)}, ${profile.lng.toFixed(2)}`}</span>
-        </div>
-      )}
+      {/* Geolocation Banner Removed */}
 
       {/* CTA Button */}
       <button
