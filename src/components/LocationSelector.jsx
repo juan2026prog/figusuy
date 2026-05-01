@@ -30,7 +30,9 @@ export default function LocationSelector({ onLocationSaved, className = '' }) {
       setMode('initial');
       if (onLocationSaved) onLocationSaved(coords);
     } catch (err) {
-      setErrorMsg(err.toString());
+      console.error('Location GPS Error:', err);
+      const msg = err.message || (typeof err === 'string' ? err : 'Error desconocido al obtener ubicación.');
+      setErrorMsg(msg);
       setMode('manual');
     }
   };
@@ -67,7 +69,9 @@ export default function LocationSelector({ onLocationSaved, className = '' }) {
       setMode('initial');
       if (onLocationSaved) onLocationSaved({ department, neighborhood });
     } catch (err) {
-      setErrorMsg('Error al guardar la ubicación manual.');
+      console.error('Location Manual Error:', err);
+      const msg = err.message || 'Error al guardar la ubicación manual.';
+      setErrorMsg(msg);
       setMode('manual');
     }
   };
