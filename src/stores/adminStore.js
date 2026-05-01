@@ -131,19 +131,19 @@ export const useAdminStore = create((set, get) => ({
         .from('profiles')
         .select('*')
         .order('created_at', { ascending: false })
-      if (pErr) console.error('fetchUsers profiles error:', pErr)
+      if (pErr) throw pErr
       
       const { data: roles, error: rErr } = await supabase
         .from('user_roles')
         .select('user_id, role')
-      if (rErr) console.error('fetchUsers roles error:', rErr)
+      if (rErr) throw rErr
       
       // Merge roles into profiles
       const roleMap = {}
       ;(roles || []).forEach(r => { roleMap[r.user_id] = r.role })
       const merged = (profiles || []).map(p => ({
         ...p,
-        user_roles: roleMap[p.id] ? { role: roleMap[p.id] } : null
+        user_roles: roleMap[p.id] ? [{ role: roleMap[p.id] }] : []
       }))
       
       set({ users: merged })
@@ -156,28 +156,39 @@ export const useAdminStore = create((set, get) => ({
   },
 
   updateUser: async (userId, updates) => {
-    await supabase.from('profiles').update(updates).eq('id', userId)
-    get().fetchUsers()
+    const { error } = await supabase.from('profiles').update(updates).eq('id', userId)
+    if (error) {
+      console.error('Error updating user:', error)
+      return error
+    }
+    await get().fetchUsers()
   },
 
   setUserRole: async (userId, role) => {
-    await supabase.from('user_roles').upsert({ user_id: userId, role }, { onConflict: 'user_id' })
-    get().fetchUsers()
+    const { error } = await supabase.from('user_roles').upsert({ user_id: userId, role }, { onConflict: 'user_id' })
+    if (error) {
+      console.error('Error setting user role:', error)
+      return error
+    }
+    await get().fetchUsers()
   },
 
   toggleUserBlock: async (userId, blocked) => {
-    await supabase.from('profiles').update({ is_blocked: blocked }).eq('id', userId)
-    get().fetchUsers()
+    const { error } = await supabase.from('profiles').update({ is_blocked: blocked }).eq('id', userId)
+    if (error) console.error('Error toggling block:', error)
+    await get().fetchUsers()
   },
 
   toggleUserPremium: async (userId, premium) => {
-    await supabase.from('profiles').update({ is_premium: premium }).eq('id', userId)
-    get().fetchUsers()
+    const { error } = await supabase.from('profiles').update({ is_premium: premium }).eq('id', userId)
+    if (error) console.error('Error toggling premium:', error)
+    await get().fetchUsers()
   },
 
   toggleUserVerified: async (userId, verified) => {
-    await supabase.from('profiles').update({ is_verified: verified }).eq('id', userId)
-    get().fetchUsers()
+    const { error } = await supabase.from('profiles').update({ is_verified: verified }).eq('id', userId)
+    if (error) console.error('Error toggling verified:', error)
+    await get().fetchUsers()
   },
 
   // ========== ALBUMS ==========
@@ -276,7 +287,15 @@ export const useAdminStore = create((set, get) => ({
   },
 
   updateSetting: async (key, value, userId) => {
-    await supabase.from('app_settings').update({ value: JSON.stringify(value), updated_by: userId, updated_at: new Date().toISOString() }).eq('key', key)
+    const payload = { value: typeof value === 'string' ? value : JSON.stringify(value), updated_by: userId, updated_at: new Date().toISOString() }
+    const { error } = await supabase.from('app_settings').update(payload).eq('key', key)
+    if (error) {
+      console.error('updateSetting error:', error)
+      // Fallback: try upsert
+      const { error: upsertErr } = await supabase.from('app_settings').upsert({ key, ...payload }, { onConflict: 'key' })
+      if (upsertErr) console.error('updateSetting upsert fallback error:', upsertErr)
+    }
+    get().logAction(userId, 'UPDATE_SETTING', 'app_setting', key, { value })
     get().fetchSettings()
   },
 
@@ -539,11 +558,16 @@ export const useAdminStore = create((set, get) => ({
 
   updateAlgorithmConfig: async (key, value, adminId) => {
     try {
-      const { error } = await supabase.from('algorithm_config').update({ config_value: JSON.stringify(value), updated_by: adminId, updated_at: new Date().toISOString() }).eq('config_key', key)
-      if (error) throw error
+      const updates = { config_value: typeof value === 'string' ? value : JSON.stringify(value), updated_by: adminId, updated_at: new Date().toISOString() }
+      const { error } = await supabase.from('algorithm_config').update(updates).eq('config_key', key)
+      if (error) {
+        console.error('updateAlgorithmConfig error:', error)
+        // Try upsert fallback
+        const { error: upsertErr } = await supabase.from('algorithm_config').upsert({ config_key: key, ...updates }, { onConflict: 'config_key' })
+        if (upsertErr) console.error('updateAlgorithmConfig upsert fallback error:', upsertErr)
+      }
     } catch (e) {
-      console.error('updateAlgorithmConfig error:', e)
-      // Call an RPC if needed in the future, for now just log
+      console.error('updateAlgorithmConfig exception:', e)
     }
     get().logAction(adminId, 'UPDATE_ALGORITHM', 'algorithm_config', key, { value })
     get().fetchAlgorithmConfig()

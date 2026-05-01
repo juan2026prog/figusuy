@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { SponsoredPointCard } from '../components/sponsored/SponsoredComponents'
 import { getUserLocation } from '../utils/location'
+import { useAuthStore } from '../stores/authStore'
 
 export default function Stores() {
   const [tab, setTab] = useState('all')
@@ -14,9 +15,16 @@ export default function Stores() {
 
   // Location filters
   const [selectedCountry, setSelectedCountry] = useState('Uruguay')
-  const [selectedDepartment, setSelectedDepartment] = useState('Todos')
   const [selectedZone, setSelectedZone] = useState('Todos')
-  const [userCoords, setUserCoords] = useState(null)
+  const { profile } = useAuthStore()
+  const [userCoords, setUserCoords] = useState(profile?.lat ? { lat: profile.lat, lng: profile.lng } : null)
+
+  // Sync with profile if it changes (e.g. from GPS watch)
+  useEffect(() => {
+    if (profile?.lat && profile?.lng) {
+      setUserCoords({ lat: profile.lat, lng: profile.lng })
+    }
+  }, [profile?.lat, profile?.lng])
 
   useEffect(() => {
     const fetchLocations = async () => {
@@ -166,6 +174,10 @@ export default function Stores() {
   }
 
   const handleCercaMio = async () => {
+    if (profile?.lat && profile?.lng) {
+      setUserCoords({ lat: profile.lat, lng: profile.lng })
+      return
+    }
     try {
       const coords = await getUserLocation(10000);
       setUserCoords(coords);

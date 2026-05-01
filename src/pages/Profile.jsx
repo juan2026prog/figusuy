@@ -24,7 +24,6 @@ export default function ProfilePage() {
   const [displayName, setDisplayName] = useState(profile?.name || '')
   const [notifEnabled, setNotifEnabled] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [geoLoading, setGeoLoading] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
   const [showAlphaModal, setShowAlphaModal] = useState(false)
   const initial = profile?.name?.[0]?.toUpperCase() || '?'
@@ -40,6 +39,7 @@ export default function ProfilePage() {
           if (data?.role && data.role !== 'user') setIsAdmin(true)
         })
       fetchFavorites(profile.id)
+      useAppStore.getState().fetchUserAlbums(profile.id)
     }
   }, [profile])
 
@@ -405,9 +405,6 @@ export default function ProfilePage() {
             </div>
           </div>
           <div className="action-btns">
-            <button className="btn-outline" onClick={handleGeoUpdate} disabled={geoLoading}>
-              {geoLoading ? 'Cargando...' : 'Actualizar ubicación'}
-            </button>
             <button className="btn-brand" onClick={() => navigate('/matches')}>Ver mis intercambios</button>
           </div>
         </div>

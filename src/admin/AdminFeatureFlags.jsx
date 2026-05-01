@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../stores/authStore'
+import { useFeatureFlagStore } from '../stores/featureFlagStore'
+import { useToast } from '../components/Toast'
 
 const card = { background: '#ffffff', borderRadius: '1rem', padding: '1.5rem', border: '1px solid #e7e5e4', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }
 const badge = (color, bg) => ({ fontSize: '0.6875rem', fontWeight: 700, padding: '0.2rem 0.5rem', borderRadius: '0.375rem', color, background: bg, textTransform: 'uppercase', letterSpacing: '0.03em' })
@@ -158,68 +160,64 @@ function FlagCard({ flag, onToggle, onKillSwitch, onUpdate, parentFlag }) {
 
 export default function AdminFeatureFlags() {
   const { profile } = useAuthStore()
-  const [flags, setFlags] = useState([])
-  const [auditLog, setAuditLog] = useState([])
-  const [loading, setLoading] = useState(true)
+  const { 
+    flags, auditLog, loading, fetchFlags, fetchAuditLog, 
+    toggleFlag, toggleKillSwitch, updateFlag, emergencyKillAll, restoreAll 
+  } = useFeatureFlagStore()
+  const toast = useToast()
+
   const [filter, setFilter] = useState('all')
   const [search, setSearch] = useState('')
   const [tab, setTab] = useState('flags') // flags | audit
   const [confirmKillAll, setConfirmKillAll] = useState(false)
 
-  useEffect(() => { fetchFlags(); fetchAudit() }, [])
-
-  const fetchFlags = async () => {
-    setLoading(true)
-    try {
-      const { data, error } = await supabase.from('feature_flags').select('*').order('scope').order('name')
-      if (error) throw error
-      setFlags(data || [])
-    } catch (err) {
-      console.error('Error fetching flags standard, trying RPC:', err)
-      const { data: rpcData, error: rpcErr } = await supabase.rpc('admin_get_feature_flags')
-      if (rpcErr) {
-        console.error('RPC also failed:', rpcErr)
-        setFlags([])
-      } else {
-        setFlags(rpcData || [])
-      }
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const fetchAudit = async () => {
-    const { data } = await supabase.from('feature_flag_audit').select('*, changer:changed_by(name, email)').order('created_at', { ascending: false }).limit(50)
-    setAuditLog(data || [])
-  }
+  useEffect(() => { 
+    fetchFlags()
+    fetchAuditLog() 
+  }, [])
 
   const handleToggle = async (key, enabled) => {
-    await supabase.from('feature_flags').update({ is_enabled: enabled, updated_by: profile?.id, updated_at: new Date().toISOString() }).eq('feature_key', key)
-    await supabase.from('feature_flag_audit').insert({ feature_key: key, action: enabled ? 'enable' : 'disable', changed_by: profile?.id, old_value: { is_enabled: !enabled }, new_value: { is_enabled: enabled } })
-    fetchFlags(); fetchAudit()
+    const err = await toggleFlag(key, enabled, profile?.id)
+    if (err) toast.error('Error al cambiar estado: ' + err.message)
+    else toast.success(`Feature ${enabled ? 'activada' : 'desactivada'}`)
+    fetchAuditLog()
   }
 
   const handleKillSwitch = async (key, killed) => {
-    await supabase.from('feature_flags').update({ kill_switch: killed, updated_by: profile?.id, updated_at: new Date().toISOString() }).eq('feature_key', key)
-    await supabase.from('feature_flag_audit').insert({ feature_key: key, action: killed ? 'kill_switch_on' : 'kill_switch_off', changed_by: profile?.id, old_value: { kill_switch: !killed }, new_value: { kill_switch: killed } })
-    fetchFlags(); fetchAudit()
+    const err = await toggleKillSwitch(key, killed, profile?.id)
+    if (err) toast.error('Error en Kill Switch: ' + err.message)
+    else toast.success(killed ? '🚨 Feature desactivada (Kill)' : '✅ Feature restaurada')
+    fetchAuditLog()
   }
 
   const handleUpdate = async (key, updates) => {
-    await supabase.from('feature_flags').update({ ...updates, updated_by: profile?.id, updated_at: new Date().toISOString() }).eq('feature_key', key)
-    await supabase.from('feature_flag_audit').insert({ feature_key: key, action: 'update', changed_by: profile?.id, new_value: updates })
-    fetchFlags(); fetchAudit()
+    const err = await updateFlag(key, updates, profile?.id)
+    if (err) toast.error('Error al actualizar: ' + err.message)
+    else toast.success('Configuración guardada')
+    fetchAuditLog()
   }
 
   const handleEmergencyKillAll = async () => {
-    await supabase.rpc('emergency_kill_all_features')
+    try {
+      const err = await emergencyKillAll()
+      if (err) throw err
+      toast.success('🚨 EMERGENCIA: Todas las funciones apagadas')
+    } catch (err) {
+      toast.error('Fallo al activar emergencia: ' + err.message)
+    }
     setConfirmKillAll(false)
-    fetchFlags(); fetchAudit()
+    fetchAuditLog()
   }
 
   const handleRestoreAll = async () => {
-    await supabase.rpc('restore_all_features')
-    fetchFlags(); fetchAudit()
+    try {
+      const err = await restoreAll()
+      if (err) throw err
+      toast.success('✅ Sistema restaurado correctamente')
+    } catch (err) {
+      toast.error('Fallo al restaurar: ' + err.message)
+    }
+    fetchAuditLog()
   }
 
   const modules = flags.filter(f => f.scope === 'module')

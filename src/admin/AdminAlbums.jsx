@@ -22,14 +22,45 @@ export default function AdminAlbums() {
   const [form, setForm] = useState({ name: '', year: new Date().getFullYear(), total_stickers: 670, editorial: '', country: 'Uruguay', category: 'deportes', status: 'active', is_active: true, special_codes: '[]', images: [] })
   const [uploadingFiles, setUploadingFiles] = useState(false)
   const [uploadError, setUploadError] = useState('')
+  const [editingCodes, setEditingCodes] = useState([]) // Array of { prefix, label }
 
   useEffect(() => { fetchAllAlbums() }, [])
 
   const resetForm = () => {
-    setForm({ name: '', year: new Date().getFullYear(), total_stickers: 670, editorial: '', country: 'Uruguay', category: 'deportes', status: 'active', is_active: true, special_codes: '[]', images: [] })
+    setForm({ name: '', year: new Date().getFullYear(), total_stickers: 670, editorial: '', country: 'Uruguay', category: 'deportes', status: 'active', is_active: true, images: [] })
+    setEditingCodes([])
     setEditing(null)
     setShowForm(false)
     setUploadError('')
+  }
+
+  const parseSpecialCodes = (codes) => {
+    if (!codes) return []
+    if (Array.isArray(codes)) {
+      return codes.map(c => ({ prefix: c, label: `Especiales ${c}`, sequence: '' }))
+    }
+    if (typeof codes === 'object') {
+      return Object.entries(codes).map(([prefix, val]) => {
+        if (typeof val === 'object' && val !== null) {
+          return { prefix, label: val.label || '', sequence: val.sequence || '' }
+        }
+        return { prefix, label: val || '', sequence: '' }
+      })
+    }
+    return []
+  }
+
+  const serializeSpecialCodes = (codesArray) => {
+    const obj = {}
+    codesArray.forEach(c => {
+      if (c.prefix) {
+        obj[c.prefix.toUpperCase()] = {
+          label: c.label || `Especiales ${c.prefix}`,
+          sequence: c.sequence || ''
+        }
+      }
+    })
+    return obj
   }
 
   const handleEdit = (album) => {
@@ -38,9 +69,9 @@ export default function AdminAlbums() {
       editorial: album.editorial || '', country: album.country || 'Uruguay',
       category: album.category || 'deportes', status: album.status || 'active',
       is_active: album.is_active !== false,
-      special_codes: JSON.stringify(album.special_codes || []),
       images: album.images || (album.cover_url ? [album.cover_url] : []),
     })
+    setEditingCodes(parseSpecialCodes(album.special_codes))
     setEditing(album.id)
     setShowForm(true)
   }
@@ -50,9 +81,9 @@ export default function AdminAlbums() {
       name: `${album.name} (copia)`, year: album.year, total_stickers: album.total_stickers,
       editorial: album.editorial || '', country: album.country || 'Uruguay',
       category: album.category || 'deportes', status: 'coming_soon', is_active: false,
-      special_codes: JSON.stringify(album.special_codes || []),
       images: album.images || (album.cover_url ? [album.cover_url] : []),
     })
+    setEditingCodes(parseSpecialCodes(album.special_codes))
     setEditing(null)
     setShowForm(true)
   }
@@ -73,9 +104,9 @@ export default function AdminAlbums() {
       status: form.status,
       is_active: form.is_active,
       images: form.images || [],
-      cover_url: form.images && form.images.length > 0 ? form.images[0] : null
+      cover_url: form.images && form.images.length > 0 ? form.images[0] : null,
+      special_codes: serializeSpecialCodes(editingCodes)
     }
-    try { payload.special_codes = JSON.parse(form.special_codes) } catch { payload.special_codes = [] }
     
     let error
     if (editing) {
@@ -274,10 +305,85 @@ export default function AdminAlbums() {
               </div>
             </div>
 
-            <div style={{ gridColumn: '1 / -1' }}>
-              <label style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '0.375rem' }}>Códigos especiales (JSON)</label>
-              <input style={input} value={form.special_codes} onChange={e => setForm({ ...form, special_codes: e.target.value })} placeholder='["M1","M2","LE1","PROMO1"]' />
-              <p style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '0.25rem' }}>IDs de figuritas que no son numéricas.</p>
+            <div style={{ gridColumn: '1 / -1', background: '#fff7ed', padding: '1.25rem', borderRadius: '1rem', border: '1px solid #ffedd5' }}>
+              <label style={{ fontSize: '0.875rem', fontWeight: 800, color: '#9a3412', display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                <span className="material-symbols-outlined" style={{ color: '#ea580c' }}>category</span>
+                Grupos Especiales (Promos, Escudos, etc.)
+              </label>
+              <p style={{ fontSize: '0.75rem', color: '#7c2d12', opacity: 0.8, marginBottom: '1.25rem' }}>Define prefijos (ej: "P") y su nombre. El sistema creará una pestaña en el álbum para estas figuritas.</p>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                {editingCodes.map((c, i) => (
+                  <div key={i} style={{ display: 'flex', gap: '0', alignItems: 'stretch', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', borderRadius: '0.625rem', overflow: 'hidden', border: '1px solid #cbd5e1' }}>
+                    <div style={{ background: '#f1f5f9', borderRight: '1px solid #cbd5e1', display: 'flex', alignItems: 'center', padding: '0 0.6rem', fontSize: '0.7rem', fontWeight: 700, color: '#64748b', whiteSpace: 'nowrap' }}>
+                      Prefijo
+                    </div>
+                    <input 
+                      placeholder="P" 
+                      value={c.prefix} 
+                      onChange={e => {
+                        const next = [...editingCodes]; 
+                        next[i].prefix = e.target.value.toUpperCase(); 
+                        setEditingCodes(next)
+                      }}
+                      style={{ border: 'none', padding: '0.625rem 0.5rem', fontSize: '0.875rem', outline: 'none', width: '3rem', textAlign: 'center', fontWeight: 800, color: '#ea580c' }} 
+                    />
+                    <div style={{ background: '#f1f5f9', borderLeft: '1px solid #cbd5e1', borderRight: '1px solid #cbd5e1', display: 'flex', alignItems: 'center', padding: '0 0.6rem', fontSize: '0.7rem', fontWeight: 700, color: '#64748b', whiteSpace: 'nowrap' }}>
+                      Nombre
+                    </div>
+                    <input 
+                      placeholder="Promo Coca Cola" 
+                      value={c.label} 
+                      onChange={e => {
+                        const next = [...editingCodes]; 
+                        next[i].label = e.target.value; 
+                        setEditingCodes(next)
+                      }}
+                      style={{ border: 'none', padding: '0.625rem 0.75rem', fontSize: '0.875rem', outline: 'none', flex: 2, color: '#0f172a', minWidth: '8rem' }} 
+                    />
+                    <div style={{ background: '#f8fafc', borderLeft: '1px solid #cbd5e1', borderRight: '1px solid #cbd5e1', display: 'flex', alignItems: 'center', padding: '0 0.6rem', fontSize: '0.7rem', fontWeight: 700, color: '#334155', whiteSpace: 'nowrap' }}>
+                      Secuencia (1-34, A-M)
+                    </div>
+                    <input 
+                      placeholder="1-34" 
+                      value={c.sequence} 
+                      onChange={e => {
+                        const next = [...editingCodes]; 
+                        next[i].sequence = e.target.value; 
+                        setEditingCodes(next)
+                      }}
+                      style={{ border: 'none', padding: '0.625rem 0.75rem', fontSize: '0.875rem', outline: 'none', flex: 1, color: '#0369a1', fontWeight: 600, background: '#f0f9ff' }} 
+                    />
+                    <button 
+                      type="button" 
+                      onClick={() => {
+                        const next = [...editingCodes]; 
+                        next.splice(i, 1); 
+                        setEditingCodes(next)
+                      }}
+                      style={{ background: '#fff1f2', color: '#e11d48', border: 'none', borderLeft: '1px solid #fecdd3', padding: '0 0.75rem', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                      title="Eliminar grupo"
+                    >
+                      <span className="material-symbols-outlined" style={{ fontSize: '1.25rem' }}>delete</span>
+                    </button>
+                  </div>
+                ))}
+                
+                <button 
+                  type="button" 
+                  onClick={() => setEditingCodes([...editingCodes, { prefix: '', label: '', sequence: '' }])}
+                  style={{ 
+                    marginTop: '0.5rem', padding: '0.75rem', borderRadius: '0.625rem', background: 'white', color: '#ea580c', border: '2px dashed #ff9d66', 
+                    fontSize: '0.8125rem', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.borderColor = '#ea580c'}
+                  onMouseLeave={e => e.currentTarget.style.borderColor = '#ff9d66'}
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: '1.25rem' }}>add_circle</span>
+                  Agregar Grupo Especial
+                </button>
+              </div>
             </div>
 
             {/* IMÁGENES UPLOAD */}

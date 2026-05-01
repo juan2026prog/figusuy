@@ -28,18 +28,27 @@ export default function AlbumPage() {
 
   const [mode, setMode] = useState('have')
   const [viewMode, setViewMode] = useState('numbers') // 'numbers' | 'checklist'
-  const [checklistImagesEnabled, setChecklistImagesEnabled] = useState(true)
+  const [checklistImagesEnabled, setChecklistImagesEnabled] = useState(false)
 
   useEffect(() => {
     // Fetch checklist setting
     supabase.from('app_settings').select('value').eq('key', 'checklist_images_enabled').single()
       .then(({ data }) => {
         if (data) {
-          const val = typeof data.value === 'string' ? data.value.replace(/"/g, '') : data.value
-          setChecklistImagesEnabled(val === true || val === 'true')
+          // Normalize value from JSONB/Text
+          let val = data.value
+          if (typeof val === 'string') {
+            val = val.replace(/"/g, '').toLowerCase()
+          }
+          const isEnabled = val === true || val === 'true'
+          setChecklistImagesEnabled(isEnabled)
+          // If disabled and user is in checklist mode, force back to numbers
+          if (!isEnabled && viewMode === 'checklist') {
+            setViewMode('numbers')
+          }
         }
       })
-  }, [])
+  }, [viewMode])
   const [searchFilter, setSearchFilter] = useState('')
   const [activeTab, setActiveTab] = useState('base')
   const [showBulk, setShowBulk] = useState(false)
@@ -54,30 +63,84 @@ export default function AlbumPage() {
 
   const total = selectedAlbum?.total_stickers || 980
 
+  const albumStickers = useAppStore(state => state.albumStickers)
+
   const specialGroups = useMemo(() => {
-    if (!selectedAlbum?.special_codes || !Array.isArray(selectedAlbum.special_codes)) return {}
+    if (!selectedAlbum?.special_codes) return {}
+    
+    const config = selectedAlbum.special_codes
     const grouped = {}
-    selectedAlbum.special_codes.forEach(code => {
-      const prefix = code.replace(/[0-9]/g, '').toUpperCase() || 'EXTRA'
-      if (!grouped[prefix]) grouped[prefix] = []
-      grouped[prefix].push(code)
-    })
+
+    if (Array.isArray(config)) {
+      config.forEach(code => {
+        const prefix = String(code).replace(/[0-9]/g, '').toUpperCase() || 'EXTRA'
+        if (!grouped[prefix]) grouped[prefix] = []
+        grouped[prefix].push(String(code))
+      })
+    } else if (typeof config === 'object') {
+      const prefixes = Object.keys(config)
+      
+      prefixes.forEach(prefix => {
+        const groupConfig = config[prefix]
+        const sequence = typeof groupConfig === 'object' ? groupConfig.sequence : ''
+        
+        if (sequence) {
+          let codes = []
+          const numericRange = sequence.match(/^(\d+)-(\d+)$/)
+          const alphaRange = sequence.match(/^([A-Z])-([A-Z])$/i)
+          
+          if (numericRange) {
+            const start = parseInt(numericRange[1])
+            const end = parseInt(numericRange[2])
+            for (let i = start; i <= end; i++) codes.push(`${prefix}${i}`)
+          } else if (alphaRange) {
+            const start = alphaRange[1].toUpperCase().charCodeAt(0)
+            const end = alphaRange[2].toUpperCase().charCodeAt(0)
+            for (let i = start; i <= end; i++) codes.push(`${prefix}${String.fromCharCode(i)}`)
+          } else {
+            codes = sequence.split(',').map(s => `${prefix}${s.trim()}`)
+          }
+          grouped[prefix] = codes
+        } else {
+          // Scan stickers for prefix
+          albumStickers.forEach(s => {
+            const num = String(s.sticker_number)
+            if (num.startsWith(prefix)) {
+              if (!grouped[prefix]) grouped[prefix] = []
+              grouped[prefix].push(num)
+            }
+          })
+        }
+      })
+    }
+    
     return grouped
-  }, [selectedAlbum?.special_codes])
+  }, [selectedAlbum?.special_codes, albumStickers])
 
   const tabs = useMemo(() => {
     const baseTabs = [
       { key: 'base', label: `Base 1-${total}` }
     ]
     
-    // Add dynamic special tabs
-    Object.keys(specialGroups).forEach(prefix => {
-      let label = `Especiales ${prefix}`
-      if (prefix === 'P' || prefix === 'PROMO') label = 'Promos'
-      else if (prefix === 'F') label = 'Extra F'
-      else if (prefix === 'M') label = 'Especiales M'
-      else if (prefix === 'LE' || prefix === 'LEGEND') label = 'Leyendas'
-      else if (prefix === 'EXTRA') label = 'Especiales'
+    const config = selectedAlbum?.special_codes || {}
+    const isMapping = !Array.isArray(config) && typeof config === 'object'
+
+    // Add dynamic special tabs based on config keys
+    const prefixes = isMapping ? Object.keys(config) : (Array.isArray(config) ? config : [])
+    
+    prefixes.forEach(prefix => {
+      const groupConfig = config[prefix]
+      let label = typeof groupConfig === 'object' ? groupConfig.label : groupConfig
+      
+      // Fallback labels if no mapping provided
+      if (!label) {
+        if (prefix === 'P' || prefix === 'PROMO') label = 'Promos'
+        else if (prefix === 'F') label = 'Extra F'
+        else if (prefix === 'M') label = 'Especiales M'
+        else if (prefix === 'LE' || prefix === 'LEGEND') label = 'Leyendas'
+        else if (prefix === 'EXTRA') label = 'Especiales'
+        else label = `Especiales ${prefix}`
+      }
       
       baseTabs.push({ key: `special_${prefix}`, label })
     })
@@ -86,7 +149,7 @@ export default function AlbumPage() {
     baseTabs.push({ key: 'duplicates', label: 'Repetidas' })
 
     return baseTabs
-  }, [total, specialGroups])
+  }, [total, specialGroups, selectedAlbum?.special_codes])
 
   const ownedSet = useMemo(
     () => new Set(ownedStickers.map((s) => String(s.sticker_number))),
@@ -1254,12 +1317,14 @@ export default function AlbumPage() {
                 >
                   Números
                 </button>
-                <button 
-                  className={`view-toggle-btn ${viewMode === 'checklist' ? 'active' : ''}`}
-                  onClick={() => setViewMode('checklist')}
-                >
-                  Checklist
-                </button>
+                {checklistImagesEnabled && (
+                  <button 
+                    className={`view-toggle-btn ${viewMode === 'checklist' ? 'active' : ''}`}
+                    onClick={() => setViewMode('checklist')}
+                  >
+                    Checklist Visual
+                  </button>
+                )}
               </div>
 
               <div className="control-title-row">

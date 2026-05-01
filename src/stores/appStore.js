@@ -79,6 +79,7 @@ export const useAppStore = create((set, get) => ({
         set({ loading: false })
         return { error }
       }
+      await get().fetchUserAlbums(userId)
     }
 
     await get().fetchStickers(userId, album.id)

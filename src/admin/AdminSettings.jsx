@@ -6,6 +6,31 @@ import { supabase } from '../lib/supabase'
 const card = { background: '#ffffff', borderRadius: '1rem', padding: '1.5rem', border: '1px solid #e7e5e4', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }
 const input = { width: '100%', padding: '0.625rem 0.875rem', borderRadius: '0.5rem', border: '1px solid #e2e8f0', fontSize: '0.875rem', outline: 'none', background: '#f8fafc' }
 
+const fallbackDescriptions = {
+  // Algorithm
+  match_weight_active: 'Peso que se le da a la actividad reciente del usuario en el cálculo de matches. Un valor más alto prioriza usuarios activos.',
+  match_weight_compatibility: 'Peso de la compatibilidad de figuritas (faltantes vs repetidas) en el score de matching. Es el factor principal del algoritmo.',
+  match_weight_mutual: 'Peso del beneficio mutuo — cuántas figuritas pueden intercambiarse en ambas direcciones. El más importante del algoritmo.',
+  match_weight_rating: 'Peso de la reputación/valoración del usuario. Usuarios bien calificados aparecen más arriba en los resultados.',
+  match_weight_premium_boost: 'Multiplicador adicional para usuarios premium en el ranking de resultados. Solo actúa como desempate, no altera la relevancia base.',
+  match_max_free: 'Cantidad máxima de matches (cruces) visibles por día para usuarios del plan gratuito. Los premium no tienen límite.',
+  // General
+  app_name: 'Nombre de la aplicación mostrado en toda la interfaz, notificaciones, emails y SEO.',
+  primary_country: 'País principal de operación. Afecta la geolocalización por defecto y las opciones de departamento/barrio.',
+  currency: 'Moneda predeterminada para precios, planes premium y pagos dentro de la plataforma.',
+  maintenance_mode: 'Si está en true, la app muestra un cartel de mantenimiento y bloquea el acceso a usuarios no-admin.',
+  support_email: 'Email de soporte que se muestra a los usuarios para reportar problemas o hacer consultas.',
+  // Limits
+  free_max_contacts: 'Cantidad máxima de contactos/chats que un usuario gratuito puede iniciar por mes.',
+  free_max_albums: 'Cantidad máxima de álbumes que un usuario gratuito puede tener activos simultáneamente.',
+  // Safety
+  safety_message: 'Mensaje de seguridad que se muestra a los usuarios antes de coordinar un intercambio presencial.',
+  // Monetization
+  checklist_images_enabled: 'Muestra imágenes de figuritas en el checklist del álbum. Si se desactiva, se muestran solo números/nombres.',
+  premium_free_mode: 'Modo de acceso gratuito a funciones premium. disabled = cobro normal, days = trial, everyone = gratis total.',
+  premium_free_days: 'Cantidad de días de prueba gratuita de funciones premium para nuevos usuarios.',
+}
+
 export default function AdminSettings() {
   const { settings, fetchSettings, updateSetting, users, fetchUsers, logAction } = useAdminStore()
   const { profile } = useAuthStore()
@@ -42,17 +67,15 @@ export default function AdminSettings() {
   useEffect(() => {
     if (planSearch.length > 1 && !planTarget) {
       const timer = setTimeout(async () => {
-        // Use standard query or RPC
-        const { data, error } = await supabase.from('profiles')
-          .select('id, name, email, plan_name, is_premium')
-          .or(`name.ilike.%${planSearch}%,email.ilike.%${planSearch}%`)
-          .limit(8)
-        
+        const { data, error } = await supabase.rpc('admin_search_users', { search_term: planSearch })
         if (!error && data) setMatchedUsers(data)
         else {
-          // Fallback to RPC if RLS blocks
-          const { data: rpcData } = await supabase.rpc('admin_search_users', { search_term: planSearch })
-          if (rpcData) setMatchedUsers(rpcData)
+          // Fallback just in case RPC fails (legacy)
+          const { data: qData } = await supabase.from('profiles')
+            .select('id, name, email, plan_name, is_premium')
+            .or(`name.ilike.%${planSearch}%,email.ilike.%${planSearch}%`)
+            .limit(8)
+          if (qData) setMatchedUsers(qData)
         }
       }, 400)
       return () => clearTimeout(timer)
@@ -64,16 +87,15 @@ export default function AdminSettings() {
   useEffect(() => {
     if (locSearch.length > 1 && !planTarget) {
       const timer = setTimeout(async () => {
-        const { data, error } = await supabase.from('locations')
-          .select('id, name, business_plan')
-          .ilike('name', `%${locSearch}%`)
-          .limit(8)
-        
+        const { data, error } = await supabase.rpc('admin_search_locations', { search_term: locSearch })
         if (!error && data) setMatchedLocations(data)
         else {
-          // Fallback to RPC if RLS blocks
-          const { data: rpcData } = await supabase.rpc('admin_search_locations', { search_term: locSearch })
-          if (rpcData) setMatchedLocations(rpcData)
+          // Fallback
+          const { data: qData } = await supabase.from('locations')
+            .select('id, name, business_plan')
+            .ilike('name', `%${locSearch}%`)
+            .limit(8)
+          if (qData) setMatchedLocations(qData)
         }
       }, 400)
       return () => clearTimeout(timer)
@@ -165,7 +187,7 @@ export default function AdminSettings() {
     setEditKey(null)
   }
 
-  const userPlans = ['gratis', 'plus', 'pro']
+  const userPlans = ['gratis', 'premium plus', 'premium pro']
   const businessPlans = ['gratis', 'turbo', 'dominio']
 
   return (
@@ -350,37 +372,72 @@ export default function AdminSettings() {
         Parámetros del Sistema
       </h2>
 
-      {Object.entries(grouped).map(([cat, items]) => (
-        <div key={cat} style={{ ...card, marginBottom: '1rem' }}>
-          <h3 style={{ fontSize: '0.9375rem', fontWeight: 700, marginBottom: '0.875rem' }}>{categoryLabels[cat] || cat}</h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            {items.map(s => (
-              <div key={s.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.625rem 0', borderBottom: '1px solid #f1f5f9' }}>
-                <div style={{ flex: 1 }}>
-                  <p style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#0f172a' }}>{s.key.replace(/_/g, ' ')}</p>
-                  {s.updated_at && <p style={{ fontSize: '0.625rem', color: '#94a3b8' }}>Actualizado: {new Date(s.updated_at).toLocaleString()}</p>}
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  {editKey === s.key ? (
-                    <>
-                      <input style={{ ...input, width: '12rem' }} value={editVal} onChange={e => setEditVal(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSave(s.key)} />
-                      <button onClick={() => handleSave(s.key)} style={{ padding: '0.375rem 0.625rem', borderRadius: '0.375rem', background: '#10b981', color: 'white', border: 'none', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}>✓</button>
-                      <button onClick={() => setEditKey(null)} style={{ padding: '0.375rem 0.625rem', borderRadius: '0.375rem', background: '#f1f5f9', color: '#64748b', border: 'none', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}>✕</button>
-                    </>
-                  ) : (
-                    <>
-                      <code style={{ fontSize: '0.8125rem', background: '#f8fafc', padding: '0.25rem 0.625rem', borderRadius: '0.375rem', color: '#475569', border: '1px solid #e2e8f0', fontWeight: 700 }}>
-                        {JSON.stringify(s.value).replace(/"/g, '')}
-                      </code>
-                      <button onClick={() => { setEditKey(s.key); setEditVal(typeof s.value === 'string' ? s.value : JSON.stringify(s.value)) }} style={{ padding: '0.25rem 0.5rem', borderRadius: '0.375rem', background: '#fff7ed', color: '#ea580c', border: 'none', fontSize: '0.6875rem', fontWeight: 700, cursor: 'pointer' }}>✏️</button>
-                    </>
-                  )}
-                </div>
-              </div>
-            ))}
+      {Object.entries(grouped).map(([cat, items]) => {
+        const catMeta = {
+          algorithm: { icon: '🧠', color: '#8b5cf6', borderColor: '#c4b5fd' },
+          general: { icon: '⚙️', color: '#3b82f6', borderColor: '#93c5fd' },
+          limits: { icon: '🔒', color: '#f59e0b', borderColor: '#fcd34d' },
+          safety: { icon: '🛡️', color: '#10b981', borderColor: '#6ee7b7' },
+          social: { icon: '🌐', color: '#06b6d4', borderColor: '#67e8f9' },
+          monetization: { icon: '💰', color: '#ea580c', borderColor: '#fdba74' },
+        }[cat] || { icon: '📋', color: '#64748b', borderColor: '#cbd5e1' }
+
+        return (
+          <div key={cat} style={{ ...card, marginBottom: '1rem', borderLeft: `4px solid ${catMeta.borderColor}` }}>
+            <h3 style={{ fontSize: '1rem', fontWeight: 800, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#0f172a' }}>
+              <span>{catMeta.icon}</span> {categoryLabels[cat] || cat}
+            </h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+              {items.map(s => {
+                const desc = s.description || fallbackDescriptions[s.key] || null
+
+                return (
+                  <div key={s.key} style={{
+                    display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
+                    padding: '0.875rem 1rem', borderRadius: '0.625rem',
+                    background: editKey === s.key ? '#fffbeb' : '#f8fafc',
+                    border: editKey === s.key ? '1px solid #fcd34d' : '1px solid transparent',
+                    transition: 'all 0.15s', gap: '1rem',
+                  }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontSize: '0.875rem', fontWeight: 700, color: '#0f172a', margin: 0, marginBottom: '0.25rem' }}>
+                        {s.key.replace(/_/g, ' ')}
+                      </p>
+                      {desc && (
+                        <p style={{ fontSize: '0.75rem', color: '#64748b', margin: 0, marginBottom: '0.375rem', lineHeight: 1.5 }}>
+                          {desc}
+                        </p>
+                      )}
+                      {s.updated_at && (
+                        <p style={{ fontSize: '0.625rem', color: '#94a3b8', margin: 0, display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                          <span className="material-symbols-outlined" style={{ fontSize: '0.75rem' }}>schedule</span>
+                          {new Date(s.updated_at).toLocaleString()}
+                        </p>
+                      )}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexShrink: 0 }}>
+                      {editKey === s.key ? (
+                        <>
+                          <input style={{ ...input, width: '12rem' }} value={editVal} onChange={e => setEditVal(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSave(s.key)} autoFocus />
+                          <button onClick={() => handleSave(s.key)} style={{ padding: '0.375rem 0.625rem', borderRadius: '0.375rem', background: '#10b981', color: 'white', border: 'none', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}>✓</button>
+                          <button onClick={() => setEditKey(null)} style={{ padding: '0.375rem 0.625rem', borderRadius: '0.375rem', background: '#f1f5f9', color: '#64748b', border: 'none', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}>✕</button>
+                        </>
+                      ) : (
+                        <>
+                          <code style={{ fontSize: '0.8125rem', background: 'white', padding: '0.3rem 0.75rem', borderRadius: '0.5rem', color: catMeta.color, border: '1px solid #e2e8f0', fontWeight: 800, whiteSpace: 'nowrap' }}>
+                            {JSON.stringify(s.value).replace(/"/g, '')}
+                          </code>
+                          <button onClick={() => { setEditKey(s.key); setEditVal(typeof s.value === 'string' ? s.value : JSON.stringify(s.value)) }} style={{ padding: '0.3rem 0.5rem', borderRadius: '0.375rem', background: '#fff7ed', color: '#ea580c', border: 'none', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s' }}>✏️</button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
           </div>
-        </div>
-      ))}
+        )
+      })}
     </div>
   )
 }

@@ -42,6 +42,60 @@ export async function getUserLocation(timeoutMs = 10000) {
   });
 }
 
+/**
+ * Watches user location and calls a callback on change.
+ * Returns the watchId to allow clearing.
+ */
+export function watchUserLocation(onSuccess, onError, options = {}) {
+  if (!navigator.geolocation) {
+    onError('No soportado');
+    return null;
+  }
+  
+  const defaultOptions = {
+    enableHighAccuracy: true,
+    timeout: 10000,
+    maximumAge: 0,
+    ...options
+  };
+
+  return navigator.geolocation.watchPosition(
+    (pos) => onSuccess({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+    (err) => onError(err),
+    defaultOptions
+  );
+}
+
+/**
+ * Reverse geocoding using Nominatim (OpenStreetMap).
+ * Respects usage policy for low volume.
+ */
+export async function getAddressFromCoords(lat, lng) {
+  try {
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
+      {
+        headers: {
+          'Accept-Language': 'es',
+          'User-Agent': 'FigusUY-App'
+        }
+      }
+    );
+    const data = await response.json();
+    
+    const addr = data.address || {};
+    return {
+      neighborhood: addr.neighbourhood || addr.suburb || addr.residential || addr.village || '',
+      city: addr.city || addr.town || addr.municipality || '',
+      department: addr.state || addr.province || '',
+      display_name: data.display_name
+    };
+  } catch (err) {
+    console.error('Reverse Geocoding Error:', err);
+    return null;
+  }
+}
+
 export const URUGUAY_DEPARTMENTS = [
   'Artigas', 'Canelones', 'Cerro Largo', 'Colonia', 'Durazno', 'Flores', 
   'Florida', 'Lavalleja', 'Maldonado', 'Montevideo', 'Paysandú', 'Río Negro', 
