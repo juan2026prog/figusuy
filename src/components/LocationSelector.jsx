@@ -10,54 +10,77 @@ export default function LocationSelector({ onLocationSaved, className = '' }) {
   const [mode, setMode] = useState(profile?.location_source === 'gps' ? 'gps_active' : 'manual'); 
   const [errorMsg, setErrorMsg] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isWatching, setIsWatching] = useState(false);
   
   const [department, setDepartment] = useState(profile?.department || '');
   const [neighborhood, setNeighborhood] = useState(profile?.neighborhood || '');
   const [detectedArea, setDetectedArea] = useState(null);
 
+  const lastUpdateRef = useRef(0);
+  const isUpdatingRef = useRef(false);
+
   // Load profile state on mount
   useEffect(() => {
     if (profile) {
-      setIsGPSActive(profile.location_source === 'gps');
-      setDepartment(profile.department || '');
-      setNeighborhood(profile.neighborhood || '');
+      // Only set from profile if we are NOT currently in the middle of a manual change
+      if (!loading) {
+        setIsGPSActive(profile.location_source === 'gps');
+        setDepartment(profile.department || '');
+        setNeighborhood(profile.neighborhood || '');
+      }
     }
-  }, [profile]);
+  }, [profile, loading]);
 
   // Real-time tracking when GPS is active
   useEffect(() => {
     let watchId = null;
 
     if (isGPSActive) {
+      setIsWatching(true);
       watchId = watchUserLocation(
         async (coords) => {
-          // Check if we should update (e.g. throttle or check distance)
-          // For now, let's update whenever it changes slightly to satisfy "que se vaya actualizando"
-          const address = await getAddressFromCoords(coords.lat, coords.lng);
-          const updateData = {
-            lat: coords.lat,
-            lng: coords.lng,
-            location_source: 'gps',
-            department: address?.department || '',
-            city: address?.city || '',
-            neighborhood: address?.neighborhood || ''
-          };
-          
-          await saveLocationToDB(updateData);
-          setDetectedArea(address);
-          if (onLocationSaved) onLocationSaved(updateData);
+          // Throttle: only update every 30 seconds or if it's the first update
+          const now = Date.now();
+          if (now - lastUpdateRef.current < 30000 && lastUpdateRef.current !== 0) return;
+          if (isUpdatingRef.current) return;
+
+          isUpdatingRef.current = true;
+          try {
+            const address = await getAddressFromCoords(coords.lat, coords.lng);
+            const updateData = {
+              lat: coords.lat,
+              lng: coords.lng,
+              location_source: 'gps',
+              department: address?.department || '',
+              city: address?.city || '',
+              neighborhood: address?.neighborhood || ''
+            };
+            
+            await saveLocationToDB(updateData);
+            setDetectedArea(address);
+            lastUpdateRef.current = now;
+            if (onLocationSaved) onLocationSaved(updateData);
+          } catch (err) {
+            console.error('Update during watch error:', err);
+          } finally {
+            isUpdatingRef.current = false;
+          }
         },
         (err) => {
           console.error('Watch Error:', err);
-          setErrorMsg('Error al rastrear ubicación en tiempo real.');
+          // Don't show error if it's just a timeout and we already have some data
+          if (err.code === 3 && (detectedArea || profile?.lat)) return;
+          setErrorMsg('Error al rastrear ubicación. Verificá los permisos de tu celular.');
         }
       );
+    } else {
+      setIsWatching(false);
     }
 
     return () => {
       if (watchId !== null) navigator.geolocation.clearWatch(watchId);
     };
-  }, [isGPSActive]);
+  }, [isGPSActive, onLocationSaved]);
 
   const saveLocationToDB = async (data) => {
     if (!profile?.id) return;
@@ -66,7 +89,7 @@ export default function LocationSelector({ onLocationSaved, className = '' }) {
         ...data,
         location_updated_at: new Date().toISOString()
       };
-      await supabase.from('profiles').update(payload).eq('id', profile.id);
+      // Note: updateProfile already calls Supabase update
       await updateProfile(payload);
     } catch (err) {
       console.error('Error saving location:', err);
@@ -97,10 +120,11 @@ export default function LocationSelector({ onLocationSaved, className = '' }) {
         await saveLocationToDB(updateData);
         setDetectedArea(address);
         setMode('gps_active');
+        lastUpdateRef.current = Date.now();
         if (onLocationSaved) onLocationSaved(updateData);
       } catch (err) {
         console.error('GPS Activation Error:', err);
-        setErrorMsg(err.message || 'No se pudo obtener la ubicación automática.');
+        setErrorMsg(typeof err === 'string' ? err : 'No se pudo obtener la ubicación automática. Verificá los permisos.');
         setIsGPSActive(false);
       } finally {
         setLoading(false);
@@ -108,7 +132,6 @@ export default function LocationSelector({ onLocationSaved, className = '' }) {
     } else {
       setMode('manual');
       setDetectedArea(null);
-      // We don't clear manual data immediately, just change source
       await saveLocationToDB({ location_source: 'manual' });
     }
   };

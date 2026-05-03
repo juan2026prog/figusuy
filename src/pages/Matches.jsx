@@ -388,9 +388,19 @@ export default function MatchesPage() {
           </div>
         </section>
 
-        {tab === 'near' && !hasLocation && (
-          <div style={{ marginBottom: '22px' }}>
-            <LocationSelector onLocationSaved={() => handleRefresh()} />
+        {tab === 'near' && (
+          <div style={{ marginBottom: '22px', minHeight: !hasLocation ? '300px' : 'auto' }}>
+            {!hasLocation ? (
+              <LocationSelector onLocationSaved={() => handleRefresh()} />
+            ) : (
+              <div className="side-card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--panel2)' }}>
+                <div>
+                  <div className="kicker">Ubicación activa</div>
+                  <p style={{ margin: 0, fontSize: '.9rem' }}>Viendo cruces cerca de <b>{profile?.city || profile?.department || 'tu zona'}</b></p>
+                </div>
+                <button className="btn btn-sm location-selector-btn" onClick={() => navigate('/profile')}>Cambiar</button>
+              </div>
+            )}
           </div>
         )}
 
@@ -478,7 +488,7 @@ export default function MatchesPage() {
               <section className="side-card location-warning">
                 <h3>Ubicación</h3>
                 <p>Activá tu zona para ordenar mejor los matches cercanos. Nunca mostramos tu ubicación exacta.</p>
-                <button className="btn" style={{marginTop: '14px', width: '100%'}} onClick={() => document.querySelector('.location-selector-btn')?.click()}>Configurar ubicación</button>
+                <button className="btn location-selector-btn" style={{marginTop: '14px', width: '100%'}} onClick={() => setTab('near')}>Configurar ubicación</button>
               </section>
             )}
             <section className="side-card">

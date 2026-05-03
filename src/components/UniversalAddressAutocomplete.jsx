@@ -20,7 +20,10 @@ export default function UniversalAddressAutocomplete({
   const abortControllerRef = useRef(null);
 
   useEffect(() => {
-    setQuery(value || '');
+    // Only update query from value if we are not actively typing or if it's the initial load
+    if (value && value !== query && !loading && !isOpen) {
+      setQuery(value);
+    }
   }, [value]);
 
   useEffect(() => {

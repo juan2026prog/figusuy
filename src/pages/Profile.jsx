@@ -37,10 +37,12 @@ export default function ProfilePage() {
   const name = profile?.name || 'Usuario'
 
   useEffect(() => {
-    setLocationName(profile?.city || '')
-    setDisplayName(profile?.name || '')
-    // Check if user has admin role
-    if (profile?.id) {
+    // Only set initial values once or if they are empty
+    if (profile) {
+      if (!displayName) setDisplayName(profile.name || '');
+      if (!locationName) setLocationName(profile.city || '');
+      
+      // Check if user has admin role
       supabase.from('user_roles').select('role').eq('user_id', profile.id).maybeSingle()
         .then(({ data }) => {
           if (data?.role && data.role !== 'user') setIsAdmin(true)
@@ -49,7 +51,7 @@ export default function ProfilePage() {
       useAppStore.getState().fetchUserAlbums(profile.id)
       initGamification(profile.id)
     }
-  }, [profile])
+  }, [profile?.id]) // Depend on ID to re-run only when user changes
 
   const handleSave = async () => {
     if (!profile?.id) return
