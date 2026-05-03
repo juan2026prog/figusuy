@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useAdminStore } from '../stores/adminStore'
 
-const card = { background: '#ffffff', borderRadius: '1rem', padding: '1.25rem', border: '1px solid #e7e5e4', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -2px rgba(0,0,0,0.05)' }
+const card = { background: "var(--admin-panel)", borderRadius: "0.5rem", padding: "1.25rem", border: "1px solid var(--admin-line)" }
 const btn = (bg, color) => ({ padding: '0.375rem 0.75rem', borderRadius: '0.5rem', background: bg, color, border: 'none', fontSize: '0.8125rem', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.375rem', transition: 'all 0.15s' })
 
 export default function AdminPromos() {
@@ -15,23 +15,24 @@ export default function AdminPromos() {
 
   return (
     <div style={{ paddingBottom: '2rem' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
-        <div>
-          <h1 style={{ fontSize: '1.875rem', fontWeight: 900, color: '#020617', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <span className="material-symbols-outlined" style={{ color: '#ea580c', fontSize: '2rem' }}>campaign</span>
-            Promos & Visibilidad
-          </h1>
-          <p style={{ fontSize: '0.9375rem', color: '#64748b', marginTop: '0.25rem', fontWeight: 500 }}>
-            Gestión de campañas de visibilidad patrocinada, anuncios y eventos especiales.
-          </p>
+            <section className="ag-hero" style={{ marginBottom: '2rem' }}>
+        <div className="ag-hero-row">
+          <div>
+            <div className="admin-kicker">/ modulo operativo</div>
+            <h1 className="ag-title">Promos & Visibilidad</h1>
+            <p className="ag-desc" style={{ marginTop: '.8rem', maxWidth: '48rem' }}>Gestión de campañas de visibilidad patrocinada, anuncios y eventos especiales.</p>
+          </div>
+          <div className="ag-icon-box">
+            <span className="material-symbols-outlined">campaign</span>
+          </div>
         </div>
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
-          <button style={btn('#ea580c', 'white')}>
+        <div style={{ marginTop: '1.5rem', display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}><div style={{ display: 'flex', gap: '0.5rem' }}>
+          <button style={btn('var(--color-primary)', 'white')}>
             <span className="material-symbols-outlined" style={{ fontSize: '1.25rem' }}>add</span>
             Nueva Campaña
-          </button>
-        </div>
+          </button></div>
       </div>
+      </section>
 
       <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', overflowX: 'auto', paddingBottom: '0.5rem' }}>
         {[
@@ -41,9 +42,9 @@ export default function AdminPromos() {
         ].map(f => (
           <button key={f.key} onClick={() => setFilterType(f.key)} style={{
             padding: '0.5rem 1rem', borderRadius: '2rem', fontSize: '0.8125rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.375rem', whiteSpace: 'nowrap',
-            background: filterType === f.key ? '#ea580c' : '#ffffff', 
-            color: filterType === f.key ? 'white' : '#64748b', 
-            border: filterType === f.key ? '1px solid #ea580c' : '1px solid #e2e8f0',
+            background: filterType === f.key ? 'var(--color-primary)' : "var(--admin-panel)", 
+            color: filterType === f.key ? 'white' : "var(--admin-muted2)", 
+            border: filterType === f.key ? '1px solid var(--color-primary)' : '1px solid #e2e8f0',
             boxShadow: filterType === f.key ? '0 2px 4px rgba(234,88,12,0.2)' : '0 1px 2px rgba(0,0,0,0.05)',
             transition: 'all 0.2s'
           }}>
@@ -58,29 +59,29 @@ export default function AdminPromos() {
           <div key={ev.id} style={{ ...card, display: 'flex', flexDirection: 'column' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <div style={{ width: '2.5rem', height: '2.5rem', borderRadius: '0.5rem', background: '#fff7ed', color: '#ea580c', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ width: '2.5rem', height: '2.5rem', borderRadius: '0.5rem', background: "rgba(249, 115, 22, 0.1)", color: 'var(--color-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <span className="material-symbols-outlined">campaign</span>
                 </div>
                 <div>
-                  <h3 style={{ fontSize: '1rem', fontWeight: 800, color: '#0f172a', margin: 0, lineHeight: 1.2 }}>{ev.title || 'Campaña sin título'}</h3>
-                  <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>{ev.type || 'Promoción'}</span>
+                  <h3 style={{ fontSize: '1rem', fontWeight: 800, color: "#f5f5f5", margin: 0, lineHeight: 1.2 }}>{ev.title || 'Campaña sin título'}</h3>
+                  <span style={{ fontSize: '0.75rem', color: "var(--admin-muted2)", fontWeight: 600 }}>{ev.type || 'Promoción'}</span>
                 </div>
               </div>
             </div>
 
             <div style={{ marginBottom: '1rem', flex: 1 }}>
-              <p style={{ fontSize: '0.8125rem', color: '#475569', marginBottom: '0.75rem', lineHeight: 1.5 }}>
+              <p style={{ fontSize: '0.8125rem', color: "var(--admin-muted)", marginBottom: '0.75rem', lineHeight: 1.5 }}>
                 {ev.description || 'Sin descripción'}
               </p>
               
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginBottom: '1rem' }}>
-                 <div style={{ background: '#f8fafc', padding: '0.75rem', borderRadius: '0.5rem' }}>
-                    <p style={{ fontSize: '1rem', fontWeight: 900, color: '#0f172a' }}>{ev.impressions || 0}</p>
-                    <p style={{ fontSize: '0.625rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' }}>Impresiones</p>
+                 <div style={{ background: "var(--admin-panel2)", padding: '0.75rem', borderRadius: '0.5rem' }}>
+                    <p style={{ fontSize: '1rem', fontWeight: 900, color: "#f5f5f5" }}>{ev.impressions || 0}</p>
+                    <p style={{ fontSize: '0.625rem', fontWeight: 700, color: "var(--admin-muted)", textTransform: 'uppercase' }}>Impresiones</p>
                  </div>
-                 <div style={{ background: '#f8fafc', padding: '0.75rem', borderRadius: '0.5rem' }}>
-                    <p style={{ fontSize: '1rem', fontWeight: 900, color: '#ea580c' }}>{ev.impressions > 0 ? ((ev.clicks_count || 0) / ev.impressions * 100).toFixed(2) : '0.00'}%</p>
-                    <p style={{ fontSize: '0.625rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' }}>CTR Global</p>
+                 <div style={{ background: "var(--admin-panel2)", padding: '0.75rem', borderRadius: '0.5rem' }}>
+                    <p style={{ fontSize: '1rem', fontWeight: 900, color: 'var(--color-primary)' }}>{ev.impressions > 0 ? ((ev.clicks_count || 0) / ev.impressions * 100).toFixed(2) : '0.00'}%</p>
+                    <p style={{ fontSize: '0.625rem', fontWeight: 700, color: "var(--admin-muted)", textTransform: 'uppercase' }}>CTR Global</p>
                  </div>
               </div>
 
@@ -91,7 +92,7 @@ export default function AdminPromos() {
             </div>
 
             <div style={{ display: 'flex', gap: '0.5rem', marginTop: 'auto', borderTop: '1px solid #f1f5f9', paddingTop: '1rem' }}>
-              <button style={{ ...btn('#f1f5f9', '#475569'), flex: 1, justifyContent: 'center' }}>
+              <button style={{ ...btn("var(--admin-panel2)", "var(--admin-muted)"), flex: 1, justifyContent: 'center' }}>
                 <span className="material-symbols-outlined" style={{ fontSize: '1.125rem' }}>edit</span> Editar
               </button>
               <button style={{ ...btn('#fef2f2', '#ef4444'), padding: '0.375rem', width: '2.25rem', justifyContent: 'center' }}>
@@ -102,7 +103,7 @@ export default function AdminPromos() {
         ))}
         
         {filteredEvents.length === 0 && (
-          <div style={{ gridColumn: '1 / -1', ...card, textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>
+          <div style={{ gridColumn: '1 / -1', ...card, textAlign: 'center', padding: '3rem', color: "var(--admin-muted)" }}>
             No hay campañas activas.
           </div>
         )}

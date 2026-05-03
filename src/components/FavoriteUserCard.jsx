@@ -44,8 +44,8 @@ export default function FavoriteUserCard({ favorite }) {
     ? `${userProfile.city}, ${userProfile.department || ''}`
     : (userProfile.department || 'Uruguay')
 
-  const baseBg = isDark ? '#0f172a' : 'white'
-  const borderColor = isDark ? '#1e293b' : '#e2e8f0'
+  const baseBg = isDark ? 'var(--color-surface)' : 'white'
+  const borderColor = isDark ? 'var(--color-border)' : '#e2e8f0'
 
   return (
     <article style={{
@@ -57,16 +57,21 @@ export default function FavoriteUserCard({ favorite }) {
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', minWidth: 0 }}>
         <div style={{
           width: '3rem', height: '3rem', borderRadius: r['xl'], 
-          background: isDark ? '#1e293b' : '#f1f5f9',
-          color: isDark ? 'white' : '#0f172a',
+          background: isDark ? 'var(--color-border)' : '#f1f5f9',
+          color: isDark ? 'white' : 'var(--color-surface)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontWeight: 900, fontSize: '1.125rem', flexShrink: 0
+          fontWeight: 900, fontSize: '1.125rem', flexShrink: 0,
+          overflow: 'hidden'
         }}>
-          {userProfile.name?.[0]?.toUpperCase() || '?'}
+          {userProfile.avatar_url ? (
+            <img src={userProfile.avatar_url} alt={userProfile.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          ) : (
+            userProfile.name?.[0]?.toUpperCase() || '?'
+          )}
         </div>
         <div style={{ minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-            <h3 style={{ fontWeight: 900, fontSize: '1rem', margin: 0, color: isDark ? 'white' : '#0f172a' }}>
+            <h3 style={{ fontWeight: 900, fontSize: '1rem', margin: 0, color: isDark ? 'white' : 'var(--color-surface)' }}>
               {userProfile.name || 'Usuario'}
             </h3>
             <span style={{
@@ -80,7 +85,7 @@ export default function FavoriteUserCard({ favorite }) {
               Favorito
             </span>
           </div>
-          <p style={{ fontSize: '0.75rem', color: isDark ? '#94a3b8' : '#64748b', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          <p style={{ fontSize: '0.75rem', color: isDark ? 'var(--color-text-secondary)' : 'var(--color-text-muted)', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {locationStr} · {lastActive || 'Recientemente'}
           </p>
         </div>
@@ -90,7 +95,7 @@ export default function FavoriteUserCard({ favorite }) {
         <FavoriteButton targetUserId={userProfile.id} size="lg" />
         <button onClick={handleContact} disabled={contactLoading} style={{
           padding: '0.5rem 1rem', borderRadius: r.xl,
-          background: '#ea580c', color: 'white',
+          background: 'var(--color-primary)', color: 'white',
           fontWeight: 900, fontSize: '0.875rem', border: 'none', cursor: contactLoading ? 'not-allowed' : 'pointer',
           opacity: contactLoading ? 0.7 : 1
         }}>

@@ -12,22 +12,22 @@ export default function FavoritesEmptyState() {
       padding: '4rem 1.5rem',
       maxWidth: '24rem',
       margin: '0 auto',
-      color: isDark ? '#94a3b8' : '#64748b'
+      color: isDark ? 'var(--color-text-secondary)' : 'var(--color-text-muted)'
     }}>
       <div style={{
         width: '4rem', height: '4rem',
         borderRadius: '1rem',
-        background: isDark ? '#1e293b' : '#f1f5f9',
+        background: isDark ? 'var(--color-border)' : '#f1f5f9',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         margin: '0 auto 1.5rem',
-        color: isDark ? '#475569' : '#cbd5e1'
+        color: isDark ? '#475569' : 'var(--color-text-secondary)'
       }}>
         <span className="material-symbols-outlined" style={{ fontSize: '2rem' }}>favorite</span>
       </div>
       <h2 style={{
         fontSize: '1.25rem',
         fontWeight: 900,
-        color: isDark ? 'white' : '#0f172a',
+        color: isDark ? 'white' : 'var(--color-surface)',
         margin: '0 0 0.5rem'
       }}>
         Todavía no tenés favoritos
@@ -45,7 +45,7 @@ export default function FavoritesEmptyState() {
           padding: '0.75rem 1.5rem',
           borderRadius: '1rem',
           background: 'rgba(249, 115, 22, 0.15)',
-          color: '#f97316',
+          color: 'var(--color-primary-light)',
           fontWeight: 900,
           fontSize: '0.875rem',
           border: 'none',

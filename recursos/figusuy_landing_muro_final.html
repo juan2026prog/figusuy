@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FigusUY — Landing Muro Final</title>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;0,900;1,700;1,900&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root{
+      --bg:#0b0b0b;
+      --panel:#121212;
+      --panel2:#181818;
+      --line:rgba(255,255,255,.08);
+      --line2:rgba(255,255,255,.14);
+      --text:#f5f5f5;
+      --muted:rgba(245,245,245,.52);
+      --muted2:rgba(245,245,245,.32);
+      --orange:#ff5a00;
+      --orange2:#cc4800;
+      --green:#22c55e;
+    }
+
+    *{box-sizing:border-box;margin:0;padding:0}
+    html{background:var(--bg);scroll-behavior:smooth}
+    body{font-family:Barlow,sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden}
+    a{text-decoration:none;color:inherit}
+
+    nav{
+      height:56px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:0 28px;
+      border-bottom:1px solid var(--line);
+      background:rgba(11,11,11,.96);
+      backdrop-filter:blur(8px);
+      position:fixed;
+      top:0;left:0;right:0;
+      z-index:50;
+    }
+
+    .logo{display:flex;align-items:center;gap:10px;font:900 1.25rem 'Barlow Condensed',sans-serif;letter-spacing:.04em;text-transform:uppercase}
+    .logo-mark{width:30px;height:30px;background:var(--orange);display:grid;place-items:center;font-size:14px}
+    .logo span{color:var(--orange)}
+
+    .nav-links{display:flex;gap:32px;font:800 .82rem 'Barlow Condensed',sans-serif;letter-spacing:.09em;text-transform:uppercase;color:var(--muted2)}
+    .nav-links a:hover{color:#fff}
+    .nav-cta{background:var(--orange);padding:.7rem 1.15rem;font:900 .82rem 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.08em;color:#fff}
+
+    .hero{
+      min-height:100vh;
+      padding-top:56px;
+      display:grid;
+      grid-template-columns:1.02fr .98fr;
+      border-bottom:1px solid var(--line);
+    }
+
+    .hero-left{
+      position:relative;
+      padding:72px 42px 58px;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      border-right:1px solid var(--line);
+      overflow:hidden;
+    }
+
+    .hero-left::before{
+      content:'FIGUS';
+      position:absolute;
+      top:70px;
+      left:28px;
+      font:italic 900 11rem 'Barlow Condensed',sans-serif;
+      color:rgba(255,255,255,.022);
+      line-height:1;
+      pointer-events:none;
+    }
+
+    .eyebrow{display:flex;align-items:center;gap:10px;font:800 .76rem 'Barlow Condensed',sans-serif;letter-spacing:.14em;text-transform:uppercase;color:var(--muted2)}
+    .dot{width:8px;height:8px;background:var(--orange)}
+
+    h1{
+      font:italic 900 clamp(4rem,8vw,7rem) 'Barlow Condensed',sans-serif;
+      line-height:.88;
+      text-transform:uppercase;
+      margin-top:22px;
+      letter-spacing:-.015em;
+      position:relative;
+      z-index:1;
+    }
+    h1 .orange{color:var(--orange);display:block}
+
+    .hero-sub{
+      max-width:470px;
+      color:var(--muted);
+      line-height:1.7;
+      margin:24px 0 34px;
+      font-size:1rem;
+      position:relative;
+      z-index:1;
+    }
+
+    .actions{display:flex;gap:18px;align-items:center;flex-wrap:wrap;position:relative;z-index:1}
+    .btn-main{background:var(--orange);padding:1rem 1.9rem;font:900 1rem 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.07em;color:#fff;transition:.15s}
+    .btn-main:hover{background:var(--orange2);transform:translateY(-2px)}
+    .btn-link{font:800 .95rem 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+    .btn-link:hover{color:#fff}
+
+    .quick-stats{
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:0;
+      margin-top:44px;
+      border-top:1px solid var(--line);
+      position:relative;
+      z-index:1;
+    }
+    .quick-stat{padding:20px 18px 0 0;border-right:1px solid var(--line)}
+    .quick-stat:last-child{border-right:0;padding-left:18px}
+    .quick-stat b{display:block;font:italic 900 2rem 'Barlow Condensed',sans-serif;color:var(--orange);line-height:1}
+    .quick-stat span{font-size:.75rem;color:var(--muted2)}
+
+    .hero-right{
+      position:relative;
+      overflow:hidden;
+      background:
+        radial-gradient(circle at 20% 20%,rgba(255,90,0,.14),transparent 32%),
+        radial-gradient(circle at 85% 80%,rgba(255,90,0,.08),transparent 34%),
+        #090909;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:48px 34px;
+    }
+
+    .sticker-wall{
+      display:grid;
+      grid-template-columns:repeat(4,128px);
+      gap:16px;
+      transform:rotate(-2deg) scale(1.04);
+      position:relative;
+      z-index:2;
+    }
+
+    .sticker-wall::before{
+      content:'';
+      position:absolute;
+      inset:-28px;
+      background:linear-gradient(135deg,rgba(255,90,0,.15),transparent 48%,rgba(255,255,255,.035));
+      z-index:-1;
+      filter:blur(26px);
+    }
+
+    .card-sticker{
+      aspect-ratio:3/4;
+      position:relative;
+      overflow:hidden;
+      border:2px solid rgba(255,255,255,.9);
+      background:#ddd;
+      box-shadow:0 18px 30px rgba(0,0,0,.38);
+      transition:.18s;
+    }
+    .card-sticker:hover{transform:translateY(-4px) rotate(1deg)}
+    .card-sticker::before{content:'';position:absolute;inset:7px;border:1px solid rgba(0,0,0,.14);z-index:2}
+    .card-sticker::after{content:'';position:absolute;left:0;right:0;bottom:0;height:30%;background:linear-gradient(to top,rgba(0,0,0,.78),transparent);z-index:2}
+
+    .art{position:absolute;inset:0;background-size:cover;background-position:center;filter:saturate(.95) contrast(1.02)}
+    .card-sticker .num{position:absolute;top:8px;left:8px;z-index:3;background:#0b0b0b;color:#fff;padding:2px 7px;font:900 .82rem 'Barlow Condensed',sans-serif}
+    .card-sticker .label{position:absolute;left:8px;bottom:8px;z-index:3;background:#0b0b0b;color:#fff;padding:4px 7px;font:800 .58rem 'Barlow Condensed',sans-serif;letter-spacing:.08em;text-transform:uppercase}
+
+    .card-sticker.missing{background:#151515;border-color:rgba(255,255,255,.16);box-shadow:none}
+    .card-sticker.missing .art{display:none}
+    .card-sticker.missing::after{display:none}
+    .card-sticker.missing .num{background:transparent;color:rgba(255,255,255,.2);font-size:1rem}
+    .card-sticker.missing .label{background:transparent;color:rgba(255,255,255,.22);left:50%;bottom:50%;transform:translate(-50%,50%);font-size:.75rem}
+
+    .card-sticker.match{border-color:var(--orange);box-shadow:0 18px 36px rgba(255,90,0,.20)}
+    .card-sticker.match .label{background:var(--orange)}
+    .card-sticker.dup{border-color:var(--green);box-shadow:0 18px 34px rgba(34,197,94,.16)}
+    .card-sticker.dup .label{background:var(--green);color:#03140a}
+
+    .a1{background-image:linear-gradient(135deg,#2563eb,#60a5fa 45%,#f97316)}
+    .a2{background-image:linear-gradient(135deg,#16a34a,#86efac 45%,#14532d)}
+    .a3{background-image:linear-gradient(135deg,#dc2626,#fb7185 45%,#7f1d1d)}
+    .a4{background-image:linear-gradient(135deg,#f59e0b,#fde68a 45%,#b45309)}
+    .a5{background-image:linear-gradient(135deg,#7c3aed,#c4b5fd 45%,#4c1d95)}
+    .a6{background-image:linear-gradient(135deg,#0f172a,#475569 45%,#e2e8f0)}
+    .a7{background-image:linear-gradient(135deg,#0891b2,#67e8f9 45%,#164e63)}
+    .a8{background-image:linear-gradient(135deg,#be123c,#fda4af 45%,#881337)}
+    .a9{background-image:linear-gradient(135deg,#1d4ed8,#93c5fd 45%,#1e3a8a)}
+    .a10{background-image:linear-gradient(135deg,#15803d,#bbf7d0 45%,#14532d)}
+    .a11{background-image:linear-gradient(135deg,#ea580c,#fdba74 45%,#7c2d12)}
+    .a12{background-image:linear-gradient(135deg,#111827,#9ca3af 45%,#000)}
+
+    section{border-bottom:1px solid var(--line)}
+    .inner{max-width:1180px;margin:0 auto;padding:72px 28px}
+    .kicker{font:800 .72rem 'Barlow Condensed',sans-serif;letter-spacing:.16em;text-transform:uppercase;color:var(--orange)}
+    h2{font:italic 900 clamp(2.6rem,5vw,4.4rem) 'Barlow Condensed',sans-serif;line-height:.93;text-transform:uppercase;margin-top:10px}
+    .section-sub{color:var(--muted);margin-top:10px;max-width:540px;line-height:1.6}
+
+    .album-preview{margin-top:36px;border:1px solid var(--line);background:var(--panel)}
+    .album-top{display:flex;justify-content:space-between;gap:20px;align-items:center;padding:16px 18px;background:var(--panel2);border-bottom:1px solid var(--line)}
+    .album-top h3{font:900 .92rem 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.08em}
+    .album-top span{font:700 .85rem 'Barlow Condensed',sans-serif;color:var(--muted)}
+    .preview-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(62px,1fr));gap:1px;background:var(--line)}
+    .pf{aspect-ratio:3/4;background:var(--panel);display:grid;place-items:center;align-content:center;gap:2px}
+    .pf b{font:italic 900 1rem 'Barlow Condensed',sans-serif;color:rgba(255,255,255,.16)}
+    .pf span{font:800 .48rem 'Barlow Condensed',sans-serif;text-transform:uppercase;color:rgba(255,255,255,.12)}
+    .pf.have b{color:#fff}.pf.have span{color:rgba(255,255,255,.3)}
+    .pf.dup{background:rgba(34,197,94,.06)}.pf.dup b{color:var(--green)}.pf.dup span{color:rgba(34,197,94,.4)}
+    .pf.miss{background:rgba(255,90,0,.05)}.pf.miss b{color:var(--orange)}.pf.miss span{color:rgba(255,90,0,.4)}
+
+    .benefits{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:1px;background:var(--line);margin-top:18px}
+    .benefit{background:var(--panel);padding:24px}
+    .benefit.main{background:var(--orange);color:#fff}
+    .benefit h3{font:900 1.1rem 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.04em}
+    .benefit p{color:var(--muted);font-size:.9rem;line-height:1.65;margin-top:8px}
+    .benefit.main p{color:rgba(255,255,255,.78)}
+
+    .plans{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);margin-top:34px;border:1px solid var(--line)}
+    .plan{background:var(--panel);padding:28px;display:flex;flex-direction:column}
+    .plan.featured{background:var(--panel2);border-top:3px solid var(--orange)}
+    .plan-name{font:800 .76rem 'Barlow Condensed',sans-serif;letter-spacing:.14em;text-transform:uppercase;color:var(--orange)}
+    .price{font:italic 900 3.2rem 'Barlow Condensed',sans-serif;margin:10px 0;line-height:1}
+    .plan ul{list-style:none;display:grid;gap:10px;margin:18px 0 26px;color:var(--muted);font-size:.9rem}
+    .plan li::before{content:'— ';color:var(--orange)}
+    .plan button{margin-top:auto;width:100%;border:1px solid var(--line2);background:transparent;color:#fff;padding:1rem;font:900 .9rem 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.08em;cursor:pointer}
+    .plan.featured button{background:var(--orange);border-color:var(--orange)}
+
+    @media(max-width:980px){
+      .hero{grid-template-columns:1fr}
+      .hero-right{display:none}
+      .nav-links{display:none}
+      .hero-left{border-right:0;padding:90px 24px 54px}
+      .quick-stats{grid-template-columns:1fr 1fr 1fr}
+      .benefits,.plans{grid-template-columns:1fr}
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="logo"><div class="logo-mark">⚽</div>FIGUS<span>UY</span></div>
+    <div class="nav-links"><a href="#como">Cómo funciona</a><a href="#album">Álbumes</a><a href="#planes">Planes</a></div>
+    <a class="nav-cta" href="#">Empezar gratis</a>
+  </nav>
+
+  <main>
+    <section class="hero">
+      <div class="hero-left">
+        <div class="eyebrow"><div class="dot"></div><span>3.400 coleccionistas activos ahora</span></div>
+        <h1>Completá<br><span class="orange">tu</span>álbum.</h1>
+        <p class="hero-sub">Te faltan 12. A 600 metros hay 3 personas que las tienen. Cargá tu álbum, encontrá cruces reales y completalo sin perder semanas en grupos.</p>
+        <div class="actions"><a class="btn-main">Empezar gratis</a><a class="btn-link">Ver demo →</a></div>
+        <div class="quick-stats"><div class="quick-stat"><b>12</b><span>te faltan hoy</span></div><div class="quick-stat"><b>3</b><span>cruces cerca</span></div><div class="quick-stat"><b>78%</b><span>completo</span></div></div>
+      </div>
+
+      <div class="hero-right">
+        <div class="sticker-wall">
+          <div class="card-sticker match"><div class="art a1"></div><span class="num">18</span><span class="label">Match</span></div>
+          <div class="card-sticker"><div class="art a2"></div><span class="num">24</span><span class="label">Tengo</span></div>
+          <div class="card-sticker missing"><span class="num">45</span><span class="label">Falta</span></div>
+          <div class="card-sticker dup"><div class="art a4"></div><span class="num">M3</span><span class="label">Repet.</span></div>
+          <div class="card-sticker"><div class="art a5"></div><span class="num">10</span><span class="label">Tengo</span></div>
+          <div class="card-sticker missing"><span class="num">88</span><span class="label">Falta</span></div>
+          <div class="card-sticker match"><div class="art a7"></div><span class="num">101</span><span class="label">Cerca</span></div>
+          <div class="card-sticker"><div class="art a8"></div><span class="num">122</span><span class="label">Tengo</span></div>
+          <div class="card-sticker dup"><div class="art a9"></div><span class="num">7</span><span class="label">Repet.</span></div>
+          <div class="card-sticker missing"><span class="num">16</span><span class="label">Falta</span></div>
+          <div class="card-sticker"><div class="art a11"></div><span class="num">31</span><span class="label">Tengo</span></div>
+          <div class="card-sticker match"><div class="art a12"></div><span class="num">M1</span><span class="label">Match</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="album">
+      <div class="inner">
+        <span class="kicker">// álbum</span>
+        <h2>Vé lo que tenés.<br>Encontrá lo que falta.</h2>
+        <p class="section-sub">Tu álbum deja de ser una lista. Pasa a ser un mapa visual de lo que necesitás para completarlo.</p>
+        <div class="album-preview">
+          <div class="album-top"><h3>Mundial 2026 · Base</h3><span>528 / 670 · 78% completo</span></div>
+          <div class="preview-grid" id="previewGrid"></div>
+        </div>
+        <div class="benefits">
+          <div class="benefit main"><h3>Completá más rápido</h3><p>Entrás y ves quién tiene justo lo que te falta. Menos vueltas, más figuritas.</p></div>
+          <div class="benefit"><h3>Intercambiá más cerca</h3><p>Priorizamos cruces útiles y cercanos, no listas infinitas sin sentido.</p></div>
+          <div class="benefit"><h3>Perdé menos tiempo</h3><p>El sistema te muestra oportunidades reales, no conversaciones eternas.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="planes">
+      <div class="inner">
+        <span class="kicker">// planes</span>
+        <h2>Coleccioná mejor.<br>Cuando quieras.</h2>
+        <p class="section-sub">No pagás por funciones. Pagás por completar más rápido.</p>
+        <div class="plans">
+          <article class="plan"><div class="plan-name">Gratis</div><div class="price">$0</div><ul><li>1 álbum activo</li><li>Hasta 5 cruces por mes</li><li>Búsqueda por barrio</li></ul><button>Empezar gratis</button></article>
+          <article class="plan featured"><div class="plan-name">Premium</div><div class="price">$79</div><ul><li>3 álbumes activos</li><li>Más cruces útiles</li><li>Alertas cuando aparece la que falta</li></ul><button>Probar 7 días</button></article>
+          <article class="plan"><div class="plan-name">Premium Plus</div><div class="price">$149</div><ul><li>Álbumes ilimitados</li><li>Prioridad en cruces</li><li>Todo más rápido</li></ul><button>Elegir plan</button></article>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const grid=document.getElementById('previewGrid');
+    const have=new Set([1,2,3,4,7,8,10,11,13,14,18,22,24,31,34,38]);
+    const dup=new Set([4,10,22,31]);
+    const miss=new Set([5,6,9,12,15,16,17]);
+    for(let i=1;i<=48;i++){
+      let c='';
+      if(dup.has(i)) c='dup';
+      else if(miss.has(i)) c='miss';
+      else if(have.has(i)) c='have';
+      const d=document.createElement('div');
+      d.className='pf '+c;
+      d.innerHTML=`<b>${i}</b><span>${dup.has(i)?'repet.':miss.has(i)?'falta':have.has(i)?'tengo':''}</span>`;
+      grid.appendChild(d);
+    }
+  </script>
+</body>
+</html>

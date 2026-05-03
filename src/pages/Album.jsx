@@ -5,6 +5,8 @@ import { useAuthStore } from '../stores/authStore'
 import { useAppStore } from '../stores/appStore'
 import { useToast } from '../components/Toast'
 import { supabase } from '../lib/supabase'
+import { ALBUM_PROGRESS_STATES, getPartnerStoreAlbumState, markAlbumCompleted, subscribePartnerStoreStorage } from '../lib/partnerStore'
+import { getUserLocation } from '../utils/location'
 
 export default function AlbumPage() {
   const navigate = useNavigate()
@@ -15,6 +17,7 @@ export default function AlbumPage() {
     fetchAlbums,
     fetchUserAlbums,
     selectAlbum,
+    userAlbums = [],
     ownedStickers = [],
     missingStickers = [],
     duplicateStickers = [],
@@ -28,31 +31,36 @@ export default function AlbumPage() {
 
   const [mode, setMode] = useState('have')
   const [viewMode, setViewMode] = useState('numbers') // 'numbers' | 'checklist'
-  const [checklistImagesEnabled, setChecklistImagesEnabled] = useState(false)
+  const [checklistImagesEnabled, setChecklistImagesEnabled] = useState(true)
 
   useEffect(() => {
     // Fetch checklist setting
     supabase.from('app_settings').select('value').eq('key', 'checklist_images_enabled').single()
       .then(({ data }) => {
         if (data) {
-          // Normalize value from JSONB/Text
           let val = data.value
-          if (typeof val === 'string') {
-            val = val.replace(/"/g, '').toLowerCase()
-          }
+          if (typeof val === 'string') val = val.replace(/"/g, '').toLowerCase()
           const isEnabled = val === true || val === 'true'
           setChecklistImagesEnabled(isEnabled)
-          // If disabled and user is in checklist mode, force back to numbers
-          if (!isEnabled && viewMode === 'checklist') {
-            setViewMode('numbers')
-          }
         }
       })
-  }, [viewMode])
+  }, [])
+
   const [searchFilter, setSearchFilter] = useState('')
   const [activeTab, setActiveTab] = useState('base')
   const [showBulk, setShowBulk] = useState(false)
   const [bulkInput, setBulkInput] = useState('')
+  const [showCompletionConfirm, setShowCompletionConfirm] = useState(false)
+  const [showCompletionCelebration, setShowCompletionCelebration] = useState(false)
+  const [completionPromptDismissed, setCompletionPromptDismissed] = useState(false)
+  const [showPartnerStoreSelector, setShowPartnerStoreSelector] = useState(false)
+  const [partnerStores, setPartnerStores] = useState([])
+  const [loadingPartnerStores, setLoadingPartnerStores] = useState(false)
+  const [userCoords, setUserCoords] = useState(null)
+  
+  const [partnerStoreStateTick, setPartnerStoreStateTick] = useState(0)
+
+  useEffect(() => subscribePartnerStoreStorage(() => setPartnerStoreStateTick(prev => prev + 1)), [])
 
   useEffect(() => {
     fetchAlbums()
@@ -170,6 +178,26 @@ export default function AlbumPage() {
   const missingCount = missingStickers.length
   const duplicateCount = duplicateStickers.length
   const progressPercent = total > 0 ? Math.round((ownedCount / total) * 100) : 0
+  const currentUserAlbum = useMemo(
+    () => userAlbums.find(item => item.album_id === selectedAlbum?.id) || null,
+    [userAlbums, selectedAlbum?.id]
+  )
+  const legendState = useMemo(
+    () => getPartnerStoreAlbumState(profile?.id, selectedAlbum?.id),
+    [profile?.id, selectedAlbum?.id, partnerStoreStateTick]
+  )
+  const albumProgressState = legendState.status || ALBUM_PROGRESS_STATES.IN_PROGRESS
+  const isAlbumLocked = albumProgressState !== ALBUM_PROGRESS_STATES.IN_PROGRESS
+  const isAlbumCompleted = albumProgressState === ALBUM_PROGRESS_STATES.COMPLETED
+  const isAlbumPartnerVerified = albumProgressState === ALBUM_PROGRESS_STATES.PARTNER_VERIFIED
+
+  const albumStickersMap = useMemo(() => {
+    const map = {}
+    albumStickers?.forEach(s => {
+      map[String(s.sticker_number)] = s
+    })
+    return map
+  }, [albumStickers])
 
   const numbers = useMemo(() => {
     let result = []
@@ -190,23 +218,40 @@ export default function AlbumPage() {
     const query = searchFilter.trim().toLowerCase()
     return result.filter((n) => {
       if (n.toLowerCase().includes(query)) return true
-      const sData = useAppStore.getState().albumStickers?.find(s => String(s.sticker_number) === n)
+      const sData = albumStickersMap[n]
       if (sData?.name?.toLowerCase().includes(query)) return true
       if (sData?.team?.toLowerCase().includes(query)) return true
       return false
     })
-  }, [activeTab, total, missingSet, duplicateSet, searchFilter, specialGroups, useAppStore])
+  }, [activeTab, total, missingSet, duplicateSet, searchFilter, specialGroups, albumStickersMap])
 
-  const albumStickersMap = useMemo(() => {
-    const map = {}
-    useAppStore.getState().albumStickers?.forEach(s => {
-      map[String(s.sticker_number)] = s
-    })
-    return map
-  }, [useAppStore.getState().albumStickers])
+  useEffect(() => {
+    if (ownedCount < total && completionPromptDismissed) {
+      setCompletionPromptDismissed(false)
+    }
+    if (!selectedAlbum?.id || !profile?.id) return
+    if (ownedCount < total || total <= 0) return
+    if (albumProgressState !== ALBUM_PROGRESS_STATES.IN_PROGRESS) return
+    if (completionPromptDismissed) return
+    if (showCompletionConfirm || showCompletionCelebration) return
+    setShowCompletionConfirm(true)
+  }, [
+    completionPromptDismissed,
+    albumProgressState,
+    ownedCount,
+    profile?.id,
+    selectedAlbum?.id,
+    showCompletionCelebration,
+    showCompletionConfirm,
+    total
+  ])
 
   const handleToggle = async (num) => {
     if (!profile?.id || !selectedAlbum?.id) return
+    if (isAlbumLocked) {
+      toast.error('Este album ya esta cerrado. Solo puedes revisarlo o validarlo en una Tienda PartnerStore.')
+      return
+    }
 
     const sticker = String(num)
     const isOwned = ownedSet.has(sticker)
@@ -251,6 +296,10 @@ export default function AlbumPage() {
 
   const handleBulkAdd = async () => {
     if (!bulkInput.trim() || !profile?.id || !selectedAlbum?.id) return
+    if (isAlbumLocked) {
+      toast.error('Este album ya esta cerrado. No puedes modificarlo.')
+      return
+    }
 
     const nums = bulkInput
       .split(/[,\s]+/)
@@ -275,15 +324,80 @@ export default function AlbumPage() {
     }
   }
 
+  const handleConfirmAlbumCompletion = () => {
+    markAlbumCompleted({
+      userId: profile.id,
+      userName: profile.name || 'Coleccionista FigusUY',
+      albumId: selectedAlbum.id,
+      albumName: selectedAlbum.name,
+      albumCover: selectedAlbum.cover_url || selectedAlbum.images?.[0] || null,
+      albumYear: selectedAlbum.year || null
+    })
+    setCompletionPromptDismissed(false)
+    setPartnerStoreStateTick(prev => prev + 1)
+    setShowCompletionConfirm(false)
+    setShowCompletionCelebration(true)
+  }
+
+  const calculateDistance = (lat1, lon1, lat2, lon2) => {
+    if (!lat1 || !lon1 || !lat2 || !lon2) return Infinity
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+  }
+
+  const handleOpenPartnerStoreSelector = async () => {
+    setShowCompletionCelebration(false)
+    setShowPartnerStoreSelector(true)
+    setLoadingPartnerStores(true)
+
+    let coords = userCoords
+    if (!coords && profile?.lat) {
+       coords = { lat: profile.lat, lng: profile.lng }
+       setUserCoords(coords)
+    }
+
+    if (!coords) {
+       try {
+         coords = await getUserLocation(5000)
+         setUserCoords(coords)
+       } catch (err) {
+         console.log('Location not available', err)
+       }
+    }
+
+    const { data } = await supabase
+      .from('locations')
+      .select('*')
+      .eq('is_active', true)
+      .eq('business_plan', 'legend')
+
+    if (data) {
+       const stores = data.map(store => {
+         let dist = Infinity
+         if (coords && store.lat && store.lng) {
+            dist = calculateDistance(coords.lat, coords.lng, store.lat, store.lng)
+         }
+         return { ...store, _distance: dist }
+       }).sort((a, b) => a._distance - b._distance)
+       setPartnerStores(stores)
+    }
+    setLoadingPartnerStores(false)
+  }
+
   if (!selectedAlbum) {
     return (
       <div className="album-page-root">
         <style>{`
           .album-page-root {
-            background-color: #020617;
+            background-color: var(--color-bg);
             min-height: 100vh;
-            color: white;
-          }
+            color: var(--color-text); }
           .no-album-container {
             display: flex;
             flex-direction: column;
@@ -296,8 +410,8 @@ export default function AlbumPage() {
           .no-album-icon {
             width: 5rem;
             height: 5rem;
-            background-color: #0f172a;
-            border-radius: 1.5rem;
+            background-color: var(--color-surface);
+            border-radius: 4px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -305,33 +419,40 @@ export default function AlbumPage() {
             margin-bottom: 1.5rem;
           }
           .no-album-title { font-size: 1.875rem; font-weight: 900; margin: 0 0 0.5rem; }
-          .no-album-desc { color: #94a3b8; margin-bottom: 2rem; }
+          .no-album-desc { color: var(--color-text-secondary); margin-bottom: 2rem; }
           .album-list { display: grid; gap: 0.75rem; width: 100%; max-width: 28rem; }
           .album-item-btn {
             display: flex;
             align-items: center;
             gap: 1rem;
             padding: 1rem;
-            border-radius: 1rem;
-            background-color: #0f172a;
-            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 4px;
+            background-color: var(--color-surface);
+            border: 1px solid var(--color-border-light);
             transition: all 0.2s;
             text-align: left;
             cursor: pointer;
           }
-          .album-item-btn:hover { border-color: #ea580c; }
+          .album-item-btn:hover { border-color: var(--color-primary); }
           .album-item-icon {
-            width: 3rem;
-            height: 3rem;
-            background-color: #ea580c;
-            border-radius: 0.75rem;
+            aspect-ratio: 3/4;
+            width: 4rem;
+            background-color: var(--color-primary);
+            border-radius: 4px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 1.5rem;
+            overflow: hidden;
+            flex-shrink: 0;
           }
-          .album-item-name { font-weight: 900; margin: 0; color: white; }
-          .album-item-meta { font-size: 0.75rem; color: #64748b; margin: 0; }
+          .album-item-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+          }
+          .album-item-name { font-weight: 900; margin: 0; color: var(--color-text); font-size: 1rem; }
+          .album-item-meta { font-size: 0.75rem; color: var(--color-text-muted); margin: 0; }
         `}</style>
         <div className="no-album-container">
           <div className="no-album-icon">📖</div>
@@ -378,629 +499,335 @@ export default function AlbumPage() {
     <div className="album-page-root">
       <style>{`
         .album-page-root {
-          background-color: #020617;
+          background-color: var(--color-bg);
           min-height: 100vh;
-          color: white;
-          font-family: inherit;
+          color: var(--color-text);
+          padding: 24px;
+          max-width: 1480px;
+          margin: auto;
+          font-family: 'Barlow', system-ui, sans-serif;
         }
 
-        /* TOPBAR */
-        .album-topbar {
-          position: sticky;
-          top: 0;
-          z-index: 40;
-          height: 5rem;
-          background-color: rgba(5, 8, 22, 0.9);
-          backdrop-filter: blur(16px);
-          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-          padding: 0 1rem;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 1rem;
+        /* ALBUM HEADER CARD */
+        .album-header-section {
+          border: 1px solid var(--color-border);
+          background: var(--color-surface);
+          margin-bottom: 18px;
         }
-
-        @media (min-width: 768px) {
-          .album-topbar { padding: 0 2rem; }
-        }
-
-        .topbar-info p {
-          font-size: 0.75rem;
-          color: #64748b;
-          font-weight: 900;
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
-          margin: 0;
-        }
-
-        .topbar-info h1 {
-          font-size: 1.25rem;
-          font-weight: 900;
-          margin: 0;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          max-width: 160px;
-        }
-
-        @media (min-width: 768px) {
-          .topbar-info h1 {
-            font-size: 1.5rem;
-            max-width: 320px;
-          }
-        }
-
-        .topbar-search {
-          display: none;
-          flex: 1;
-          max-width: 32rem;
-          margin: 0 1.5rem;
-        }
-
-        @media (min-width: 1024px) {
-          .topbar-search { display: flex; }
-        }
-
-        .topbar-search input, .album-search-input {
-          width: 100%;
-          padding: 0.75rem 1.25rem;
-          border-radius: 1rem;
-          background-color: #0f172a;
-          border: 1px solid rgba(255,255,255,0.1);
-          color: white;
-          font-size: 0.875rem;
-          font-weight: 700;
-          outline: none;
-        }
-        .topbar-search input:focus, .album-search-input:focus {
-          border-color: #ea580c;
-          box-shadow: 0 0 0 2px rgba(234,88,12,0.2);
-        }
-
-        .topbar-actions {
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-          flex-shrink: 0;
-        }
-
-        .album-select {
-          display: none;
-          padding: 0.625rem 1rem;
-          border-radius: 1rem;
-          background-color: #0f172a;
-          border: 1px solid rgba(255,255,255,0.1);
-          color: white;
-          font-size: 0.875rem;
-          font-weight: 700;
-          outline: none;
-        }
-        @media (min-width: 640px) {
-          .album-select { display: block; }
-        }
-
-        .btn-primary {
-          padding: 0.625rem 1rem;
-          border-radius: 1rem;
-          background-color: #ea580c;
-          color: white;
-          font-weight: 900;
-          font-size: 0.875rem;
-          border: none;
-          cursor: pointer;
-          box-shadow: 0 10px 15px -3px rgba(234,88,12,0.25);
-          transition: all 0.2s;
-        }
-        .btn-primary:hover {
-          background-color: #f97316;
-        }
-
-        .album-container {
-          max-width: 1500px;
-          margin: 0 auto;
-          padding: 1.5rem 1rem 6rem;
-          display: flex;
-          flex-direction: column;
-          gap: 1.5rem;
-        }
-
-        @media (min-width: 768px) {
-          .album-container {
-            padding: 1.5rem 2rem 2rem;
-          }
-        }
-
-        /* HERO SUMMARY */
-        .album-hero {
-          border-radius: 2rem;
-          background: linear-gradient(to bottom right, #111827, #0f172a, #1f1308);
-          border: 1px solid rgba(255,255,255,0.1);
-          box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
-          padding: 1.25rem;
-        }
-
-        @media (min-width: 768px) {
-          .album-hero { padding: 1.75rem; }
-        }
-
-        .album-hero-content {
-          display: flex;
-          flex-direction: column;
-          gap: 1.5rem;
-        }
-
-        @media (min-width: 1280px) {
-          .album-hero-content {
-            flex-direction: row;
-            align-items: center;
-            justify-content: space-between;
-          }
-        }
-
-        .album-hero-info {
-          display: flex;
-          align-items: center;
-          gap: 1.25rem;
-          flex: 1;
-          min-width: 0;
-        }
-
-        .album-hero-icon {
-          width: 5rem;
-          height: 6rem;
-          border-radius: 1.7rem;
-          background: linear-gradient(to bottom right, #f97316, #c2410c);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 2.25rem;
-          box-shadow: 0 20px 25px -5px rgba(234,88,12,0.3);
-          flex-shrink: 0;
-        }
-
-        .album-hero-badges {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 0.5rem;
-          margin-bottom: 0.5rem;
-        }
-        .badge-principal {
-          padding: 0.25rem 0.75rem;
-          border-radius: 9999px;
-          background-color: rgba(234,88,12,0.2);
-          border: 1px solid rgba(234,88,12,0.3);
-          color: #f97316;
-          font-size: 0.75rem;
-          font-weight: 900;
-        }
-        .badge-secondary {
-          padding: 0.25rem 0.75rem;
-          border-radius: 9999px;
-          background-color: rgba(255,255,255,0.1);
-          border: 1px solid rgba(255,255,255,0.1);
-          color: #cbd5e1;
-          font-size: 0.75rem;
-          font-weight: 900;
-        }
-
-        .album-hero-title {
-          font-size: 1.875rem;
-          font-weight: 900;
-          margin: 0;
-          letter-spacing: -0.025em;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-        }
-        @media (min-width: 768px) {
-          .album-hero-title { font-size: 3rem; }
-        }
-
-        .album-hero-desc {
-          color: #94a3b8;
-          font-size: 0.875rem;
-          margin: 0.5rem 0 0;
-          display: none;
-        }
-        @media (min-width: 640px) {
-          .album-hero-desc { display: block; }
-        }
-
-        .album-stats-grid {
+        .album-header-card {
           display: grid;
-          grid-template-columns: repeat(2, 1fr);
-          gap: 0.75rem;
+          grid-template-columns: 120px 1fr;
+          gap: 22px;
+          padding: 24px;
         }
-        @media (min-width: 640px) {
-          .album-stats-grid { grid-template-columns: repeat(4, 1fr); }
+        .album-cover {
+          aspect-ratio: 3/4;
+          border: 1px solid var(--color-border-light);
+          background: linear-gradient(180deg, var(--color-surface-hover), var(--color-bg));
+          display: grid;
+          place-items: center;
+          text-align: center;
+          min-height: 140px;
+          border-radius: 2px;
+          overflow: hidden;
         }
-        @media (min-width: 1280px) {
-          .album-stats-grid { min-width: 520px; }
+        .album-cover b {
+          font: italic 900 2.8rem 'Barlow Condensed', sans-serif;
+          color: var(--color-primary);
+        }
+        .album-cover span {
+          font: 800 .55rem 'Barlow Condensed', sans-serif;
+          letter-spacing: .12em;
+          text-transform: uppercase;
+          color: var(--color-text-muted);
+        }
+        .album-header-info {
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+        }
+        .album-kicker {
+          font: 800 .72rem 'Barlow Condensed', sans-serif;
+          letter-spacing: .16em;
+          text-transform: uppercase;
+          color: var(--color-primary);
+          margin-bottom: 4px;
+        }
+        .album-header-title {
+          font: italic 900 clamp(1.8rem, 4vw, 2.3rem) 'Barlow Condensed', sans-serif;
+          line-height: .95;
+          text-transform: uppercase;
+          margin: 0;
+        }
+        .album-header-subtitle {
+          color: var(--color-text-secondary);
+          font-size: .9rem;
+          margin-top: 4px;
         }
 
-        .stat-card {
-          border-radius: 1.5rem;
-          padding: 1rem;
+        .album-header-stats {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 1px;
+          background: var(--color-border);
+          margin-top: 18px;
+        }
+        .album-header-stat {
+          background: var(--color-surface);
+          padding: 16px;
           text-align: center;
         }
-        .stat-card-default {
-          background-color: #070b1a;
-          border: 1px solid rgba(255,255,255,0.1);
+        .album-header-stat b {
+          display: block;
+          font: italic 900 2.2rem 'Barlow Condensed', sans-serif;
+          color: var(--color-text);
+          line-height: 1;
         }
-        .stat-card-success {
-          background-color: rgba(6,78,59,0.3);
-          border: 1px solid rgba(16,185,129,0.2);
-        }
-        .stat-card-danger {
-          background-color: rgba(127,29,29,0.3);
-          border: 1px solid rgba(239,68,68,0.2);
-        }
-        .stat-card-primary {
-          background-color: #ea580c;
-        }
-
-        .stat-value {
-          font-size: 1.875rem;
-          font-weight: 900;
-          margin: 0;
-        }
-        .stat-value.text-success { color: #34d399; }
-        .stat-value.text-danger { color: #f87171; }
-        .stat-value.text-white { color: white; }
-
-        .stat-label {
-          font-size: 0.625rem;
-          font-weight: 900;
+        .album-header-stat span {
+          font-size: .72rem;
           text-transform: uppercase;
-          margin: 0.25rem 0 0;
-          color: #64748b;
+          color: var(--color-text-muted);
+          font-weight: 700;
         }
-        .stat-card-primary .stat-label { color: #ffedd5; }
+        .album-header-stat.primary b { color: var(--color-primary); }
+        .album-header-stat.success b { color: var(--color-success); }
+        .album-header-stat.danger b { color: var(--color-danger); }
 
-        .progress-section {
-          margin-top: 1.5rem;
+        .progress-container {
+          padding: 18px 20px;
+          border-top: 1px solid var(--color-border);
         }
-        .progress-header {
+        .progress-info {
           display: flex;
           justify-content: space-between;
-          font-size: 0.875rem;
-          font-weight: 900;
-          margin-bottom: 0.5rem;
+          font: 800 .9rem 'Barlow Condensed', sans-serif;
+          text-transform: uppercase;
+          letter-spacing: .05em;
+          margin-bottom: 8px;
         }
-        .progress-header .progress-text { color: #f97316; }
-
-        .progress-bar-container {
-          height: 1rem;
-          border-radius: 9999px;
-          background-color: #070b1a;
-          border: 1px solid rgba(255,255,255,0.1);
+        .progress-bar {
+          height: 18px;
+          border: 1px solid var(--color-border-light);
+          background: var(--color-bg);
+          position: relative;
           overflow: hidden;
-          display: flex;
         }
         .progress-fill {
           height: 100%;
+          background: var(--color-primary);
           transition: width 0.3s ease;
         }
-        .progress-fill-owned { background-color: #ea580c; }
-        .progress-fill-missing { background-color: #ef4444; }
 
-        .progress-legend {
+        /* HYBRID CONVERSION LAYOUT */
+        .hybrid-layout {
+          display: grid;
+          grid-template-columns: 1fr 300px;
+          gap: 18px;
+        }
+        @media (max-width: 1024px) {
+          .hybrid-layout { grid-template-columns: 1fr; }
+        }
+
+        .action-strip {
+          border: 1px solid var(--color-border);
+          background: var(--color-surface);
+          display: grid;
+          grid-template-columns: 1fr 280px;
+          gap: 1px;
+          background: var(--color-border);
+          margin-bottom: 18px;
+        }
+        @media (max-width: 768px) {
+          .action-strip { grid-template-columns: 1fr; }
+        }
+        
+        .bulk-add-section {
+          background: var(--color-surface-hover);
+          padding: 16px;
+          display: grid;
+          grid-template-columns: 1fr auto;
+          gap: 10px;
+          align-items: end;
+        }
+        .bulk-add-section input {
+          height: 48px;
+          background: var(--color-bg);
+          border: 1px solid var(--color-border-light);
+          padding: 0 14px;
+          color: var(--color-text);
+          font-weight: 700;
+          width: 100%;
+        }
+        .matches-proof-box {
+          background: var(--color-surface-hover);
+          padding: 16px;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          text-align: center;
+        }
+        .matches-proof-box b {
+          font: italic 900 1.8rem 'Barlow Condensed', sans-serif;
+          color: var(--color-primary);
+          line-height: .9;
+        }
+        .matches-proof-box span {
+          color: var(--color-text-secondary);
+          font-size: .82rem;
+          margin-top: 4px;
+        }
+
+        /* MODES SELECTOR */
+        .modes-grid {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 1px;
+          background: var(--color-border);
+          border: 1px solid var(--color-border);
+          margin-bottom: 18px;
+        }
+        @media (max-width: 640px) {
+          .modes-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        .mode-card {
+          border: 0;
+          background: var(--color-surface);
+          padding: 14px;
+          text-align: left;
+          color: var(--color-text);
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+        .mode-card small {
+          display: block;
+          font: 800 .62rem 'Barlow Condensed', sans-serif;
+          letter-spacing: .12em;
+          text-transform: uppercase;
+          color: var(--color-text-muted);
+        }
+        .mode-card b {
+          display: block;
+          font: italic 900 1.35rem 'Barlow Condensed', sans-serif;
+          text-transform: uppercase;
+          line-height:.95;
+          margin-top: 6px;
+        }
+        .mode-card span {
+          display: block;
+          font-size: .76rem;
+          color: var(--color-text-muted);
+          margin-top: 6px;
+        }
+        .mode-card.active { background: var(--color-primary); color: #fff; }
+        .mode-card.active b, .mode-card.active small, .mode-card.active span { color: #fff; }
+        .mode-card.have b { color: var(--color-text); }
+        .mode-card.dup b { color: var(--color-success); }
+        .mode-card.miss b { color: var(--color-danger); }
+        .mode-card.clear b { color: var(--color-text-secondary); }
+
+        /* MAIN CONTENT AREA */
+        .main-content {
+          background: var(--color-surface);
+          border: 1px solid var(--color-border);
+          padding: 18px;
+        }
+        .tabs-header {
           display: flex;
           justify-content: space-between;
-          font-size: 0.75rem;
-          font-weight: 700;
-          color: #64748b;
-          margin-top: 0.5rem;
-        }
-        .progress-legend .text-danger { color: #f87171; }
-
-        /* MAIN GRID CONTENT */
-        .content-layout {
-          display: grid;
-          gap: 1.5rem;
-          align-items: start;
-        }
-
-        @media (min-width: 1280px) {
-          .content-layout {
-            grid-template-columns: 1fr 360px;
-          }
-        }
-
-        .control-panel {
-          background-color: #0f172a;
-          border-radius: 2rem;
-          border: 1px solid rgba(255,255,255,0.1);
-          box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5);
-          display: flex;
-          flex-direction: column;
-        }
-
-        .control-header {
-          padding: 1.25rem;
-          border-bottom: 1px solid rgba(255,255,255,0.1);
-        }
-        @media (min-width: 768px) {
-          .control-header { padding: 1.5rem; }
-        }
-
-        .control-title-row {
-          display: flex;
-          flex-direction: column;
-          gap: 1.25rem;
-        }
-        @media (min-width: 1536px) {
-          .control-title-row {
-            flex-direction: row;
-            align-items: center;
-            justify-content: space-between;
-          }
-        }
-
-        .control-title h3 {
-          font-size: 1.5rem;
-          font-weight: 900;
-          margin: 0;
-        }
-        @media (min-width: 768px) {
-          .control-title h3 { font-size: 1.875rem; }
-        }
-
-        .control-title p {
-          font-size: 0.875rem;
-          color: #94a3b8;
-          margin: 0.25rem 0 0;
-        }
-
-        .view-toggle-row {
-          display: flex;
+          gap: 12px;
           align-items: center;
-          gap: 0.5rem;
-          background: rgba(255,255,255,0.05);
-          padding: 0.25rem;
-          border-radius: 1rem;
-          width: fit-content;
-          margin-bottom: 1rem;
-        }
-        
-        .view-toggle-btn {
-          padding: 0.5rem 1rem;
-          border-radius: 0.75rem;
-          font-weight: 700;
-          font-size: 0.875rem;
-          border: none;
-          background: transparent;
-          color: #94a3b8;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-        
-        .view-toggle-btn.active {
-          background: #ea580c;
-          color: white;
-          box-shadow: 0 4px 6px -1px rgba(234,88,12,0.2);
-        }
-
-        .mode-buttons {
-          display: flex;
+          margin-bottom: 16px;
           flex-wrap: wrap;
-          gap: 0.5rem;
         }
-
-        .mode-btn {
-          padding: 0.75rem 1rem;
-          border-radius: 1rem;
-          font-weight: 900;
-          font-size: 0.875rem;
-          transition: all 0.2s;
-          cursor: pointer;
-          border: 1px solid transparent;
-        }
-        .mode-btn-inactive {
-          background-color: rgba(255,255,255,0.1);
-          border-color: rgba(255,255,255,0.1);
-          color: #cbd5e1;
-        }
-        .mode-btn-inactive:hover { background-color: rgba(255,255,255,0.2); }
-        .mode-btn-active-have { background-color: white; color: #020617; box-shadow: 0 0 0 2px #ea580c; }
-        .mode-btn-active-dup { background-color: rgba(16,185,129,0.15); border-color: rgba(16,185,129,0.3); color: #6ee7b7; box-shadow: 0 0 0 2px #ea580c; }
-        .mode-btn-active-mis { background-color: rgba(239,68,68,0.15); border-color: rgba(239,68,68,0.3); color: #fca5a5; box-shadow: 0 0 0 2px #ea580c; }
-        .mode-btn-active-clr { background-color: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.2); color: white; box-shadow: 0 0 0 2px #ea580c; }
-
-        .search-bulk-row {
-          margin-top: 1.25rem;
-          display: grid;
-          gap: 0.75rem;
-        }
-        @media (min-width: 1024px) {
-          .search-bulk-row { grid-template-columns: 1fr auto auto; }
-        }
-
-        .btn-secondary {
-          padding: 0.75rem 1.25rem;
-          border-radius: 1rem;
-          background-color: rgba(255,255,255,0.1);
-          border: 1px solid rgba(255,255,255,0.1);
-          color: white;
-          font-weight: 900;
-          font-size: 0.875rem;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-        .btn-secondary:hover { background-color: rgba(255,255,255,0.2); }
-
-        .bulk-input-container {
-          margin-top: 1rem;
-          padding: 1rem;
-          border-radius: 1rem;
-          background-color: #070b1a;
-          border: 1px solid rgba(255,255,255,0.1);
-        }
-        .bulk-textarea {
-          width: 100%;
-          background: transparent;
-          border: none;
-          outline: none;
-          color: white;
-          font-size: 0.875rem;
-          font-weight: 700;
-          min-height: 5rem;
-          resize: none;
-          margin-bottom: 0.75rem;
-        }
-        .bulk-textarea::placeholder { color: #475569; }
-        .btn-white {
-          width: 100%;
-          padding: 0.75rem;
-          background-color: white;
-          color: #020617;
-          border-radius: 0.75rem;
-          font-weight: 900;
-          font-size: 0.875rem;
-          border: none;
-          cursor: pointer;
-          transition: background-color 0.2s;
-        }
-        .btn-white:hover { background-color: #f1f5f9; }
-
-        .legend-row {
-          margin-top: 1.25rem;
+        .filter-tabs {
           display: flex;
-          flex-wrap: wrap;
-          gap: 0.75rem;
-          font-size: 0.75rem;
-          font-weight: 700;
-          color: #94a3b8;
-        }
-        .legend-item {
-          display: inline-flex;
-          align-items: center;
-          gap: 0.5rem;
-        }
-        .legend-color {
-          width: 1rem;
-          height: 1rem;
-          border-radius: 0.25rem;
-        }
-
-        .tabs-container {
-          padding: 1.25rem 1.25rem 0;
-          display: flex;
-          gap: 0.5rem;
+          gap: 1px;
+          background: var(--color-border);
+          border: 1px solid var(--color-border);
           overflow-x: auto;
-          scrollbar-width: none;
         }
-        @media (min-width: 768px) {
-          .tabs-container { padding: 1.5rem 1.5rem 0; }
-        }
-
-        .tab-btn {
-          padding: 0.5rem 1rem;
-          border-radius: 0.75rem;
-          font-weight: 900;
-          font-size: 0.875rem;
+        .filter-tab {
+          border: 0;
+          background: var(--color-surface);
+          color: var(--color-text-muted);
+          padding: .7rem 1rem;
+          font: 800 .82rem 'Barlow Condensed', sans-serif;
+          letter-spacing: .08em;
+          text-transform: uppercase;
           white-space: nowrap;
           cursor: pointer;
-          border: 1px solid transparent;
-          transition: all 0.2s;
         }
-        .tab-btn-active {
-          background-color: #ea580c;
-          color: white;
-        }
-        .tab-btn-inactive {
-          background-color: #070b1a;
-          border-color: rgba(255,255,255,0.1);
-          color: #cbd5e1;
-        }
-        .tab-btn-inactive:hover { border-color: #ea580c; }
-
-        .grid-container-wrapper {
-          padding: 1.25rem;
-        }
-        @media (min-width: 768px) {
-          .grid-container-wrapper { padding: 1.5rem; }
+        .filter-tab.active {
+          background: var(--color-primary);
+          color: #fff;
         }
 
-        .grid-scroll-area {
-          max-height: 480px;
-          overflow-y: auto;
-          scrollbar-width: thin;
-          scrollbar-color: #1e293b transparent;
-          padding-right: 0.5rem;
-        }
-
+        /* STICKERS GRID (VISTA RAPIDA) */
         .stickers-grid {
           display: grid;
-          grid-template-columns: repeat(5, 1fr);
-          gap: 0.5rem;
+          grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+          gap: 8px;
+          padding: 10px;
+          background: var(--color-bg);
+          border: 1px solid var(--color-border);
         }
-        @media (min-width: 640px) { .stickers-grid { grid-template-columns: repeat(8, 1fr); } }
-        @media (min-width: 768px) { .stickers-grid { grid-template-columns: repeat(10, 1fr); } }
-        @media (min-width: 1024px) { .stickers-grid { grid-template-columns: repeat(12, 1fr); } }
-        @media (min-width: 1536px) { .stickers-grid { grid-template-columns: repeat(16, 1fr); } }
-
-        .sticker-btn {
-          aspect-ratio: 1 / 1;
-          border-radius: 0.75rem;
-          font-weight: 900;
-          font-size: 0.875rem;
+        
+        .sticker-cell {
+          aspect-ratio: 1/1;
           display: flex;
-          align-items: center;
           justify-content: center;
+          align-items: center;
+          background: var(--color-surface);
+          border: 1px solid var(--color-border);
+          border-radius: 4px;
           cursor: pointer;
           transition: all 0.2s;
-          border: 1px solid transparent;
         }
-        .sticker-owned {
-          background-color: white;
-          color: #020617;
-        }
-        .sticker-duplicate {
-          background-color: #10b981;
-          color: white;
-          box-shadow: 0 10px 15px -3px rgba(16,185,129,0.2);
-        }
-        .sticker-missing {
-          background-color: #ef4444;
-          color: white;
-          box-shadow: 0 10px 15px -3px rgba(239,68,68,0.2);
-        }
-        .sticker-unmarked {
-          background-color: #070b1a;
-          border-color: rgba(255,255,255,0.1);
-          color: #64748b;
-        }
-        .sticker-unmarked:hover { border-color: #ea580c; }
+        .sticker-cell:hover { border-color: var(--color-primary); transform: translateY(-2px); }
+        .sticker-cell b { font: 900 1.4rem 'Barlow Condensed', sans-serif; color: var(--color-text); }
+        
+        .sticker-cell.have { background: var(--color-primary); border-color: var(--color-primary); }
+        .sticker-cell.have b { color: #fff; }
+        
+        .sticker-cell.dup { background: var(--color-success); border-color: var(--color-success); }
+        .sticker-cell.dup b { color: #fff; }
+        
+        .sticker-cell.miss { background: var(--color-danger); border-color: var(--color-danger); }
+        .sticker-cell.miss b { color: #fff; }
 
+        /* CHECKLIST IMAGES VIEW */
         .stickers-checklist {
           display: grid;
           grid-template-columns: repeat(2, 1fr);
-          gap: 0.75rem;
+          gap: 1rem;
         }
-        @media (min-width: 640px) { .stickers-checklist { grid-template-columns: repeat(3, 1fr); } }
-        @media (min-width: 1024px) { .stickers-checklist { grid-template-columns: repeat(4, 1fr); } }
-        @media (min-width: 1536px) { .stickers-checklist { grid-template-columns: repeat(6, 1fr); } }
+        @media (min-width: 640px) { .stickers-checklist { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); } }
+        @media (min-width: 1024px) { .stickers-checklist { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); } }
 
         .checklist-card {
-          background-color: #070b1a;
-          border: 1px solid rgba(255,255,255,0.1);
-          border-radius: 1rem;
+          background-color: var(--color-surface-hover);
+          border: 1px solid rgba(255,255,255,0.08);
+          border-radius: 4px;
           overflow: hidden;
           cursor: pointer;
-          transition: all 0.2s;
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
           display: flex;
           flex-direction: column;
+          position: relative;
         }
-        .checklist-card:hover { border-color: #ea580c; }
-        
-        .checklist-card.owned { border-color: rgba(255,255,255,0.3); }
-        .checklist-card.duplicate { border-color: rgba(16,185,129,0.5); }
-        .checklist-card.missing { border-color: rgba(239,68,68,0.5); }
+        .checklist-card:hover { 
+          transform: translateY(-4px); 
+          border-color: var(--color-primary);
+          box-shadow: 0 12px 20px -8px rgba(255,90,0,0.3);
+        }
+        .checklist-card.owned { border-color: rgba(255,255,255,0.2); }
+        .checklist-card.duplicate { border-color: rgba(34,197,94,0.4); }
+        .checklist-card.missing { border-color: rgba(239,68,68,0.4); }
 
         .checklist-img-wrapper {
           aspect-ratio: 3/4;
-          background-color: #0f172a;
+          width: 100%;
+          background-color: var(--color-bg);
           position: relative;
           display: flex;
           align-items: center;
@@ -1012,6 +839,10 @@ export default function AlbumPage() {
           width: 100%;
           height: 100%;
           object-fit: cover;
+          transition: transform 0.3s ease;
+        }
+        .checklist-card:hover .checklist-img {
+          transform: scale(1.05);
         }
         
         .checklist-placeholder {
@@ -1019,548 +850,367 @@ export default function AlbumPage() {
           flex-direction: column;
           align-items: center;
           justify-content: center;
-          color: #475569;
+          color: var(--color-text-muted);
           gap: 0.5rem;
+          background: linear-gradient(135deg, var(--color-surface) 0%, var(--color-bg) 100%);
+          width: 100%;
+          height: 100%;
         }
         
         .checklist-info {
           padding: 0.75rem;
-          flex: 1;
           display: flex;
           flex-direction: column;
+          gap: 0.25rem;
+          background: var(--color-surface);
         }
         
         .checklist-header {
           display: flex;
           justify-content: space-between;
-          align-items: flex-start;
-          margin-bottom: 0.25rem;
+          align-items: center;
         }
         
         .checklist-num {
           font-weight: 900;
-          font-size: 1rem;
-          color: white;
+          font-size: 1.1rem;
+          color: var(--color-primary);
+          font-family: 'Barlow Condensed', sans-serif;
         }
         
         .checklist-name {
-          font-size: 0.75rem;
-          color: #94a3b8;
-          font-weight: 700;
-          display: -webkit-box;
-          -webkit-line-clamp: 2;
-          -webkit-box-orient: vertical;
+          font-size: 0.85rem;
+          color: var(--color-text); font-weight: 700;
+          white-space: nowrap;
           overflow: hidden;
+          text-overflow: ellipsis;
         }
         
         .checklist-status {
-          margin-top: auto;
-          padding-top: 0.5rem;
+          margin-top: 0.25rem;
           display: flex;
           align-items: center;
-          gap: 0.25rem;
+          gap: 0.375rem;
         }
         
         .status-dot {
-          width: 0.5rem;
-          height: 0.5rem;
+          width: 0.375rem;
+          height: 0.375rem;
           border-radius: 50%;
         }
         .status-text {
           font-size: 0.625rem;
           font-weight: 900;
           text-transform: uppercase;
+          letter-spacing: 0.02em;
         }
-
-        .right-panel {
-          display: flex;
-          flex-direction: column;
-          gap: 1.5rem;
-        }
-        @media (min-width: 1280px) {
-          .right-panel {
-            position: sticky;
-            top: 6rem;
-          }
-        }
-
-        .panel-card {
-          border-radius: 2rem;
-          padding: 1.5rem;
-          box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5);
-        }
-        .panel-card-brand {
-          background-color: #ea580c;
-        }
-        .panel-card-dark {
-          background-color: #0f172a;
-          border: 1px solid rgba(255,255,255,0.1);
-        }
-
-        .panel-header {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          margin-bottom: 0.75rem;
-        }
-        .panel-title {
-          font-size: 1.5rem;
-          font-weight: 900;
-          color: white;
-          margin: 0;
-        }
-        .panel-card-dark .panel-title { margin-bottom: 1.25rem; }
-
-        .panel-badge {
-          padding: 0.25rem 0.75rem;
-          border-radius: 9999px;
-          background-color: white;
-          color: #ea580c;
-          font-size: 0.75rem;
-          font-weight: 900;
-        }
-
-        .panel-text {
-          color: #ffedd5;
-          font-size: 0.875rem;
-          margin: 0;
-        }
-        .panel-card-dark .panel-text { color: #94a3b8; }
-
-        .panel-btn {
-          margin-top: 1.25rem;
-          width: 100%;
-          padding: 1rem;
-          border-radius: 1rem;
-          background-color: white;
-          color: #ea580c;
-          font-weight: 900;
-          font-size: 0.875rem;
-          border: none;
-          cursor: pointer;
-          transition: background-color 0.2s;
-        }
-        .panel-btn:hover { background-color: #fff7ed; }
-
-        .nav-links {
-          display: flex;
-          flex-direction: column;
-          gap: 0.75rem;
-        }
-        .nav-link-btn {
-          width: 100%;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          padding: 1rem;
-          border-radius: 1rem;
-          background-color: #070b1a;
-          border: 1px solid rgba(255,255,255,0.1);
-          transition: border-color 0.2s;
-          cursor: pointer;
-        }
-        .nav-link-btn:hover { border-color: #ea580c; }
-        .nav-link-label { font-weight: 900; color: white; font-size: 0.875rem; }
-        .nav-link-val { font-weight: 900; font-size: 0.875rem; }
-        .text-emerald { color: #34d399; }
-        .text-red { color: #f87171; }
-        .text-slate { color: #94a3b8; }
-
-        .mobile-nav {
-          position: fixed;
-          bottom: 0; left: 0; right: 0;
-          z-index: 50;
-          background-color: rgba(15, 23, 42, 0.95);
-          backdrop-filter: blur(16px);
-          border-top: 1px solid rgba(255,255,255,0.1);
-          padding: 0.75rem 1rem;
-          display: grid;
-          grid-template-columns: repeat(4, 1fr);
-          gap: 0.5rem;
-          text-align: center;
-        }
-        @media (min-width: 768px) {
-          .mobile-nav { display: none; }
-        }
-        .mobile-nav button {
-          color: #94a3b8;
-          font-size: 0.75rem;
-          font-weight: 700;
-          border: none;
-          background: none;
-          cursor: pointer;
-        }
-        .mobile-nav button.text-brand { color: #f97316; }
       `}</style>
 
-      {/* TOPBAR */}
-      <header className="album-topbar">
-        <div className="topbar-info">
-          <p>Álbum activo</p>
-          <h1>{selectedAlbum.name}</h1>
-        </div>
-
-        <div className="topbar-search">
-          <input
-            type="text"
-            placeholder="Buscar figurita, código o sección..."
-            onChange={(e) => setSearchFilter(e.target.value)}
-          />
-        </div>
-
-        <div className="topbar-actions">
-          <select
-            value={String(selectedAlbum.id)}
-            onChange={async (e) => {
-              const album = albums.find((x) => String(x.id) === e.target.value)
-              if (album) {
-                const res = await selectAlbum(album, profile?.id)
-                if (res?.error) {
-                  if (res.error.message.includes('límite de álbumes activos')) {
-                    const upgrade = window.confirm('Tu plan permite un número limitado de álbumes activos.\n\n¿Querés mejorar tu plan?')
-                    if (upgrade) {
-                      navigate('/premium')
-                    }
-                  } else {
-                    toast.error(res.error.message)
-                  }
-                }
-              }
-            }}
-            className="album-select"
-          >
-            {albums.map((album) => (
-              <option key={album.id} value={String(album.id)}>
-                {album.name}
-              </option>
-            ))}
-          </select>
-
-          <button
-            onClick={() => navigate('/matches')}
-            className="btn-primary"
-          >
-            Ver intercambios
-          </button>
-        </div>
-      </header>
-
-      <section className="album-container">
-        
-        {/* HERO SUMMARY */}
-        <div className="album-hero">
-          <div className="album-hero-content">
-            <div className="album-hero-info">
-              <div className="album-hero-icon" style={selectedAlbum.cover_url || (selectedAlbum.images && selectedAlbum.images.length > 0) ? { background: 'none' } : {}}>
-                {selectedAlbum.cover_url || (selectedAlbum.images && selectedAlbum.images.length > 0) ? (
-                  <img src={selectedAlbum.cover_url || selectedAlbum.images[0]} alt={selectedAlbum.name} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '1.7rem' }} />
-                ) : '⚽'}
-              </div>
-              <div style={{ minWidth: 0 }}>
-                <div className="album-hero-badges">
-                  <span className="badge-principal">Principal</span>
-                  <span className="badge-secondary">{total} figuritas</span>
-                </div>
-                <h2 className="album-hero-title">{selectedAlbum.name}</h2>
-                <p className="album-hero-desc">
-                  Marcá tus figuritas, repetidas y faltantes desde una sola plantilla.
-                </p>
-              </div>
-            </div>
-
-            <div className="album-stats-grid">
-              <div className="stat-card stat-card-default">
-                <p className="stat-value">{ownedCount}</p>
-                <p className="stat-label">Tengo</p>
-              </div>
-              <div className="stat-card stat-card-success">
-                <p className="stat-value text-success">{duplicateCount}</p>
-                <p className="stat-label">Repetidas</p>
-              </div>
-              <div className="stat-card stat-card-danger">
-                <p className="stat-value text-danger">{missingCount}</p>
-                <p className="stat-label">Faltantes</p>
-              </div>
-              <div className="stat-card stat-card-primary">
-                <p className="stat-value text-white">{progressPercent}%</p>
-                <p className="stat-label">Completo</p>
-              </div>
-            </div>
+      {/* ═══ ALBUM HEADER ═══ */}
+      <div className="album-header-section">
+        <div className="album-header-card">
+          <div className="album-cover">
+            {(selectedAlbum.cover_url || (selectedAlbum.images && selectedAlbum.images.length > 0)) ? (
+              <img src={selectedAlbum.cover_url || selectedAlbum.images[0]} alt={selectedAlbum.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            ) : (
+              <div><b>{selectedAlbum?.year?.toString().slice(-2) || '26'}</b><span>Album</span></div>
+            )}
           </div>
-
-          <div className="progress-section">
-            <div className="progress-header">
-              <span>Progreso del álbum</span>
-              <span className="progress-text">{ownedCount} / {total}</span>
-            </div>
-            <div className="progress-bar-container">
-              <div className="progress-fill progress-fill-owned" style={{ width: `${progressPercent}%` }} />
-              <div className="progress-fill progress-fill-missing" style={{ width: `${(missingCount / total) * 100}%` }} />
-            </div>
-            <div className="progress-legend">
-              <span>✓ Marcadas como tengo</span>
-              <span className="text-danger">❌ Faltantes</span>
+          <div className="album-header-info">
+            <span className="album-kicker">{selectedAlbum.year} · Álbum principal</span>
+            <h1 className="album-header-title">{selectedAlbum.name}</h1>
+            <p className="album-header-subtitle">Marcá tus figuritas, repetidas y faltantes desde una sola plantilla.</p>
+            <div className="album-header-stats">
+              <div className="album-header-stat"><b>{ownedCount}</b><span>Tengo</span></div>
+              <div className="album-header-stat success"><b>{duplicateCount}</b><span>Repetidas</span></div>
+              <div className="album-header-stat danger"><b>{missingCount}</b><span>Faltantes</span></div>
+              <div className="album-header-stat primary"><b>{progressPercent}%</b><span>Completo</span></div>
             </div>
           </div>
         </div>
+        <div className="progress-container">
+          <div className="progress-info">
+            <span>Progreso del álbum</span>
+            <span style={{ color: 'var(--color-primary)' }}>{ownedCount} / {total}</span>
+          </div>
+          <div className="progress-bar"><div className="progress-fill" style={{ width: `${progressPercent}%` }} /></div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '12px' }}>
+            <span className="biz-chip blue">
+              {albumProgressState === ALBUM_PROGRESS_STATES.IN_PROGRESS
+                ? 'In progress'
+                : albumProgressState === ALBUM_PROGRESS_STATES.PARTNER_VERIFIED
+                  ? 'Partner Verified'
+                  : 'Completed (sin verificar)'}
+            </span>
+            {isAlbumLocked && <span className="biz-chip">Edicion bloqueada</span>}
+          </div>
+        </div>
+      </div>
 
-        {/* CONTENT GRID */}
-        <div className="content-layout">
-          
-          {/* CONTROL PANEL */}
-          <div className="control-panel">
-            <div className="control-header">
-              <div className="view-toggle-row">
-                <button 
-                  className={`view-toggle-btn ${viewMode === 'numbers' ? 'active' : ''}`}
-                  onClick={() => setViewMode('numbers')}
-                >
-                  Números
-                </button>
-                {checklistImagesEnabled && (
-                  <button 
-                    className={`view-toggle-btn ${viewMode === 'checklist' ? 'active' : ''}`}
-                    onClick={() => setViewMode('checklist')}
-                  >
-                    Checklist Visual
-                  </button>
-                )}
+      <div className="hybrid-layout">
+        <div>
+          {/* ═══ ACTION STRIP ═══ */}
+          <div className="action-strip">
+            <div className="bulk-add-section">
+              <div style={{ width: '100%' }}>
+                <span className="album-kicker" style={{ fontSize: '.68rem' }}>Carga rápida</span>
+                <input placeholder="Ej: 10, 45, 89, M1..." value={bulkInput} onChange={(e) => setBulkInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleBulkAdd()} />
               </div>
-
-              <div className="control-title-row">
-                <div className="control-title">
-                  <h3>Control de figuritas</h3>
-                  <p>Elegí un modo y tocá las figuritas para marcarlas.</p>
-                </div>
-                
-                <div className="mode-buttons">
-                  {[
-                    { key: 'have', label: '✓ Tengo', activeClass: 'mode-btn-active-have' },
-                    { key: 'duplicate', label: '🔁 Repetida', activeClass: 'mode-btn-active-dup' },
-                    { key: 'missing', label: '❌ Faltante', activeClass: 'mode-btn-active-mis' },
-                    { key: 'clear', label: 'Borrar', activeClass: 'mode-btn-active-clr' },
-                  ].map(({ key, label, activeClass }) => (
-                    <button
-                      key={key}
-                      onClick={() => setMode(key)}
-                      className={`mode-btn ${mode === key ? activeClass : 'mode-btn-inactive'}`}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="search-bulk-row">
-                <input
-                  type="text"
-                  placeholder="Buscar número o código: 10, 125, M1..."
-                  value={searchFilter}
-                  onChange={(e) => setSearchFilter(e.target.value)}
-                  className="album-search-input"
-                />
-                <button
-                  onClick={() => setShowBulk((prev) => !prev)}
-                  className="btn-primary"
-                >
-                  Carga rápida
-                </button>
-                <button className="btn-secondary">
-                  Guardar
-                </button>
-              </div>
-
-              {showBulk && (
-                <div className="bulk-input-container">
-                  <textarea
-                    placeholder="Ingresá los números separados por coma o espacio (ej: 1, 5, 12, M3...)"
-                    value={bulkInput}
-                    onChange={(e) => setBulkInput(e.target.value)}
-                    className="bulk-textarea"
-                  />
-                  <button
-                    onClick={handleBulkAdd}
-                    className="btn-white"
-                  >
-                    Procesar figuritas
-                  </button>
-                </div>
-              )}
-
-              <div className="legend-row">
-                <span className="legend-item"><span className="legend-color" style={{ backgroundColor: 'white' }}></span> Tengo</span>
-                <span className="legend-item"><span className="legend-color" style={{ backgroundColor: '#10b981' }}></span> Repetida</span>
-                <span className="legend-item"><span className="legend-color" style={{ backgroundColor: '#ef4444' }}></span> Faltante</span>
-                <span className="legend-item"><span className="legend-color" style={{ backgroundColor: '#070b1a', border: '1px solid rgba(255,255,255,0.2)' }}></span> Sin marcar</span>
-              </div>
+              <button className="btn-orange" style={{ height: 48 }} onClick={handleBulkAdd}>Guardar</button>
             </div>
-
-            {/* TABS */}
-            <div className="tabs-container">
-              {tabs.map((tab) => (
-                <button
-                  key={tab.key}
-                  onClick={() => setActiveTab(tab.key)}
-                  className={`tab-btn ${activeTab === tab.key ? 'tab-btn-active' : 'tab-btn-inactive'}`}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-
-            {/* GRID */}
-            <div className="grid-container-wrapper">
-              <div className="grid-scroll-area">
-                {viewMode === 'numbers' ? (
-                  <div className="stickers-grid">
-                    {numbers.map((num) => {
-                      const sticker = String(num)
-                      const isOwned = ownedSet.has(sticker)
-                      const isMissing = missingSet.has(sticker)
-                      const isDuplicate = duplicateSet.has(sticker)
-
-                      let cls = 'sticker-btn '
-
-                      if (isDuplicate) {
-                        cls += 'sticker-duplicate'
-                      } else if (isMissing) {
-                        cls += 'sticker-missing'
-                      } else if (isOwned) {
-                        cls += 'sticker-owned'
-                      } else {
-                        cls += 'sticker-unmarked'
-                      }
-
-                      return (
-                        <button key={sticker} onClick={() => handleToggle(sticker)} className={cls}>
-                          {sticker}
-                        </button>
-                      )
-                    })}
-                  </div>
-                ) : (
-                  <div className="stickers-checklist">
-                    {numbers.map((num) => {
-                      const sticker = String(num)
-                      const isOwned = ownedSet.has(sticker)
-                      const isMissing = missingSet.has(sticker)
-                      const isDuplicate = duplicateSet.has(sticker)
-                      const sData = albumStickersMap[sticker]
-
-                      let statusColor = '#070b1a'
-                      let statusText = 'Sin marcar'
-                      let statusTextCol = '#64748b'
-                      let cardCls = 'checklist-card '
-
-                      if (isDuplicate) {
-                        statusColor = '#10b981'
-                        statusText = 'Repetida'
-                        statusTextCol = '#10b981'
-                        cardCls += 'duplicate'
-                      } else if (isMissing) {
-                        statusColor = '#ef4444'
-                        statusText = 'Faltante'
-                        statusTextCol = '#ef4444'
-                        cardCls += 'missing'
-                      } else if (isOwned) {
-                        statusColor = 'white'
-                        statusText = 'Tengo'
-                        statusTextCol = 'white'
-                        cardCls += 'owned'
-                      }
-
-                      return (
-                        <div key={sticker} onClick={() => handleToggle(sticker)} className={cardCls}>
-                          {checklistImagesEnabled && (
-                            <div className="checklist-img-wrapper">
-                              {sData?.image_url ? (
-                                <img src={sData.image_url} alt={sData.name || sticker} className="checklist-img" loading="lazy" />
-                              ) : (
-                                <div className="checklist-placeholder">
-                                  <span style={{ fontSize: '1.5rem' }}>📷</span>
-                                  <span style={{ fontSize: '0.625rem', fontWeight: 700 }}>Sin imagen</span>
-                                </div>
-                              )}
-                            </div>
-                          )}
-                          <div className="checklist-info">
-                            <div className="checklist-header">
-                              <span className="checklist-num">{sticker}</span>
-                            </div>
-                            {sData?.name && <span className="checklist-name">{sData.name}</span>}
-                            <div className="checklist-status">
-                              <div className="status-dot" style={{ backgroundColor: statusColor }}></div>
-                              <span className="status-text" style={{ color: statusTextCol }}>{statusText}</span>
-                            </div>
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                )}
-              </div>
+            <div className="matches-proof-box">
+              <b>Cargá tus repetidas</b>
+              <span>y encontrá cruces cerca tuyo</span>
             </div>
           </div>
 
-          {/* RIGHT PANEL */}
-          <aside className="right-panel">
-            <div className="panel-card panel-card-brand">
-              <div className="panel-header">
-                <h3 className="panel-title">Intercambios</h3>
-                <span className="panel-badge">7 nuevos</span>
-              </div>
-              <p className="panel-text">Hay personas cerca que pueden tener tus faltantes.</p>
-              <button
-                onClick={() => navigate('/matches')}
-                className="panel-btn"
-              >
-                Ver intercambios
-              </button>
-            </div>
+          {/* ═══ MODES ═══ */}
+          <div className="modes-grid">
+            <button className={`mode-card ${mode === 'have' ? 'active' : 'have'}`} onClick={() => setMode('have')}>
+              <small>{mode === 'have' ? 'Modo activo' : 'Modo'}</small><b>✓ Tengo</b><span>Ya la tengo</span>
+            </button>
+            <button className={`mode-card ${mode === 'duplicate' ? 'active' : 'dup'}`} onClick={() => setMode('duplicate')}>
+              <small>{mode === 'duplicate' ? 'Modo activo' : 'Modo'}</small><b>⊕ Repetida</b><span>La puedo cambiar</span>
+            </button>
+            <button className={`mode-card ${mode === 'missing' ? 'active' : 'miss'}`} onClick={() => setMode('missing')}>
+              <small>{mode === 'missing' ? 'Modo activo' : 'Modo'}</small><b>✕ Faltante</b><span>La estoy buscando</span>
+            </button>
+            <button className={`mode-card ${mode === 'clear' ? 'active' : 'clear'}`} onClick={() => setMode('clear')}>
+              <small>{mode === 'clear' ? 'Modo activo' : 'Modo'}</small><b>⌫ Borrar</b><span>Quitar marca</span>
+            </button>
+          </div>
 
-            <div className="panel-card panel-card-dark">
-              <h3 className="panel-title">Navegación rápida</h3>
-              <div className="nav-links">
-                {[
-                  { label: 'Ver faltantes', value: missingCount, colorClass: 'text-red', tab: 'missing' },
-                  { label: 'Ver repetidas', value: duplicateCount, colorClass: 'text-emerald', tab: 'duplicates' },
-                  ...Object.keys(specialGroups).map(prefix => ({
-                    label: prefix === 'M' ? 'Especiales M' : prefix === 'P' || prefix === 'PROMO' ? 'Promos' : `Esp. ${prefix}`,
-                    value: specialGroups[prefix].length > 0 ? `${specialGroups[prefix][0]}+` : '0',
-                    colorClass: 'text-slate',
-                    tab: `special_${prefix}`
-                  }))
-                ].map((item) => (
-                  <button
-                    key={item.tab}
-                    onClick={() => setActiveTab(item.tab)}
-                    className="nav-link-btn"
-                  >
-                    <span className="nav-link-label">{item.label}</span>
-                    <span className={`nav-link-val ${item.colorClass}`}>{item.value}</span>
-                  </button>
+          {/* ═══ TABS + GRID ═══ */}
+          <div className="main-content">
+            <div className="tabs-header">
+              <div className="filter-tabs">
+                {tabs.map(t => (
+                  <button key={t.key} className={`filter-tab ${activeTab === t.key ? 'active' : ''}`} onClick={() => setActiveTab(t.key)}>{t.label}</button>
                 ))}
               </div>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <div style={{ display: 'flex', gap: '1px', background: 'var(--color-border)', border: '1px solid var(--color-border)' }}>
+                  <button onClick={() => setViewMode('numbers')} style={{ padding: '4px 8px', border: 0, background: viewMode === 'numbers' ? 'var(--color-primary)' : 'var(--color-surface)', color: viewMode === 'numbers' ? '#fff' : 'var(--color-text-muted)', fontSize: '.72rem', fontWeight: 800, cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>Rápida</button>
+                  {(checklistImagesEnabled || selectedAlbum?.has_detailed_stickers) && (
+                    <button onClick={() => setViewMode('checklist')} style={{ padding: '4px 8px', border: 0, background: viewMode === 'checklist' ? 'var(--color-primary)' : 'var(--color-surface)', color: viewMode === 'checklist' ? '#fff' : 'var(--color-text-muted)', fontSize: '.72rem', fontWeight: 800, cursor: 'pointer', fontFamily: "'Barlow Condensed', sans-serif", textTransform: 'uppercase' }}>Checklist</button>
+                  )}
+                </div>
+              </div>
             </div>
 
-            <div className="panel-card panel-card-dark">
-              <h3 className="panel-title">Consejo</h3>
-              <p className="panel-text">
-                Marcá primero tus faltantes. Después cargá repetidas para que FigusUY encuentre
-                mejores intercambios.
-              </p>
+            <div style={{ marginBottom: 16 }}>
+              <input style={{ height: 40, fontSize: '.85rem', width: '100%', padding: '0 14px', background: 'var(--color-bg)', border: '1px solid var(--color-border-light)', color: 'var(--color-text)', fontWeight: 700 }} placeholder="Buscar por número, nombre o equipo..." value={searchFilter} onChange={(e) => setSearchFilter(e.target.value)} />
             </div>
-          </aside>
+
+            {viewMode === 'numbers' ? (
+              <div className="stickers-grid">
+                {numbers.map(num => {
+                  const status = ownedSet.has(num) ? 'have' : missingSet.has(num) ? 'miss' : duplicateSet.has(num) ? 'dup' : ''
+                  return (
+                    <button key={num} className={`sticker-cell ${status}`} onClick={() => handleToggle(num)}>
+                      <b>{num}</b>
+                    </button>
+                  )
+                })}
+              </div>
+            ) : (
+              <div className="stickers-checklist">
+                {numbers.map(num => {
+                  const sticker = String(num)
+                  const isOwned = ownedSet.has(sticker)
+                  const isMissing = missingSet.has(sticker)
+                  const isDuplicate = duplicateSet.has(sticker)
+                  const sData = albumStickersMap[sticker]
+
+                  let statusColor = 'var(--color-surface-hover)'
+                  let statusText = 'Sin marcar'
+                  let statusTextCol = 'var(--color-text-muted)'
+                  let cardCls = 'checklist-card '
+
+                  if (isDuplicate) {
+                    statusColor = '#10b981'
+                    statusText = 'Repetida'
+                    statusTextCol = '#10b981'
+                    cardCls += 'duplicate'
+                  } else if (isMissing) {
+                    statusColor = '#ef4444'
+                    statusText = 'Faltante'
+                    statusTextCol = '#ef4444'
+                    cardCls += 'missing'
+                  } else if (isOwned) {
+                    statusColor = 'white'
+                    statusText = 'Tengo'
+                    statusTextCol = 'white'
+                    cardCls += 'owned'
+                  }
+
+                  return (
+                    <div key={sticker} onClick={() => handleToggle(sticker)} className={cardCls}>
+                      <div className="checklist-img-wrapper">
+                        {sData?.image_url ? (
+                          <img src={sData.image_url} alt={sData.name || sticker} className="checklist-img" loading="lazy" />
+                        ) : (
+                          <div className="checklist-placeholder">
+                            <span style={{ fontSize: '1.5rem' }}>📷</span>
+                            <span style={{ fontSize: '0.625rem', fontWeight: 700 }}>Sin imagen</span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="checklist-info">
+                        <div className="checklist-header">
+                          <span className="checklist-num">{sticker}</span>
+                          {sData?.sticker_code && <span style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--color-text-muted)', letterSpacing: '0.05em' }}>{sData.sticker_code}</span>}
+                        </div>
+                        {sData?.name && <span className="checklist-name">{sData.name}</span>}
+                        {(sData?.team || sData?.country) && <span style={{ fontSize: '0.65rem', color: 'var(--color-text-secondary)', fontWeight: 600 }}>{sData.team || sData.country}</span>}
+                        <div className="checklist-status">
+                          <div className="status-dot" style={{ backgroundColor: statusColor }}></div>
+                          <span className="status-text" style={{ color: statusTextCol }}>{statusText}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
         </div>
-      </section>
 
-      {/* MOBILE NAV */}
-      <nav className="mobile-nav">
-        <button className="text-brand">📚<br/>Álbumes</button>
-        <button onClick={() => navigate('/matches')}>🔄<br/>Cruces</button>
-        <button>💬<br/>Chats</button>
-        <button>👤<br/>Perfil</button>
-      </nav>
+        <div className="album-sidebar">
+          <div className="sidebar-card">
+            <span className="album-kicker">Siguiente mejora</span>
+            <h3>Te faltan {missingCount}</h3>
+            <p>Marcá tus repetidas y desbloqueá los mejores cruces cerca tuyo.</p>
+            {isAlbumCompleted ? (
+              <button className="btn-orange" style={{ width: '100%', marginTop: 14 }} onClick={handleOpenPartnerStoreSelector}>Validar en Tienda PartnerStore</button>
+            ) : isAlbumPartnerVerified ? (
+              <button className="btn-orange" style={{ width: '100%', marginTop: 14 }} onClick={() => navigate('/achievements')}>Ver logro</button>
+            ) : (
+              <button className="btn-orange" style={{ width: '100%', marginTop: 14 }} onClick={() => navigate('/matches')}>Ver cruces</button>
+            )}
+          </div>
+
+          <div className="quick-stats-list">
+            <div className="qs-item"><span>Más cerca</span><b>--</b></div>
+            <div className="qs-item"><span>Cerrás hoy</span><b>--</b></div>
+            <div className="qs-item"><span>Mejor score</span><b>--</b></div>
+          </div>
+        </div>
+      </div>
+
+      {showCompletionConfirm && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.82)', zIndex: 1200, display: 'grid', placeItems: 'center', padding: '1rem' }}>
+          <div style={{ width: '100%', maxWidth: '34rem', border: '1px solid var(--color-border)', background: 'var(--color-surface)', padding: '1.5rem' }}>
+            <div className="album-kicker">Confirmar cierre</div>
+            <h2 style={{ margin: '.55rem 0 0', font: "italic 900 2.2rem 'Barlow Condensed'", textTransform: 'uppercase', lineHeight: '.9' }}>Seguro que completaste este album?</h2>
+            <p style={{ color: 'var(--color-text-secondary)', lineHeight: 1.6, marginTop: '.8rem' }}>
+              Estas por marcar este album como completado. Una vez confirmado, el album se cerrara, no podras modificarlo y luego podras validarlo en una Tienda PartnerStore.
+            </p>
+            <div style={{ display: 'grid', gap: '.55rem', marginTop: '1rem', color: 'var(--color-text-secondary)', fontSize: '.88rem' }}>
+              <span>- El album se cerrara</span>
+              <span>- No vas a poder modificarlo</span>
+              <span>- Quedara marcado como completado</span>
+              <span>- Luego podras validarlo en una Tienda PartnerStore</span>
+            </div>
+            <div style={{ display: 'flex', gap: '.7rem', marginTop: '1.25rem' }}>
+              <button className="btn-orange" onClick={handleConfirmAlbumCompletion}>Confirmar album</button>
+              <button className="btn-ghost" onClick={() => { setCompletionPromptDismissed(true); setShowCompletionConfirm(false) }}>Volver</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showCompletionCelebration && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.88)', zIndex: 1210, display: 'grid', placeItems: 'center', padding: '1rem' }}>
+          <div style={{ width: '100%', maxWidth: '38rem', border: '1px solid rgba(255,90,0,.35)', background: 'linear-gradient(135deg, rgba(255,90,0,.14), rgba(250,204,21,.08)), var(--color-surface)', padding: '1.6rem', textAlign: 'center' }}>
+            <div style={{ fontSize: '3rem' }}>🎉</div>
+            <div className="album-kicker" style={{ marginTop: '.4rem' }}>Completion moment</div>
+            <h2 style={{ margin: '.55rem 0 0', font: "italic 900 2.6rem 'Barlow Condensed'", textTransform: 'uppercase', lineHeight: '.9' }}>Album completado</h2>
+            <p style={{ color: 'var(--color-text-secondary)', lineHeight: 1.6, marginTop: '.9rem' }}>
+              El album quedo cerrado y ahora figura como <strong>Completed (sin verificar)</strong>. Validalo en una Tienda PartnerStore para desbloquear tu badge, rewards y un beneficio exclusivo.
+            </p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '.7rem', marginTop: '1.2rem' }}>
+              <button className="btn-orange" onClick={handleOpenPartnerStoreSelector}>Validar en Tienda PartnerStore</button>
+              <button className="btn-ghost" onClick={() => setShowCompletionCelebration(false)}>Cerrar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showPartnerStoreSelector && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.82)', zIndex: 1200, display: 'grid', placeItems: 'center', padding: '1rem' }}>
+          <div style={{ width: '100%', maxWidth: '38rem', border: '1px solid var(--color-border)', background: 'var(--color-surface)', display: 'flex', flexDirection: 'column', maxHeight: '85vh' }}>
+            <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--color-border)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h2 style={{ font: "italic 900 2.2rem 'Barlow Condensed'", textTransform: 'uppercase', lineHeight: '.9', margin: 0 }}>Tiendas PartnerStore</h2>
+                <button className="btn-ghost" style={{ padding: '0.4rem 0.8rem' }} onClick={() => setShowPartnerStoreSelector(false)}>Cerrar</button>
+              </div>
+              <p style={{ color: 'var(--color-text-secondary)', marginTop: '.5rem', fontSize: '.9rem' }}>Encontrá la tienda más cercana para validar tu álbum y desbloquear beneficios exclusivos.</p>
+            </div>
+            <div style={{ padding: '1.5rem', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              {loadingPartnerStores ? (
+                <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--color-text-secondary)' }}>Buscando tiendas cercanas...</div>
+              ) : partnerStores.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--color-text-secondary)' }}>No hay tiendas PartnerStore disponibles.</div>
+              ) : (
+                partnerStores.map(store => {
+                  const meta = store.metadata || {}
+                  const zone = store.neighborhood || meta.zone || meta.neighborhood
+                  const locParts = [zone, store.department || meta.city].filter(Boolean)
+                  const locationStr = locParts.length > 0 ? locParts.join(' · ') : ''
+                  
+                  let distStr = null
+                  if (store._distance !== Infinity) {
+                    distStr = store._distance < 1 ? `${Math.round(store._distance * 1000)} m` : `${store._distance.toFixed(1)} km`
+                  }
+
+                  const benefitTitle = meta.partner_benefit_title || '10% OFF en sobres al validar'
+
+                  return (
+                    <div key={store.id} style={{ padding: '1.2rem', border: '1px solid var(--color-border)', background: 'rgba(255,255,255,0.03)', position: 'relative', overflow: 'hidden' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <div>
+                          <h3 style={{ font: "italic 900 1.6rem 'Barlow Condensed'", textTransform: 'uppercase', lineHeight: '1', margin: '0 0 .3rem' }}>{store.name}</h3>
+                          <div style={{ fontSize: '.85rem', color: 'var(--color-text-secondary)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            {locationStr}
+                            {distStr && <span style={{ color: 'var(--orange)' }}>· {distStr}</span>}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div style={{ fontSize: '.85rem', color: 'var(--color-text-secondary)', marginTop: '.6rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>location_on</span> {store.address || 'Dirección no disponible'}
+                      </div>
+                      
+                      {meta.hours && (
+                        <div style={{ fontSize: '.85rem', color: 'var(--color-text-secondary)', marginTop: '.3rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>schedule</span> {meta.hours}
+                        </div>
+                      )}
+
+                      <div style={{ marginTop: '1rem', background: 'linear-gradient(135deg, rgba(255,90,0,.15), rgba(250,204,21,.1))', border: '1px solid rgba(255,90,0,.3)', padding: '.75rem', display: 'flex', alignItems: 'center', gap: '.5rem', borderRadius: '2px' }}>
+                        <span style={{ fontSize: '1.2rem' }}>🎁</span>
+                        <div>
+                          <div style={{ font: "900 .8rem 'Barlow Condensed'", letterSpacing: '.05em', textTransform: 'uppercase', color: 'var(--orange)' }}>Beneficio PartnerStore visible</div>
+                          <div style={{ fontSize: '.85rem', fontWeight: 600 }}>{benefitTitle}</div>
+                        </div>
+                      </div>
+
+                      <button 
+                        className="btn-orange" 
+                        style={{ width: '100%', marginTop: '1rem', padding: '.65rem' }}
+                        onClick={() => navigate('/stores')}
+                      >
+                        Ver en el mapa
+                      </button>
+                    </div>
+                  )
+                })
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

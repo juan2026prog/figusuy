@@ -86,8 +86,8 @@ export default function AlphaWelcomeModal({ forceOpen = false, onClose }) {
       >
         {/* Background card */}
         <div style={{
-          background: 'linear-gradient(165deg, #0f172a 0%, #020617 100%)',
-          border: '1px solid #1e293b',
+          background: 'linear-gradient(165deg, var(--color-surface) 0%, var(--color-bg) 100%)',
+          border: '1px solid var(--color-border)',
           borderRadius: '2rem',
           padding: '2.5rem 2rem 2rem',
           position: 'relative',
@@ -130,14 +130,14 @@ export default function AlphaWelcomeModal({ forceOpen = false, onClose }) {
               width: '0.5rem',
               height: '0.5rem',
               borderRadius: '50%',
-              background: '#ea580c',
+              background: 'var(--color-primary)',
               display: 'inline-block',
               animation: 'pulse-soft 2s ease-in-out infinite',
             }} />
             <span style={{
               fontSize: '0.75rem',
               fontWeight: 900,
-              color: '#ea580c',
+              color: 'var(--color-primary)',
               letterSpacing: '0.08em',
               textTransform: 'uppercase',
             }}>
@@ -160,7 +160,7 @@ export default function AlphaWelcomeModal({ forceOpen = false, onClose }) {
           {/* Body text */}
           <div style={{
             fontSize: '0.9375rem',
-            color: '#94a3b8',
+            color: 'var(--color-text-secondary)',
             lineHeight: 1.7,
             marginBottom: '2rem',
           }}>
@@ -175,7 +175,7 @@ export default function AlphaWelcomeModal({ forceOpen = false, onClose }) {
             </p>
             <p style={{
               margin: 0,
-              color: '#cbd5e1',
+              color: 'var(--color-text-secondary)',
               fontWeight: 600,
             }}>
               Gracias por probarla primero. 🙌
@@ -192,7 +192,7 @@ export default function AlphaWelcomeModal({ forceOpen = false, onClose }) {
                 width: '100%',
                 padding: '0.9375rem 1.5rem',
                 borderRadius: '1.25rem',
-                background: '#ea580c',
+                background: 'var(--color-primary)',
                 color: 'white',
                 border: 'none',
                 fontWeight: 900,
@@ -217,8 +217,8 @@ export default function AlphaWelcomeModal({ forceOpen = false, onClose }) {
                 padding: '0.75rem 1.5rem',
                 borderRadius: '1.25rem',
                 background: 'transparent',
-                color: '#64748b',
-                border: '1px solid #1e293b',
+                color: 'var(--color-text-muted)',
+                border: '1px solid var(--color-border)',
                 fontWeight: 700,
                 fontSize: '0.8125rem',
                 cursor: 'pointer',
@@ -226,11 +226,11 @@ export default function AlphaWelcomeModal({ forceOpen = false, onClose }) {
               }}
               onMouseEnter={e => {
                 e.target.style.borderColor = '#334155'
-                e.target.style.color = '#94a3b8'
+                e.target.style.color = 'var(--color-text-secondary)'
               }}
               onMouseLeave={e => {
-                e.target.style.borderColor = '#1e293b'
-                e.target.style.color = '#64748b'
+                e.target.style.borderColor = 'var(--color-border)'
+                e.target.style.color = 'var(--color-text-muted)'
               }}
             >
               🐛 Reportar un problema

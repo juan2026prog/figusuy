@@ -1,14 +1,15 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import UniversalAddressAutocomplete from '../components/UniversalAddressAutocomplete'
 
 export default function BusinessProfile() {
-  const { location, setLocation, fetchLocation } = useOutletContext()
+  const { location, fetchLocation } = useOutletContext()
   const [saving, setSaving] = useState(false)
-  
+  const [previewImages, setPreviewImages] = useState([])
+
   if (!location) return null
 
-  // Ensure metadata exists
   const meta = location.metadata || {}
   const [formData, setFormData] = useState({
     name: location.name || '',
@@ -22,8 +23,26 @@ export default function BusinessProfile() {
     city: meta.city || '',
     zone: meta.zone || meta.neighborhood || '',
     allows_exchange: location.allows_exchange || false,
-    sells_stickers: location.sells_stickers || false
+    sells_stickers: location.sells_stickers || false,
+    partner_benefit_title: meta.partner_benefit_title || (location.business_plan === 'legend' ? '10% OFF en sobres' : ''),
+    partner_benefit_desc: meta.partner_benefit_desc || (location.business_plan === 'legend' ? 'Válido para usuarios que completen y validen su álbum en tienda.' : '')
   })
+
+  useEffect(() => {
+    if (location?.id) {
+      fetchPreviewImages()
+    }
+  }, [location?.id])
+
+  const fetchPreviewImages = async () => {
+    const { data } = await supabase
+      .from('location_images')
+      .select('*')
+      .eq('location_id', location.id)
+      .order('sort_order', { ascending: true })
+
+    setPreviewImages(data || [])
+  }
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target
@@ -36,8 +55,7 @@ export default function BusinessProfile() {
   const handleSave = async (e) => {
     e.preventDefault()
     setSaving(true)
-    
-    // Construct new metadata
+
     const newMetadata = {
       ...meta,
       description: formData.description,
@@ -48,8 +66,10 @@ export default function BusinessProfile() {
       department: formData.department,
       city: formData.city,
       zone: formData.zone,
-      neighborhood: formData.zone, // Keep backward compatible
-      allows_exchange: formData.allows_exchange
+      neighborhood: formData.zone,
+      allows_exchange: formData.allows_exchange,
+      partner_benefit_title: formData.partner_benefit_title,
+      partner_benefit_desc: formData.partner_benefit_desc
     }
 
     const updates = {
@@ -59,14 +79,20 @@ export default function BusinessProfile() {
       allows_exchange: formData.allows_exchange,
       sells_stickers: formData.sells_stickers,
       metadata: newMetadata,
-      type: formData.display_type === 'Punto de intercambio' ? 'safe_point' : 'store' // simplify mapping
+      type: formData.display_type === 'Punto de intercambio' ? 'safe_point' : 'store'
+    }
+
+    if (location.business_plan === 'legend' && (!formData.partner_benefit_title.trim() || !formData.partner_benefit_desc.trim())) {
+      alert('Las tiendas PartnerStore deben configurar un beneficio obligatorio.')
+      setSaving(false)
+      return
     }
 
     const { error } = await supabase
       .from('locations')
       .update(updates)
       .eq('id', location.id)
-    
+
     if (error) {
       alert('Error guardando perfil: ' + error.message)
     } else {
@@ -76,274 +102,330 @@ export default function BusinessProfile() {
     setSaving(false)
   }
 
-  // Preview logic
   const isExchange = formData.allows_exchange
-  const badge = isExchange 
-    ? { text: '🔄 Punto de intercambio', className: 'badge-exchange' } 
-    : { text: '🛍 Tienda aliada', className: 'badge-store' }
+  const badge = isExchange
+    ? { text: 'Punto de intercambio', className: 'biz-chip blue' }
+    : { text: 'Tienda aliada', className: 'biz-chip green' }
 
   const locParts = [formData.zone, formData.department].filter(Boolean)
   const locationStr = locParts.length > 0 ? locParts.join(' · ') : formData.address
 
   return (
-    <div className="biz-profile-page">
+    <div className="biz-two-col">
       <style>{`
-        .biz-profile-page {
+        .profile-form-card,
+        .profile-preview-card {
+          border: 1px solid var(--line);
+          background: var(--panel);
+          padding: 1.35rem;
+        }
+
+        .profile-form-card {
           display: grid;
-          grid-template-columns: 1fr;
-          gap: 2rem;
+          gap: 1.2rem;
         }
-        @media (min-width: 1024px) {
-          .biz-profile-page {
-            grid-template-columns: 1.5fr 1fr;
-          }
+
+        .profile-grid-2 {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 1rem;
         }
-        .biz-form-card {
-          background: #0f172a;
-          border: 1px solid #1e293b;
-          border-radius: 1rem;
-          padding: 2rem;
-        }
+
         .form-group {
-          margin-bottom: 1.5rem;
+          display: grid;
+          gap: .45rem;
         }
+
         .form-label {
-          display: block;
-          font-size: 0.875rem;
-          font-weight: 700;
-          color: #cbd5e1;
-          margin-bottom: 0.5rem;
+          color: var(--muted2);
+          font: 900 .78rem 'Barlow Condensed';
+          letter-spacing: .08em;
+          text-transform: uppercase;
         }
-        .form-input, .form-textarea, .form-select {
+
+        .form-input,
+        .form-textarea,
+        .form-select {
           width: 100%;
-          background: #1e293b;
-          border: 1px solid #334155;
-          border-radius: 0.5rem;
-          padding: 0.75rem 1rem;
-          color: white;
-          font-family: inherit;
-          font-size: 0.9375rem;
-        }
-        .form-input:focus, .form-textarea:focus, .form-select:focus {
+          border: 1px solid var(--line2);
+          background: #0d0d0d;
+          color: #fff;
+          padding: .85rem .95rem;
+          font: 600 .95rem 'Barlow', sans-serif;
           outline: none;
-          border-color: #f97316;
         }
+
+        .form-input:focus,
+        .form-textarea:focus,
+        .form-select:focus {
+          border-color: var(--orange);
+        }
+
+        .service-box {
+          display: grid;
+          gap: .9rem;
+        }
+
         .form-checkbox-label {
           display: flex;
           align-items: center;
-          gap: 0.75rem;
-          cursor: pointer;
-          font-weight: 600;
-          color: #cbd5e1;
+          gap: .8rem;
           padding: 1rem;
-          background: #1e293b;
-          border-radius: 0.5rem;
-          border: 1px solid #334155;
-        }
-        .biz-btn-save {
-          background: #f97316;
-          color: white;
-          border: none;
-          padding: 0.75rem 1.5rem;
-          border-radius: 0.5rem;
-          font-weight: 800;
-          font-size: 1rem;
+          border: 1px solid var(--line);
+          background: #0d0d0d;
+          color: var(--muted);
           cursor: pointer;
-          width: 100%;
-          transition: background 0.2s;
         }
-        .biz-btn-save:hover {
-          background: #ea580c;
+
+        .form-checkbox-label input {
+          width: 1.1rem;
+          height: 1.1rem;
         }
-        .biz-btn-save:disabled {
-          background: #94a3b8;
-          cursor: not-allowed;
-        }
-        
-        /* Preview Card - matching Stores.jsx */
-        .preview-container {
+
+        .preview-shell {
           position: sticky;
-          top: 2rem;
+          top: 1.5rem;
+          display: grid;
+          gap: 1rem;
         }
-        .preview-header {
-          font-size: 1.25rem;
-          font-weight: 800;
-          margin-bottom: 1rem;
-          color: white;
+
+        .profile-preview-card {
+          background:
+            linear-gradient(180deg, rgba(255, 90, 0, .08) 0%, rgba(255, 90, 0, 0) 100%),
+            var(--panel2);
         }
-        .punto-card {
-          background: #020617;
-          border: 1px solid #1e293b;
-          border-radius: 1.5rem;
-          padding: 1.25rem;
-          position: relative;
+
+        .preview-store-card {
+          border: 1px solid var(--line);
+          background: #0d0d0d;
+          overflow: hidden;
         }
-        .badge-exchange {
-          display: inline-block;
-          background: rgba(14, 165, 233, 0.15);
-          color: #0ea5e9;
-          padding: 0.25rem 0.5rem;
-          border-radius: 0.375rem;
-          font-size: 0.6875rem;
-          font-weight: 800;
-          margin-bottom: 0.5rem;
+
+        .preview-image {
+          width: 100%;
+          height: 210px;
+          object-fit: cover;
+          display: block;
+          background: #111;
         }
-        .badge-store {
-          display: inline-block;
-          background: rgba(16, 185, 129, 0.15);
-          color: #10b981;
-          padding: 0.25rem 0.5rem;
-          border-radius: 0.375rem;
-          font-size: 0.6875rem;
-          font-weight: 800;
-          margin-bottom: 0.5rem;
+
+        .preview-image-empty {
+          width: 100%;
+          height: 210px;
+          display: grid;
+          place-items: center;
+          background:
+            linear-gradient(135deg, rgba(255, 90, 0, .12) 0%, rgba(255, 90, 0, .03) 26%, transparent 50%),
+            #111;
+          color: var(--muted2);
+          font: italic 900 1.6rem 'Barlow Condensed';
+          text-transform: uppercase;
         }
-        .punto-name {
-          font-size: 1.125rem;
-          font-weight: 900;
-          margin-bottom: 0.125rem;
-          color: white;
+
+        .preview-body {
+          padding: 1rem;
         }
-        .punto-loc {
-          font-size: 0.8125rem;
-          color: #94a3b8;
-          font-weight: 500;
-          margin-bottom: 0.5rem;
+
+        .preview-store-card h3 {
+          margin: .6rem 0 0;
+          font: italic 900 1.9rem 'Barlow Condensed';
+          line-height: .9;
+          text-transform: uppercase;
         }
-        .punto-desc {
-          font-size: 0.875rem;
-          color: #cbd5e1;
-          margin-bottom: 0.75rem;
-          line-height: 1.4;
+
+        .preview-store-card p {
+          margin-top: .5rem;
+          color: var(--muted);
+          line-height: 1.55;
+          font-size: .92rem;
         }
-        .punto-meta {
+
+        .preview-meta {
           display: flex;
           flex-wrap: wrap;
-          gap: 0.5rem;
-          margin-bottom: 1rem;
+          gap: .55rem;
+          margin: 1rem 0;
         }
-        .meta-pill {
-          background: #1e293b;
-          padding: 0.25rem 0.5rem;
-          border-radius: 0.25rem;
-          font-size: 0.75rem;
-          font-weight: 600;
-          color: #cbd5e1;
+
+        .preview-actions {
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: .55rem;
         }
-        .action-btn {
-          flex: 1;
+
+        .preview-action {
+          padding: .72rem .6rem;
+          border: 1px solid var(--line2);
+          background: transparent;
+          color: #fff;
+          font: 900 .74rem 'Barlow Condensed';
+          letter-spacing: .08em;
+          text-transform: uppercase;
           text-align: center;
-          padding: 0.5rem;
-          border-radius: 0.5rem;
-          font-size: 0.8125rem;
-          font-weight: 700;
         }
-        .action-btn-primary {
-          background: #f97316;
-          color: white;
-          border: none;
+
+        .preview-action.primary {
+          background: var(--orange);
+          border-color: var(--orange);
         }
-        .action-btn-secondary {
-          background: #1e293b;
-          color: white;
-          border: 1px solid #334155;
+
+        @media (max-width: 900px) {
+          .profile-grid-2,
+          .preview-actions {
+            grid-template-columns: 1fr;
+          }
         }
       `}</style>
 
-      <div className="biz-form-card">
-        <h2 style={{ fontSize: '1.5rem', fontWeight: 900, marginBottom: '2rem' }}>Datos Públicos</h2>
-        
-        <form onSubmit={handleSave}>
+      <div className="profile-form-card">
+        <div className="biz-section-head">
+          <div>
+            <div className="biz-page-kicker">/ perfil publico</div>
+            <h2>Configura tu ficha</h2>
+            <p>Edita la informacion que ve la comunidad y mejora la claridad comercial de tu local dentro del mapa.</p>
+          </div>
+        </div>
+
+        <form onSubmit={handleSave} className="biz-page">
           <div className="form-group">
-            <label className="form-label">Nombre del Local</label>
+            <label className="form-label">Nombre del local</label>
             <input name="name" value={formData.name} onChange={handleChange} className="form-input" required />
           </div>
 
           <div className="form-group">
-            <label className="form-label">Descripción Corta</label>
-            <textarea name="description" value={formData.description} onChange={handleChange} className="form-textarea" rows="3" maxLength="150" placeholder="Ej: Vení a intercambiar figuritas y tomarte un café..." />
+            <label className="form-label">Descripcion corta</label>
+            <textarea name="description" value={formData.description} onChange={handleChange} className="form-textarea" rows="3" maxLength="150" placeholder="Ej: veni a intercambiar figuritas y encontrar sobres oficiales..." />
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+          <div className="profile-grid-2">
             <div className="form-group">
-              <label className="form-label">Tipo de Lugar</label>
+              <label className="form-label">Tipo de lugar</label>
               <select name="display_type" value={formData.display_type} onChange={handleChange} className="form-select">
                 <option value="store">Tienda</option>
-                <option value="cafe">Cafetería</option>
+                <option value="cafe">Cafeteria</option>
                 <option value="kiosk">Kiosco</option>
-                <option value="safe_point">Punto de Intercambio</option>
+                <option value="safe_point">Punto de intercambio</option>
               </select>
             </div>
             <div className="form-group">
-              <label className="form-label">WhatsApp (ej: 59899123456)</label>
-              <input name="whatsapp" value={formData.whatsapp} onChange={handleChange} className="form-input" />
+              <label className="form-label">WhatsApp</label>
+              <input name="whatsapp" value={formData.whatsapp} onChange={handleChange} className="form-input" placeholder="59899123456" />
             </div>
           </div>
 
           <div className="form-group">
-            <label className="form-label">Dirección exacta</label>
-            <input name="address" value={formData.address} onChange={handleChange} className="form-input" required />
+            <UniversalAddressAutocomplete
+              countryCode="uy"
+              label="Direccion exacta"
+              value={formData.address}
+              onChange={(val) => setFormData(prev => ({ ...prev, address: val }))}
+              onAddressSelect={(data) => {
+                setFormData(prev => ({
+                  ...prev,
+                  address: data.fullAddress,
+                  department: data.department || prev.department,
+                  city: data.city || prev.city,
+                  zone: data.neighborhood || data.locality || prev.zone
+                }))
+              }}
+              required
+            />
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+          <div className="profile-grid-2">
             <div className="form-group">
               <label className="form-label">Departamento</label>
               <input name="department" value={formData.department} onChange={handleChange} className="form-input" />
             </div>
             <div className="form-group">
-              <label className="form-label">Barrio / Zona</label>
+              <label className="form-label">Barrio o zona</label>
               <input name="zone" value={formData.zone} onChange={handleChange} className="form-input" />
             </div>
           </div>
 
           <div className="form-group">
-            <label className="form-label">Horarios (ej: Lun a Vie 09 a 18hs)</label>
-            <input name="hours" value={formData.hours} onChange={handleChange} className="form-input" />
+            <label className="form-label">Horarios</label>
+            <input name="hours" value={formData.hours} onChange={handleChange} className="form-input" placeholder="Lun a Vie 09 a 18 hs" />
           </div>
 
-          <h3 style={{ fontSize: '1.25rem', fontWeight: 800, margin: '2rem 0 1rem' }}>Configuración de Servicios</h3>
-          
-          <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <div className="biz-section-head" style={{ marginTop: '.25rem' }}>
+            <div>
+              <div className="biz-page-kicker">/ servicios</div>
+              <h2 style={{ fontSize: '2rem' }}>Como opera tu local</h2>
+            </div>
+          </div>
+
+          <div className="service-box">
             <label className="form-checkbox-label">
-              <input type="checkbox" name="allows_exchange" checked={formData.allows_exchange} onChange={handleChange} style={{ width: '1.25rem', height: '1.25rem' }} />
-              Permite intercambio de figuritas gratis (Punto seguro)
+              <input type="checkbox" name="allows_exchange" checked={formData.allows_exchange} onChange={handleChange} />
+              Permite intercambio de figuritas gratis como punto seguro.
             </label>
-            
             <label className="form-checkbox-label">
-              <input type="checkbox" name="sells_stickers" checked={formData.sells_stickers} onChange={handleChange} style={{ width: '1.25rem', height: '1.25rem' }} />
-              Vende figuritas / sobres oficiales
+              <input type="checkbox" name="sells_stickers" checked={formData.sells_stickers} onChange={handleChange} />
+              Vende figuritas o sobres oficiales.
             </label>
           </div>
 
-          <button type="submit" className="biz-btn-save" disabled={saving}>
-            {saving ? 'Guardando...' : 'Guardar Cambios'}
+          {location?.business_plan === 'legend' && (
+            <>
+              <div className="biz-section-head" style={{ marginTop: '1.25rem' }}>
+                <div>
+                  <div className="biz-page-kicker">/ beneficio obligatorio</div>
+                  <h2 style={{ fontSize: '2rem' }}>Beneficio PartnerStore</h2>
+                  <p>Es condición del plan ofrecer un beneficio mínimo a quienes validen su álbum en tu tienda.</p>
+                </div>
+              </div>
+              <div className="profile-grid-2">
+                <div className="form-group">
+                  <label className="form-label">Título del beneficio</label>
+                  <input name="partner_benefit_title" value={formData.partner_benefit_title} onChange={handleChange} className="form-input" required placeholder="Ej: 10% OFF en sobres" />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Condición / Descripción</label>
+                  <input name="partner_benefit_desc" value={formData.partner_benefit_desc} onChange={handleChange} className="form-input" required placeholder="Ej: Válido para usuarios que completen y validen su álbum en tienda." />
+                </div>
+              </div>
+            </>
+          )}
+
+          <button type="submit" className="biz-btn-primary" style={{ width: '100%', marginTop: '1.25rem' }} disabled={saving}>
+            {saving ? 'Guardando...' : 'Guardar cambios'}
           </button>
         </form>
       </div>
 
-      <div className="preview-container">
-        <h3 className="preview-header">Así te ven en FigusUY</h3>
-        <article className="punto-card">
-          <span className={badge.className}>{badge.text}</span>
-          <h3 className="punto-name">{formData.name || 'Nombre del local'}</h3>
-          <p className="punto-loc">
-            {formData.display_type} · {locationStr || 'Dirección no definida'}
-          </p>
-          <p className="punto-desc">
-            {formData.description || 'Descripción de tu local...'}
-          </p>
-          
-          <div className="punto-meta">
-            {formData.hours && <span className="meta-pill">🕒 {formData.hours}</span>}
-            {formData.whatsapp && <span className="meta-pill">📱 {formData.whatsapp}</span>}
-          </div>
+      <div className="preview-shell">
+        <div className="profile-preview-card">
+          <div className="biz-page-kicker">/ preview</div>
+          <h2 className="biz-card-title">Asi te ven en FigusUY</h2>
+          <p className="biz-card-copy">La vista previa te ayuda a ajustar tono, claridad y nivel de confianza antes de publicar cambios.</p>
+        </div>
 
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            {formData.whatsapp && (
-              <button className="action-btn action-btn-primary">WhatsApp</button>
-            )}
-            <button className="action-btn action-btn-secondary">Cómo llegar</button>
-            <button className="action-btn action-btn-secondary">Ver detalle</button>
+        <article className="preview-store-card">
+          {previewImages[0]?.image_url ? (
+            <img src={previewImages[0].image_url} alt={formData.name || 'Foto del local'} className="preview-image" />
+          ) : (
+            <div className="preview-image-empty">Sin foto principal</div>
+          )}
+
+          <div className="preview-body">
+            <span className={badge.className}>{badge.text}</span>
+            <h3>{formData.name || 'Nombre del local'}</h3>
+            <p>{formData.display_type} · {locationStr || 'Direccion no definida'}</p>
+            <p>{formData.description || 'Descripcion de tu local...'}</p>
+
+            <div className="preview-meta">
+              {formData.hours && <span className="biz-chip">{formData.hours}</span>}
+              {formData.whatsapp && <span className="biz-chip orange">WhatsApp</span>}
+              {formData.sells_stickers && <span className="biz-chip green">Sobres oficiales</span>}
+              {location?.business_plan === 'legend' && formData.partner_benefit_title && <span className="biz-chip" style={{ background: 'linear-gradient(90deg, var(--yellow), var(--orange))', color: '#111', fontWeight: 900 }}>🎁 {formData.partner_benefit_title}</span>}
+            </div>
+
+            <div className="preview-actions">
+              {formData.whatsapp && <div className="preview-action primary">WhatsApp</div>}
+              <div className="preview-action">Como llegar</div>
+              <div className="preview-action">Ver detalle</div>
+            </div>
           </div>
         </article>
       </div>

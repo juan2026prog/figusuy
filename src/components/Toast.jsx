@@ -65,3 +65,19 @@ function ToastItem({ toast }) {
     </div>
   )
 }
+
+export default function Toast({ message, type, onClose }) {
+  useEffect(() => {
+    if (onClose) {
+      const t = setTimeout(onClose, 3000)
+      return () => clearTimeout(t)
+    }
+  }, [onClose])
+  
+  return (
+    <div className={`toast toast-${type} toast-enter`} style={{position: 'fixed', bottom: 20, left: '50%', transform: 'translateX(-50%)', zIndex: 9999, cursor: 'pointer'}} onClick={onClose}>
+      <span className={`toast-icon toast-icon-${type}`}>{icons[type] || icons.info}</span>
+      <span className="toast-message">{message}</span>
+    </div>
+  )
+}

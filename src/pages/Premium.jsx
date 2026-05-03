@@ -24,7 +24,6 @@ export default function PremiumPage() {
   const handleSubscribe = (planName) => {
     const plan = plans.find(p => p.name.includes(planName))
     if (plan && plan.mp_payment_link) {
-      // Pasar el ID del usuario como referencia para el webhook de Mercado Pago
       const url = new URL(plan.mp_payment_link)
       if (profile?.id) url.searchParams.append('external_reference', profile.id)
       window.location.href = url.toString()
@@ -33,192 +32,433 @@ export default function PremiumPage() {
     }
   }
 
-  const features = [
-    { name: 'Calidad de cruces', free: 'Básicos', plus: 'Optimizados', pro: 'Avanzados' },
-    { name: 'Álbumes activos', free: '1', plus: '3', pro: 'Ilimitados' },
-    { name: 'Chat', free: 'Vence en 3 días', plus: 'Sin vencimiento', pro: 'Sin vencimiento' },
-    { name: 'Favoritos', free: '10', plus: '50', pro: 'Ilimitados' },
-    { name: 'Alertas', free: '—', plus: 'Nuevos relevantes', pro: 'Tiempo real' },
-    { name: 'Sugerencias inteligentes', free: '—', plus: '—', pro: '✓' },
-    { name: 'Acceso anticipado', free: '—', plus: '—', pro: '✓' },
+  // Precios dinÃ¡micos basados en la carga real de Supabase
+  const plusPlan = plans.find(p => p.name.toLowerCase().includes('plus'))
+  const proPlan = plans.find(p => p.name.toLowerCase().includes('pro'))
+  const plusPrice = plusPlan ? `$${plusPlan.price}` : '$99'
+  const proPrice = proPlan ? `$${proPlan.price}` : '$199'
+  const normalizedCurrentTier = (currentTier || '').toLowerCase()
+  const userPlanLevels = [
+    { key: 'gratis', order: 0 },
+    { key: 'plus', order: plusPlan?.price ?? 99 },
+    { key: 'pro', order: proPlan?.price ?? 199 }
   ]
+  const currentUserPlan = normalizedCurrentTier.includes('pro')
+    ? 'pro'
+    : normalizedCurrentTier.includes('plus')
+      ? 'plus'
+      : 'gratis'
+  const currentUserLevel = userPlanLevels.find(plan => plan.key === currentUserPlan)?.order ?? 0
+
+  const getUserPlanCta = (planKey) => {
+    const targetLevel = userPlanLevels.find(plan => plan.key === planKey)?.order ?? 0
+    if (targetLevel === currentUserLevel) {
+      return { label: 'Plan actual', note: 'Este es tu plan activo.', tone: 'current', disabled: true }
+    }
+    if (targetLevel > currentUserLevel) {
+      return { label: 'Mejorar plan', note: 'Mas alcance, mas oportunidades.', tone: 'upgrade', disabled: false }
+    }
+    return { label: 'Cambiar plan', note: 'Podes cambiar tu plan cuando quieras.', tone: 'change', disabled: false }
+  }
 
   return (
-    <>
-      {/* Topbar */}
-      <header style={{ position: 'sticky', top: 0, zIndex: 40, background: 'rgba(2,6,23,0.9)', backdropFilter: 'blur(16px)', borderBottom: '1px solid #1e293b' }}>
-        <div style={{ height: '5rem', padding: '0 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
-          <div>
-            <p style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 700 }}>Planes</p>
-            <h1 style={{ fontSize: '1.5rem', fontWeight: 900, letterSpacing: '-0.025em', color: 'white', margin: 0 }}>Premium</h1>
-          </div>
-          <button
-            onClick={() => navigate(-1)}
-            style={{ padding: '0.5rem 1rem', borderRadius: '0.75rem', background: 'white', color: '#020617', fontWeight: 900, fontSize: '0.875rem', border: 'none', cursor: 'pointer' }}
-          >
-            Volver
-          </button>
+    <div className="premium-panini-wrapper">
+      <style>{`
+        .premium-panini-wrapper {
+          --bg:#0b0b0b; --panel:#121212; --panel2:#181818; --line:rgba(255,255,255,.08); --line2:rgba(255,255,255,.14);
+          --text:#f5f5f5; --muted:rgba(245,245,245,.58); --muted2:rgba(245,245,245,.36); --orange:#ff5a00; --orange2:#cc4800;
+          --green:#22c55e; --blue:#3b82f6; --yellow:#facc15;
+          min-height:100vh; color:var(--text); font-family:'Barlow',sans-serif;
+          background:radial-gradient(circle at top right, rgba(255,90,0,.14), transparent 28%), linear-gradient(180deg, #0b0b0b 0%, #090909 100%);
+        }
+        .premium-panini-wrapper * { box-sizing:border-box; }
+        .topbar { position:sticky; top:0; z-index:50; display:flex; align-items:center; justify-content:space-between; gap:18px; min-height:82px; padding:14px 22px; border-bottom:1px solid var(--line); background:rgba(11,11,11,.96); backdrop-filter:blur(8px); }
+        .top-kicker,.kicker,.eyebrow { font:900 .72rem 'Barlow Condensed'; letter-spacing:.16em; text-transform:uppercase; }
+        .top-kicker,.kicker { color:var(--orange); }
+        .eyebrow { color:var(--muted2); }
+        .top-title { font:italic 900 2.45rem 'Barlow Condensed'; text-transform:uppercase; line-height:.9; }
+        .btn { border:1px solid var(--line2); background:transparent; color:#fff; padding:.9rem 1.15rem; font:900 .88rem 'Barlow Condensed'; letter-spacing:.08em; text-transform:uppercase; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:8px; transition:.2s ease; text-decoration:none; white-space:nowrap; }
+        .btn:hover { border-color:var(--orange); color:var(--orange); }
+        .btn.orange { background:var(--orange); border-color:var(--orange); color:#fff; }
+        .btn.orange:hover { background:var(--orange2); border-color:var(--orange2); color:#fff; }
+        .btn.secondary { background:transparent; color:#fff; }
+        .btn.block { width:100%; }
+        .btn.inline { border:0; padding-inline:0; }
+        .btn.is-current,.btn:disabled { opacity:.5; pointer-events:none; }
+        .wrap { width:min(100%, 1420px); margin:0 auto; padding:28px 22px 76px; }
+        .section { margin-top:28px; }
+        .hero { display:grid; grid-template-columns:minmax(0,1.1fr) minmax(320px,.9fr); gap:22px; }
+        .hero-main,.hero-panel,.hero-panel-cta,.current-main,.current-side,.comparison,.benefit,.faq-item,.plan { border:1px solid var(--line); background:var(--panel); }
+        .hero-main { position:relative; overflow:hidden; min-height:420px; padding:34px; display:flex; flex-direction:column; justify-content:space-between; background:linear-gradient(135deg, rgba(255,90,0,.18) 0%, rgba(255,90,0,.04) 26%, transparent 45%), linear-gradient(180deg, #181818 0%, #111111 100%); }
+        .hero-main:before { content:'PREMIUM'; position:absolute; right:18px; top:-12px; font:italic 900 clamp(5rem,15vw,10rem) 'Barlow Condensed'; line-height:.8; color:rgba(255,255,255,.04); pointer-events:none; }
+        .hero-main:after { content:''; position:absolute; inset:auto 0 0 0; height:4px; background:linear-gradient(90deg, var(--orange) 0%, rgba(255,90,0,0) 72%); }
+        .hero-copy { position:relative; z-index:1; max-width:780px; }
+        .hero-title { margin:10px 0 0; font:italic 900 clamp(3.6rem,7vw,6.5rem) 'Barlow Condensed'; line-height:.82; text-transform:uppercase; }
+        .hero-title span { color:var(--orange); }
+        .hero-sub,.section-head p,.comparison-caption,.benefit p,.faq-item p,.plan-concept,.plan-note,.hero-panel p,.hero-panel-cta p,.current-copy p,.mini-stat span { color:var(--muted); line-height:1.6; }
+        .hero-sub { max-width:640px; margin:18px 0 0; font-size:1.05rem; }
+        .hero-badges,.hero-actions,.current-meta,.plan-meta,.mini-grid { display:flex; flex-wrap:wrap; gap:10px; }
+        .hero-badges { margin-top:28px; }
+        .badge,.current-chip,.plan-tag,.tier-state { display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border:1px solid var(--line2); background:#0d0d0d; font:900 .76rem 'Barlow Condensed'; letter-spacing:.08em; text-transform:uppercase; }
+        .badge.orange,.current-chip.orange { color:var(--orange); border-color:rgba(255,90,0,.35); background:rgba(255,90,0,.08); }
+        .badge.green,.tier-state.premium,.current-chip.green { color:var(--green); border-color:rgba(34,197,94,.35); background:rgba(34,197,94,.08); }
+        .badge.blue { color:var(--blue); border-color:rgba(59,130,246,.35); background:rgba(59,130,246,.08); }
+        .tier-state.free { color:var(--yellow); border-color:rgba(250,204,21,.35); background:rgba(250,204,21,.08); }
+        .hero-actions { position:relative; z-index:1; margin-top:26px; }
+        .hero-side,.current-card,.plans,.benefits { display:grid; gap:1px; background:var(--line); }
+        .hero-panel,.hero-panel-cta,.current-main,.current-side,.plan,.benefit { padding:24px; }
+        .hero-panel-cta,.current-side { background:linear-gradient(180deg, rgba(255,90,0,.08) 0%, rgba(255,90,0,0) 100%), var(--panel2); }
+        .hero-panel h2,.current-main h2,.section-head h2,.table-head h2,.faq h2 { margin:10px 0 0; font:italic 900 3rem 'Barlow Condensed'; line-height:.88; text-transform:uppercase; }
+        .hero-tier { display:flex; align-items:center; justify-content:space-between; gap:14px; margin-top:18px; padding:16px; border:1px solid var(--line); background:#0d0d0d; }
+        .hero-tier strong,.current-tier { font:italic 900 2.1rem 'Barlow Condensed'; text-transform:uppercase; line-height:.9; }
+        .mini-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); }
+        .mini-stat { padding:14px; border:1px solid var(--line); background:#0d0d0d; }
+        .mini-stat strong { display:block; margin-bottom:6px; font:italic 900 1.55rem 'Barlow Condensed'; text-transform:uppercase; line-height:.9; }
+        .section-head,.table-head { display:flex; justify-content:space-between; align-items:end; gap:18px; margin-bottom:18px; }
+        .section-head p,.comparison-caption { margin-top:8px; font-size:.96rem; max-width:720px; }
+        .current-card { grid-template-columns:minmax(0,1.1fr) minmax(300px,.9fr); }
+        .current-main { position:relative; overflow:hidden; }
+        .current-main:before { content:''; position:absolute; inset:0 auto 0 0; width:5px; background:${isPremium ? 'var(--green)' : 'var(--orange)'}; }
+        .current-copy { position:relative; z-index:1; padding-left:12px; }
+        .current-meta { margin-top:20px; }
+        .usage-box { margin-top:24px; padding:18px; border:1px solid var(--line); background:#0d0d0d; }
+        .usage-top { display:flex; justify-content:space-between; gap:12px; margin-bottom:10px; color:var(--muted2); font:900 .78rem 'Barlow Condensed'; letter-spacing:.08em; text-transform:uppercase; }
+        .bar { position:relative; overflow:hidden; height:18px; border:1px solid var(--line2); background:#090909; }
+        .bar div { height:100%; background:linear-gradient(90deg, var(--orange) 0%, #ff7a2f 100%); }
+        .bar.premium div { background:linear-gradient(90deg, var(--green) 0%, #7ce7a4 100%); }
+        .bar:before,.bar:after { content:''; position:absolute; top:0; bottom:0; width:1px; background:rgba(255,255,255,.28); }
+        .bar:before { left:50%; } .bar:after { left:75%; }
+        .current-side { display:flex; flex-direction:column; justify-content:space-between; gap:18px; }
+        .current-side-title,.benefit h3 { font:italic 900 1.9rem 'Barlow Condensed'; text-transform:uppercase; line-height:.9; }
+        .plan-nudge-list,.features,.faq-grid { display:grid; gap:12px; }
+        .plan-nudge-item,.feature { display:grid; grid-template-columns:20px 1fr; gap:10px; color:var(--muted); font-size:.94rem; line-height:1.45; }
+        .plan-nudge-item strong,.feature strong,td strong,.feature-lead strong { color:#fff; }
+        .plans { grid-template-columns:repeat(3,minmax(0,1fr)); border:1px solid var(--line); }
+        .plan { position:relative; overflow:hidden; min-height:680px; display:flex; flex-direction:column; }
+        .plan:before { content:''; position:absolute; inset:0 0 auto 0; height:5px; background:transparent; }
+        .plan.recommended { background:linear-gradient(180deg, rgba(255,90,0,.11) 0%, rgba(255,90,0,0) 28%), var(--panel2); }
+        .plan.recommended:before { background:var(--orange); }
+        .plan.pro { background:linear-gradient(180deg, rgba(59,130,246,.12) 0%, rgba(59,130,246,0) 28%), linear-gradient(135deg, #171717 0%, #101010 100%); }
+        .plan-ribbon { position:absolute; right:16px; top:16px; padding:5px 10px; background:var(--orange); color:#fff; font:900 .66rem 'Barlow Condensed'; letter-spacing:.1em; text-transform:uppercase; }
+        .plan-icon { width:64px; height:64px; display:grid; place-items:center; margin-bottom:18px; border:1px solid var(--line2); background:#0d0d0d; font-size:1.85rem; }
+        .plan.recommended .plan-icon { border-color:rgba(255,90,0,.35); background:rgba(255,90,0,.08); }
+        .plan.pro .plan-icon { border-color:rgba(59,130,246,.35); background:rgba(59,130,246,.08); }
+        .plan-meta { margin-bottom:10px; }
+        .plan-name { font:italic 900 2.7rem 'Barlow Condensed'; text-transform:uppercase; line-height:.86; }
+        .plan-concept { min-height:54px; margin:10px 0 0; font-size:.93rem; }
+        .price { display:flex; align-items:end; gap:8px; margin:24px 0 18px; }
+        .price b { font:italic 900 4.4rem 'Barlow Condensed'; line-height:.8; }
+        .price span { margin-bottom:5px; color:var(--muted2); font:900 .82rem 'Barlow Condensed'; letter-spacing:.08em; text-transform:uppercase; }
+        .feature-lead { margin-bottom:18px; padding:14px 16px; border:1px solid var(--line); background:#0d0d0d; }
+        .feature-lead strong { display:block; margin-bottom:6px; font:italic 900 1.35rem 'Barlow Condensed'; text-transform:uppercase; line-height:.95; }
+        .feature-lead span { color:var(--muted); font-size:.9rem; line-height:1.45; }
+        .features { flex:1; }
+        .check { color:var(--green); font-weight:900; }
+        .plan.recommended .check { color:var(--orange); }
+        .plan.pro .check { color:var(--blue); }
+        .plan-note { margin:14px 0 0; padding-top:14px; border-top:1px solid var(--line); font-size:.8rem; text-align:center; }
+        .plan-cta-note { margin:10px 0 14px; color:var(--muted2); font-size:.8rem; line-height:1.45; text-align:center; min-height:34px; }
+        .comparison { overflow:hidden; }
+        .table-head { padding:22px; margin-bottom:0; background:var(--panel2); border-bottom:1px solid var(--line); }
+        .comparison-table { overflow-x:auto; }
+        table { width:100%; min-width:780px; border-collapse:collapse; }
+        th,td { padding:16px 18px; border-bottom:1px solid var(--line); text-align:left; }
+        th { background:#0d0d0d; color:var(--muted2); font:900 .82rem 'Barlow Condensed'; letter-spacing:.08em; text-transform:uppercase; }
+        td { color:var(--muted); font-size:.94rem; }
+        .td-orange { color:var(--orange); font-weight:900; }
+        .td-green { color:var(--green); font-weight:900; }
+        .benefits { grid-template-columns:repeat(3,minmax(0,1fr)); border:1px solid var(--line); }
+        .benefit:nth-child(2) { background:linear-gradient(180deg, rgba(59,130,246,.08) 0%, rgba(59,130,246,0) 100%), var(--panel); }
+        .benefit:nth-child(3) { background:linear-gradient(180deg, rgba(250,204,21,.08) 0%, rgba(250,204,21,0) 100%), var(--panel); }
+        .benefit-icon { width:56px; height:56px; display:grid; place-items:center; margin-bottom:18px; border:1px solid var(--line2); background:#0d0d0d; font-size:1.65rem; }
+        .benefit p { margin-top:10px; font-size:.93rem; }
+        .faq { max-width:980px; margin:0 auto; padding-bottom:20px; }
+        .faq h2 { text-align:center; margin-bottom:18px; }
+        .faq-item { overflow:hidden; }
+        .faq-item summary { list-style:none; cursor:pointer; display:flex; justify-content:space-between; gap:16px; padding:18px 20px; font:900 1rem 'Barlow Condensed'; letter-spacing:.05em; text-transform:uppercase; }
+        .faq-item summary::-webkit-details-marker { display:none; }
+        .faq-item summary span { color:var(--orange); }
+        .faq-item p { padding:16px 20px; border-top:1px solid var(--line); font-size:.93rem; }
+        @media (max-width:1150px) {
+          .hero,.current-card,.plans,.benefits { grid-template-columns:1fr; }
+          .plan { min-height:auto; }
+          .mini-grid { grid-template-columns:1fr; }
+          .section-head,.table-head { align-items:start; }
+        }
+        @media (max-width:720px) {
+          .topbar { align-items:start; padding-inline:14px; }
+          .top-title { font-size:2rem; }
+          .wrap { padding:18px 12px 64px; }
+          .hero-main,.hero-panel,.hero-panel-cta,.current-main,.current-side,.plan,.benefit { padding:20px; }
+          .hero { gap:14px; }
+          .hero-title { font-size:3.35rem; }
+          .hero-panel h2,.current-main h2,.section-head h2,.table-head h2,.faq h2 { font-size:2.4rem; }
+          .current-tier,.hero-tier strong { font-size:1.8rem; }
+          .section-head,.table-head { display:block; }
+          .section-head .btn,.table-head .btn,.hero-actions .btn,.current-side .btn { width:100%; margin-top:14px; }
+          .plans,.benefits,.hero-side,.current-card { gap:14px; background:transparent; border:0; }
+          .hero-panel,.hero-panel-cta,.current-main,.current-side,.plan,.benefit { border:1px solid var(--line); }
+          .price b { font-size:3.8rem; }
+          .faq-item summary,.faq-item p { padding-inline:16px; }
+        }
+      `}</style>
+
+      <header className="topbar">
+        <div>
+          <div className="top-kicker">Planes</div>
+          <div className="top-title">Premium</div>
         </div>
+        <button className="btn inline" onClick={() => navigate(-1)}>&larr; Volver</button>
       </header>
 
-      {/* Content */}
-      <section style={{ maxWidth: '80rem', margin: '0 auto', padding: '1.5rem 1rem 7rem' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-
-          {/* Hero */}
-          <div style={{ borderRadius: '2rem', background: 'linear-gradient(135deg, #0f172a 0%, #020617 50%, #431407 100%)', border: '1px solid #1e293b', padding: '1.5rem 2rem', color: 'white', overflow: 'hidden', position: 'relative' }}>
-            <div style={{ position: 'absolute', right: '-6rem', top: '-6rem', width: '16rem', height: '16rem', background: 'rgba(234,88,12,0.15)', borderRadius: '50%', filter: 'blur(60px)', pointerEvents: 'none' }}></div>
-            <div style={{ position: 'relative', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '1.5rem' }}>
-              <div>
-                <div style={{ width: '3.5rem', height: '3.5rem', borderRadius: '1rem', background: '#ea580c', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', marginBottom: '1.25rem', boxShadow: '0 10px 25px rgba(234,88,12,0.3)' }}>👑</div>
-                <h2 style={{ fontSize: 'clamp(1.75rem, 4vw, 3rem)', fontWeight: 900, letterSpacing: '-0.03em', margin: 0 }}>
-                  {isPremium ? 'Ya sos Premium' : 'Desbloqueá más intercambios'}
-                </h2>
-                <p style={{ marginTop: '0.75rem', color: '#cbd5e1', maxWidth: '40rem' }}>
-                  Elegí el plan que mejor se adapte a cómo completás tus álbumes. Más cruces, más alertas y menos tiempo perdido.
-                </p>
+      <main className="wrap">
+        <section className="hero">
+          <div className="hero-main">
+            <div className="hero-copy">
+              <div className="kicker">// tu ventaja dentro de figusuy</div>
+              <h1 className="hero-title">Acelerá, optimizá y <span>completá más rápido.</span></h1>
+              <p className="hero-sub">FigusUy es y siempre será gratis. Pero si querés ahorrar tiempo, reducir la fricción y conseguir esas figuritas difíciles antes que nadie, nuestros planes aceleradores son para vos.</p>
+              <div className="hero-badges">
+                <span className="badge green">✓ Uso principal 100% gratuito</span>
+                <span className="badge orange">✓ Ahorro de tiempo garantizado</span>
+                <span className="badge blue">✓ Prioridad en matches reales</span>
               </div>
-              <div style={{ borderRadius: '1.5rem', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.1)', padding: '1.25rem', minWidth: '260px' }}>
-                <p style={{ fontSize: '0.875rem', color: '#cbd5e1', fontWeight: 700 }}>Tu plan actual</p>
-                <p style={{ fontSize: '1.875rem', fontWeight: 900, marginTop: '0.25rem', textTransform: 'uppercase' }}>{currentTier}</p>
-                <p style={{ fontSize: '0.875rem', color: '#94a3b8', marginTop: '0.5rem' }}>
-                  {isPremium ? 'Beneficios activos.' : 'Te quedan 1 de 3 cruces este mes.'}
-                </p>
-                {!isPremium && (
-                  <div style={{ marginTop: '1rem', height: '0.75rem', borderRadius: '9999px', background: 'rgba(255,255,255,0.1)', overflow: 'hidden' }}>
-                    <div style={{ height: '100%', width: '66%', background: '#ea580c', borderRadius: '9999px' }}></div>
+            </div>
+            <div className="hero-actions">
+              <a className="btn orange" href="#planes">Ver aceleradores</a>
+              <button className="btn" onClick={() => setShowPlans(true)}>Comparar planes</button>
+            </div>
+          </div>
+
+          <aside className="hero-side">
+            <div className="hero-panel">
+              <div className="eyebrow">Tu estado hoy</div>
+              <h2>{currentTier}</h2>
+              <p>{isPremium ? 'Estás acelerando tus intercambios con beneficios premium. Filtrá, detectá y cerrá tratos más rápido.' : 'Tenés acceso completo a todas las funciones básicas para completar tu álbum. Podés subir de plan cuando el volumen de matches te tome demasiado tiempo.'}</p>
+              <div className="hero-tier">
+                <div>
+                  <span className="eyebrow">Plan activo</span>
+                  <strong>{currentTier}</strong>
+                </div>
+                <span className={`tier-state ${isPremium ? 'premium' : 'free'}`}>{isPremium ? 'Premium activo' : 'Modo gratis'}</span>
+              </div>
+            </div>
+            <div className="hero-panel-cta">
+              <div>
+                <div className="eyebrow">Lo que cambia</div>
+                <div className="mini-grid">
+                  <div className="mini-stat"><strong>{isPremium ? 'Filtros On' : 'Más velocidad'}</strong><span>{isPremium ? 'Ordená tus matches a tu gusto.' : 'Encontrá a la gente cerca tuyo al instante.'}</span></div>
+                  <div className="mini-stat"><strong>{isPremium ? 'Radar activo' : 'Certeza'}</strong><span>{isPremium ? 'Avisos por las más difíciles.' : 'Saber si leyeron tu mensaje y si están online.'}</span></div>
+                  <div className="mini-stat"><strong>{isPremium ? 'Prioridad' : 'Destacá'}</strong><span>{isPremium ? 'Aparecés primero en búsquedas.' : 'Subí en la lista para que te hablen a vos.'}</span></div>
+                </div>
+              </div>
+              <a className="btn orange block" href="#current-plan">{isPremium ? 'Ver tu plan' : 'Acelerar ahora'}</a>
+            </div>
+          </aside>
+        </section>
+
+        <section className="section" id="current-plan">
+          <div className="section-head">
+            <div>
+              <div className="kicker">// plan actual</div>
+              <h2>Tu estado actual</h2>
+              <p>Tu progreso real. Actualizá tu plan cuando sientas que necesitás ir más rápido o ahorrar tiempo buscando.</p>
+            </div>
+          </div>
+          <div className="current-card">
+            <div className="current-main">
+              <div className="current-copy">
+                <div className="eyebrow">Tu plan actual</div>
+                <h2 className="current-tier">{currentTier}</h2>
+                <p>{isPremium ? 'Estás aprovechando el ecosistema FigusUy al máximo. Tus filtros, estado de lectura y radar de prioridades están listos para cerrar los mejores cambios.' : 'Tenés acceso total para agregar figuritas, ver todos tus matches y chatear sin límites. FigusUy es tuyo. Si la búsqueda manual se vuelve lenta, podés acelerarla.'}</p>
+                <div className="current-meta">
+                  <span className={`current-chip ${isPremium ? 'green' : 'orange'}`}>{isPremium ? 'Acelerador activo' : 'Velocidad base'}</span>
+                  <span className="current-chip">{isPremium ? 'Acceso total' : 'Aceleración disponible'}</span>
+                </div>
+                <div className="usage-box">
+                  <div className="usage-top">
+                    <span>Álbumes y Matches</span>
+                    <span>Ilimitados</span>
                   </div>
-                )}
+                  <div className={`bar premium`}>
+                    <div style={{ width: '100%' }}></div>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-
-          {/* Plan cards */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.25rem' }}>
-
-            {/* Free */}
-            <article style={{ borderRadius: '2rem', background: '#0f172a', border: '1px solid #1e293b', padding: '1.5rem', display: 'flex', flexDirection: 'column' }}>
-              <div style={{ width: '3rem', height: '3rem', borderRadius: '1rem', background: '#1e293b', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', marginBottom: '1rem' }}>🎒</div>
-              <h3 style={{ fontSize: '1.5rem', fontWeight: 900, color: 'white', margin: 0 }}>Gratis</h3>
-              <p style={{ color: '#94a3b8', fontSize: '0.875rem', marginTop: '0.25rem' }}>Para empezar a probar la app.</p>
-              <div style={{ marginTop: '1.5rem', display: 'flex', alignItems: 'flex-end', gap: '0.25rem' }}>
-                <span style={{ fontSize: '3rem', fontWeight: 900, color: 'white', lineHeight: 1 }}>$0</span>
-                <span style={{ marginBottom: '0.5rem', color: '#64748b', fontWeight: 700 }}>/mes</span>
-              </div>
-              <div style={{ marginTop: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', fontSize: '0.875rem', color: '#cbd5e1', flex: 1 }}>
-                <p style={{ margin: 0 }}>✓ <b>1</b> álbum activo</p>
-                <p style={{ margin: 0 }}>✓ Cruces <b>básicos</b></p>
-                <p style={{ margin: 0 }}>✓ Chat por <b>3 días</b></p>
-                <p style={{ margin: 0 }}>✓ Favoritos <b>básicos</b></p>
-                <p style={{ margin: 0 }}>✓ Puntos y tiendas</p>
-              </div>
-              <button style={{ marginTop: '2rem', width: '100%', padding: '1rem', borderRadius: '1rem', background: '#1e293b', color: 'white', fontWeight: 900, border: 'none', cursor: 'default' }}>Plan actual</button>
-            </article>
-
-            {/* Plus */}
-            <article style={{ position: 'relative', borderRadius: '2rem', background: '#0f172a', border: '2px solid #ea580c', boxShadow: '0 20px 25px -5px rgba(234,88,12,0.1)', padding: '1.5rem', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '0.5rem', background: '#ea580c' }}></div>
-              <div style={{ position: 'absolute', top: '1.25rem', right: '1.25rem', padding: '0.25rem 0.75rem', borderRadius: '9999px', background: '#ea580c', color: 'white', fontSize: '0.75rem', fontWeight: 900 }}>RECOMENDADO</div>
-              <div style={{ width: '3rem', height: '3rem', borderRadius: '1rem', background: '#431407', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', marginBottom: '1rem' }}>💎</div>
-              <h3 style={{ fontSize: '1.5rem', fontWeight: 900, color: 'white', margin: 0 }}>Plus</h3>
-              <p style={{ color: '#94a3b8', fontSize: '0.875rem', marginTop: '0.25rem' }}>Para completar el álbum más fácil y cómodo.</p>
-              <div style={{ marginTop: '1.5rem', display: 'flex', alignItems: 'flex-end', gap: '0.25rem' }}>
-                <span style={{ fontSize: '3rem', fontWeight: 900, color: 'white', lineHeight: 1 }}>$99</span>
-                <span style={{ marginBottom: '0.5rem', color: '#64748b', fontWeight: 700 }}>/mes</span>
-              </div>
-              <div style={{ marginTop: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', fontSize: '0.875rem', color: '#cbd5e1', flex: 1 }}>
-                <p style={{ margin: 0 }}>✓ Hasta <b>3</b> álbumes activos</p>
-                <p style={{ margin: 0 }}>✓ Cruces <b>optimizados</b></p>
-                <p style={{ margin: 0 }}>✓ Chat <b>sin vencimiento</b></p>
-                <p style={{ margin: 0 }}>✓ Favoritos <b>ampliados</b></p>
-                <p style={{ margin: 0 }}>✓ Alertas de <b>nuevos cruces</b> relevantes</p>
-                <p style={{ margin: 0 }}>✓ Menos ruido, <b>mejores oportunidades</b></p>
-              </div>
-              <button
-                onClick={() => handleSubscribe('Plus')}
-                style={{ marginTop: '2rem', width: '100%', padding: '1rem', borderRadius: '1rem', background: '#ea580c', color: 'white', fontWeight: 900, border: 'none', cursor: 'pointer', boxShadow: '0 10px 25px rgba(234,88,12,0.2)' }}
-              >
-                Elegir Plus
-              </button>
-            </article>
-
-            {/* Pro */}
-            <article style={{ borderRadius: '2rem', background: '#0f172a', border: '1px solid #1e293b', padding: '1.5rem', display: 'flex', flexDirection: 'column', color: 'white' }}>
-              <div style={{ width: '3rem', height: '3rem', borderRadius: '1rem', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', marginBottom: '1rem' }}>🚀</div>
-              <h3 style={{ fontSize: '1.5rem', fontWeight: 900, margin: 0 }}>Pro</h3>
-              <p style={{ color: '#cbd5e1', fontSize: '0.875rem', marginTop: '0.25rem' }}>Ventaja para usuarios intensivos.</p>
-              <div style={{ marginTop: '1.5rem', display: 'flex', alignItems: 'flex-end', gap: '0.25rem' }}>
-                <span style={{ fontSize: '3rem', fontWeight: 900, lineHeight: 1 }}>$199</span>
-                <span style={{ marginBottom: '0.5rem', color: '#94a3b8', fontWeight: 700 }}>/mes</span>
-              </div>
-              <div style={{ marginTop: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', fontSize: '0.875rem', color: '#e2e8f0', flex: 1 }}>
-                <p style={{ margin: 0 }}>✓ Álbumes activos <b>ilimitados</b></p>
-                <p style={{ margin: 0 }}>✓ Cruces <b>avanzados</b></p>
-                <p style={{ margin: 0 }}>✓ Alertas en <b>tiempo real</b></p>
-                <p style={{ margin: 0 }}>✓ Favoritos <b>ilimitados</b></p>
-                <p style={{ margin: 0 }}>✓ Sugerencias <b>inteligentes</b></p>
-                <p style={{ margin: 0 }}>✓ Mejores oportunidades <b>primero</b></p>
-                <p style={{ margin: 0 }}>✓ Acceso <b>anticipado</b> a funciones</p>
-              </div>
-              <button
-                onClick={() => handleSubscribe('Pro')}
-                style={{ marginTop: '2rem', width: '100%', padding: '1rem', borderRadius: '1rem', background: 'white', color: '#0f172a', fontWeight: 900, border: 'none', cursor: 'pointer' }}
-              >
-                Elegir Pro
-              </button>
-            </article>
-          </div>
-
-          {/* Comparison table */}
-          <div style={{ borderRadius: '2rem', background: '#0f172a', border: '1px solid #1e293b', overflow: 'hidden' }}>
-            <div style={{ padding: '1.5rem', borderBottom: '1px solid #1e293b', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem' }}>
+            <aside className="current-side">
               <div>
-                <h3 style={{ fontSize: '1.5rem', fontWeight: 900, color: 'white', margin: 0 }}>Comparar planes</h3>
-                <p style={{ fontSize: '0.875rem', color: '#94a3b8', margin: '0.25rem 0 0' }}>La diferencia real entre Gratis, Plus y Pro.</p>
+                <div className="eyebrow">Siguiente paso</div>
+                <div className="current-side-title">{isPremium ? 'Mantené la ventaja y completá más rápido.' : 'Acelerá tus cambios sin perder el ritmo.'}</div>
               </div>
-              <button
-                onClick={() => setShowPlans(true)}
-                style={{ padding: '0.75rem 1.25rem', borderRadius: '1rem', background: '#ea580c', color: 'white', fontWeight: 900, fontSize: '0.875rem', border: 'none', cursor: 'pointer' }}
-              >
-                Ver tabla compacta
+              <div className="plan-nudge-list">
+                <div className="plan-nudge-item"><span className="check">✓</span><span><strong>Filtros por distancia</strong> para no viajar de más y cambiar cerca.</span></div>
+                <div className="plan-nudge-item"><span className="check">✓</span><span><strong>Confirmación de lectura</strong> para no perder tiempo con fantasmas.</span></div>
+                <div className="plan-nudge-item"><span className="check">✓</span><span><strong>Radar de difíciles</strong> para que el sistema trabaje por vos.</span></div>
+              </div>
+              <a className="btn orange block" href="#planes">Ver aceleradores</a>
+            </aside>
+          </div>
+        </section>
+
+        <section className="section" id="planes">
+          <div className="section-head">
+            <div>
+              <div className="kicker">// planes</div>
+              <h2>Elegí tu ritmo para completar</h2>
+              <p>El núcleo es gratis. Plus es tu acelerador para ahorrar tiempo. Pro es el radar absoluto para las figuritas difíciles.</p>
+            </div>
+          </div>
+          <div className="plans">
+            <article className="plan">
+              {(() => {
+                const cta = getUserPlanCta('gratis')
+                return (
+                  <>
+              <div className="plan-icon"><span className="material-symbols-outlined" style={{fontSize:'1.85rem'}}>backpack</span></div>
+              <div className="plan-meta"><span className="plan-tag">Usar</span></div>
+              <h3 className="plan-name">Gratis</h3>
+              <p className="plan-concept">Coleccioná a tu ritmo y encontrá tus matches. La experiencia completa, sin barreras.</p>
+              <div className="price"><b>$0</b><span>siempre</span></div>
+              <div className="feature-lead"><strong>Tu punto de partida.</strong><span>Todo lo que necesitás para completar el álbum con paciencia.</span></div>
+              <div className="features">
+                <div className="feature"><span className="check">✓</span><span>Cargar figuritas <strong>sin límite</strong></span></div>
+                <div className="feature"><span className="check">✓</span><span>Ver <strong>todos</strong> tus matches</span></div>
+                <div className="feature"><span className="check">✓</span><span>Chat <strong>ilimitado</strong> con matches</span></div>
+                <div className="feature"><span className="check">✓</span><span>Completar tu álbum <strong>gratis</strong></span></div>
+              </div>
+              <button className={`btn ${cta.tone === 'current' ? '' : 'secondary'} block`} disabled={cta.disabled} onClick={() => setShowPlans(true)}>{cta.label}</button>
+              <p className="plan-cta-note">{cta.note}</p>
+              <p className="plan-note">El verdadero motor de FigusUy. Pagás con tu tiempo de búsqueda manual.</p>
+                  </>
+                )
+              })()}
+            </article>
+
+            <article className="plan recommended">
+              {(() => {
+                const cta = getUserPlanCta('plus')
+                return (
+                  <>
+              <div className="plan-ribbon">Acelerador</div>
+              <div className="plan-icon"><span className="material-symbols-outlined" style={{fontSize:'1.85rem'}}>diamond</span></div>
+              <div className="plan-meta"><span className="plan-tag">Ahorrar Tiempo</span><span className="plan-tag">Velocidad</span></div>
+              <h3 className="plan-name">Plus</h3>
+              <p className="plan-concept">Acelerá tus cambios. Encontrá lo que buscás cerca tuyo, rápido y sin perder tiempo.</p>
+              <div className="price"><b>{plusPrice}</b><span>mes UYU</span></div>
+              <div className="feature-lead"><strong>El salto para activos.</strong><span>Filtros, confirmaciones y limpieza de ruido.</span></div>
+              <div className="features">
+                <div className="feature"><span className="check">✓</span><span>Filtro de matches <strong>por distancia</strong></span></div>
+                <div className="feature"><span className="check">✓</span><span>Filtro por <strong>figurita específica</strong></span></div>
+                <div className="feature"><span className="check">✓</span><span><strong>Doble check azul</strong> (leyeron tu mensaje)</span></div>
+                <div className="feature"><span className="check">✓</span><span>Ver el estado <strong>"Última vez online"</strong></span></div>
+                <div className="feature"><span className="check">✓</span><span>Experiencia <strong>sin publicidad</strong></span></div>
+                <div className="feature"><span className="check">✓</span><span>Saber <strong>quién vio tu perfil</strong></span></div>
+                <div className="feature"><span className="check">✓</span><span>Badge Plus destacado</span></div>
+              </div>
+              <button className={`btn ${cta.tone === 'upgrade' ? 'orange' : cta.tone === 'change' ? 'secondary' : ''} block ${cta.tone === 'current' ? 'is-current' : ''}`} onClick={() => handleSubscribe('Plus')} disabled={cta.disabled}>
+                {cta.label}
               </button>
+              <p className="plan-cta-note">{cta.note}</p>
+              <p className="plan-note">Si tenés decenas de matches y querés filtrar solo a los más cercanos y activos.</p>
+                  </>
+                )
+              })()}
+            </article>
+
+            <article className="plan pro">
+              {(() => {
+                const cta = getUserPlanCta('pro')
+                return (
+                  <>
+              <div className="plan-icon"><span className="material-symbols-outlined" style={{fontSize:'1.85rem'}}>rocket_launch</span></div>
+              <div className="plan-meta"><span className="plan-tag">Prioridad Absoluta</span><span className="plan-tag">Radar</span></div>
+              <h3 className="plan-name">Pro</h3>
+              <p className="plan-concept">Dominá el intercambio. Prioridad máxima y alertas para las figuritas más difíciles.</p>
+              <div className="price"><b>{proPrice}</b><span>mes UYU</span></div>
+              <div className="feature-lead"><strong>Para las últimas 10.</strong><span>El sistema caza por vos y te pone en el centro de atención.</span></div>
+              <div className="features">
+                <div className="feature"><span className="check">✓</span><span>Todo lo incluido en <strong>Plus</strong></span></div>
+                <div className="feature"><span className="check">✓</span><span><strong>Alertas "Radar"</strong> instantáneas de escasez</span></div>
+                <div className="feature"><span className="check">✓</span><span><strong>Aparecés primero</strong> en los matches de otros</span></div>
+                <div className="feature"><span className="check">✓</span><span><strong>Modo Fantasma</strong> (navegar sin ser visto)</span></div>
+                <div className="feature"><span className="check">✓</span><span>Múltiples álbumes con analíticas</span></div>
+                <div className="feature"><span className="check">✓</span><span>Soporte prioritario y Badge Coleccionista</span></div>
+              </div>
+              <button className={`btn ${cta.tone === 'upgrade' ? 'orange' : cta.tone === 'change' ? 'secondary' : ''} block ${cta.tone === 'current' ? 'is-current' : ''}`} onClick={() => handleSubscribe('Pro')} disabled={cta.disabled}>
+                {cta.label}
+              </button>
+              <p className="plan-cta-note">{cta.note}</p>
+              <p className="plan-note">Cuando estás buscando las doradas o las últimas para cerrar el álbum.</p>
+                  </>
+                )
+              })()}
+            </article>
+          </div>
+        </section>
+
+        <section className="section comparison">
+          <div className="table-head">
+            <div>
+              <div className="kicker">// comparacion</div>
+              <h2>Comparacion rapida</h2>
+              <p className="comparison-caption">Simple, clara y enfocada en lo que cambia de verdad entre Gratis, Plus y Pro.</p>
             </div>
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', fontSize: '0.875rem', minWidth: '760px', borderCollapse: 'collapse' }}>
-                <thead style={{ background: '#020617' }}>
-                  <tr style={{ textAlign: 'left', color: 'white' }}>
-                    <th style={{ padding: '1.25rem', fontWeight: 900 }}>Funcionalidad</th>
-                    <th style={{ padding: '1.25rem', fontWeight: 900 }}>Gratis</th>
-                    <th style={{ padding: '1.25rem', fontWeight: 900, color: '#ea580c' }}>Plus</th>
-                    <th style={{ padding: '1.25rem', fontWeight: 900 }}>Pro</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {features.map((f, i) => (
-                    <tr key={f.name} style={{ borderTop: '1px solid #1e293b' }}>
-                      <td style={{ padding: '1.25rem', fontWeight: 700, color: 'white' }}>{f.name}</td>
-                      <td style={{ padding: '1.25rem', color: '#94a3b8' }}>{f.free}</td>
-                      <td style={{ padding: '1.25rem', color: '#ea580c', fontWeight: 900 }}>{f.plus}</td>
-                      <td style={{ padding: '1.25rem', color: 'white', fontWeight: 900 }}>{f.pro}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <button className="btn orange" onClick={() => setShowPlans(true)}>Ver tabla completa</button>
+          </div>
+          <div className="comparison-table">
+            <table>
+              <thead>
+                <tr><th>Función</th><th>Gratis</th><th>Plus</th><th>Pro / Coleccionista</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><strong>Cargar y ver Matches</strong></td><td>Ilimitado</td><td className="td-orange">Ilimitado</td><td className="td-green">Ilimitado</td></tr>
+                <tr><td><strong>Chat y Mensajes</strong></td><td>Ilimitados</td><td className="td-orange">Ilimitados</td><td className="td-green">Ilimitados</td></tr>
+                <tr><td><strong>Filtros Avanzados (Distancia)</strong></td><td>Manual</td><td className="td-orange">Sí, precisos</td><td className="td-green">Sí, precisos</td></tr>
+                <tr><td><strong>Doble Check en Chat</strong></td><td>No</td><td className="td-orange">Sí</td><td className="td-green">Sí</td></tr>
+                <tr><td><strong>Posicionamiento en Matches</strong></td><td>Normal</td><td className="td-orange">Normal</td><td className="td-green">N°1 (Prioridad)</td></tr>
+                <tr><td><strong>Radar de Automatch</strong></td><td>No</td><td className="td-orange">No</td><td className="td-green">Automático</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section className="section">
+          <div className="section-head">
+            <div>
+              <div className="kicker">// beneficios</div>
+              <h2>Por qué acelerar</h2>
+              <p>En FigusUy nunca vas a pagar por usar el sistema. Pagás para ahorrar tu propio tiempo cuando la búsqueda se vuelve intensa.</p>
             </div>
           </div>
-
-          {/* Trust bar */}
-          <div style={{ borderRadius: '1.5rem', background: '#0f172a', border: '1px solid #1e293b', padding: '1.25rem', display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '1.5rem', fontSize: '0.75rem', fontWeight: 900, color: '#94a3b8' }}>
-            <span>🔒 Pago seguro</span>
-            <span>❌ Sin compromiso</span>
-            <span>💳 Mercado Pago</span>
-            <span>⚙️ Cancelás cuando quieras</span>
+          <div className="benefits">
+            <article className="benefit"><div className="benefit-icon"><span className="material-symbols-outlined" style={{fontSize:'1.65rem'}}>bolt</span></div><h3>Cortá el ruido</h3><p>Con decenas de matches, necesitás filtros de distancia y estado online. Plus limpia tu lista al instante.</p></article>
+            <article className="benefit"><div className="benefit-icon"><span className="material-symbols-outlined" style={{fontSize:'1.65rem'}}>done_all</span></div><h3>Certeza en chats</h3><p>Dejá de hablarle a la pared. El doble check y la última hora de conexión te aseguran con quién vale la pena coordinar.</p></article>
+            <article className="benefit"><div className="benefit-icon"><span className="material-symbols-outlined" style={{fontSize:'1.65rem'}}>radar</span></div><h3>Atrapá las difíciles</h3><p>Cuando te faltan 5 figuritas, Pro te alerta en el segundo que alguien las sube y pone tu perfil arriba de todo para que te elijan a vos.</p></article>
           </div>
+        </section>
 
-        </div>
-      </section>
+        <section className="section faq">
+          <div className="kicker" style={{ textAlign: 'center' }}>// faq</div>
+          <h2>Preguntas frecuentes</h2>
+          <div className="faq-grid">
+            <details className="faq-item">
+              <summary>&iquest;Me van a cobrar por mandar mensajes? <span>▼</span></summary>
+              <p>No. El uso central de FigusUy, incluyendo encontrar matches y chatear para coordinar intercambios, es y siempre será 100% gratuito.</p>
+            </details>
+            <details className="faq-item">
+              <summary>&iquest;Para qué sirve el plan Plus entonces? <span>▼</span></summary>
+              <p>Para ahorrarte tiempo. Si tenés muchos matches, Plus te permite filtrarlos por distancia, ver quién está online y si leyeron tus mensajes.</p>
+            </details>
+            <details className="faq-item">
+              <summary>&iquest;Qué significa prioridad de matches en Pro? <span>▼</span></summary>
+              <p>Significa que cuando otro usuario busque una figurita que vos tenés repetida, tu perfil le aparecerá primero en su lista, dándote mayor ventaja para concretar.</p>
+            </details>
+          </div>
+        </section>
+      </main>
 
       <PlansModal isOpen={showPlans} onClose={() => setShowPlans(false)} />
-    </>
+    </div>
   )
 }

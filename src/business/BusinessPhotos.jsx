@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { getLocalBusinessPlanRules } from '../lib/businessPlans'
 
 export default function BusinessPhotos() {
   const { location } = useOutletContext()
@@ -17,14 +18,13 @@ export default function BusinessPhotos() {
   }, [location])
 
   const fetchPlanRules = async () => {
-    // If we had the RPC, we could use it. For now, fetch from table:
     const { data } = await supabase
       .from('business_plan_rules')
       .select('*')
       .eq('plan_name', location.business_plan || 'gratis')
       .single()
-    
-    if (data) setPlanRules(data)
+
+    setPlanRules(data || getLocalBusinessPlanRules(location.business_plan || 'gratis'))
   }
 
   const fetchImages = async () => {
@@ -34,13 +34,13 @@ export default function BusinessPhotos() {
       .select('*')
       .eq('location_id', location.id)
       .order('sort_order', { ascending: true })
-    
+
     if (!error) setImages(data || [])
     setLoading(false)
   }
 
   const handleDelete = async (id) => {
-    if (!window.confirm('¿Eliminar esta foto?')) return
+    if (!window.confirm('Eliminar esta foto?')) return
     await supabase.from('location_images').delete().eq('id', id)
     fetchImages()
   }
@@ -48,12 +48,11 @@ export default function BusinessPhotos() {
   const handleUploadFake = async () => {
     if (!planRules) return
     if (images.length >= planRules.max_photos) {
-      alert(`Tu plan ${planRules.plan_name} permite hasta ${planRules.max_photos} foto(s). Mejorá tu plan para subir más.`)
+      alert(`Tu plan ${planRules.plan_name} permite hasta ${planRules.max_photos} foto(s). Mejora tu plan para subir mas.`)
       return
     }
 
     setUploading(true)
-    // Simulate upload
     const url = `https://picsum.photos/seed/${Math.random()}/600/400`
     await supabase.from('location_images').insert({
       location_id: location.id,
@@ -68,108 +67,181 @@ export default function BusinessPhotos() {
   if (!location) return null
 
   return (
-    <div className="biz-photos">
+    <div className="biz-page">
       <style>{`
+        .photos-top {
+          display: grid;
+          grid-template-columns: minmax(0, 1.1fr) minmax(300px, .9fr);
+          gap: 1.25rem;
+        }
+
+        .photos-limit-card,
+        .photos-guide-card,
+        .photo-card,
+        .upload-card {
+          border: 1px solid var(--line);
+        }
+
+        .photos-limit-card {
+          padding: 1.35rem;
+          background:
+            linear-gradient(180deg, rgba(255, 90, 0, .1) 0%, rgba(255, 90, 0, 0) 100%),
+            var(--panel2);
+        }
+
+        .photos-guide-card {
+          padding: 1.35rem;
+          background: var(--panel);
+        }
+
+        .photos-guide-card h3,
+        .photos-limit-card h3 {
+          margin-top: .5rem;
+          font: italic 900 2rem 'Barlow Condensed';
+          line-height: .9;
+          text-transform: uppercase;
+        }
+
+        .photos-guide-card p,
+        .photos-limit-card p {
+          margin-top: .7rem;
+          color: var(--muted);
+          line-height: 1.55;
+        }
+
         .photo-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-          gap: 1.5rem;
-          margin-top: 1.5rem;
+          grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+          gap: 1rem;
         }
+
         .photo-card {
-          background: #1e293b;
-          border: 1px solid #334155;
-          border-radius: 0.75rem;
           overflow: hidden;
-          position: relative;
+          background: #0d0d0d;
         }
+
         .photo-img {
           width: 100%;
-          height: 150px;
+          height: 160px;
           object-fit: cover;
           display: block;
         }
+
         .photo-actions {
           display: flex;
           justify-content: space-between;
-          padding: 0.75rem;
-          background: #0f172a;
+          gap: .6rem;
+          padding: .8rem;
+          background: var(--panel);
         }
+
         .btn-icon {
-          background: none;
-          border: none;
-          color: #94a3b8;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 2.3rem;
+          height: 2.3rem;
+          border: 1px solid var(--line2);
+          background: transparent;
+          color: var(--muted);
           cursor: pointer;
-          transition: color 0.2s;
         }
+
         .btn-icon:hover {
-          color: white;
+          color: #fff;
+          border-color: var(--orange);
         }
+
         .btn-icon.danger:hover {
-          color: #ef4444;
+          color: #fca5a5;
+          border-color: rgba(239, 68, 68, .35);
         }
-        
+
         .upload-card {
-          border: 2px dashed #334155;
-          border-radius: 0.75rem;
+          min-height: 214px;
           display: flex;
           flex-direction: column;
           align-items: center;
           justify-content: center;
-          height: 150px;
-          color: #94a3b8;
+          gap: .5rem;
+          background: transparent;
+          border-style: dashed;
+          color: var(--muted);
           cursor: pointer;
-          transition: all 0.2s;
+          transition: .2s ease;
         }
+
         .upload-card:hover {
-          border-color: #f97316;
-          color: #f97316;
-          background: rgba(249,115,22,0.05);
+          border-color: var(--orange);
+          color: var(--orange);
+          background: rgba(255, 90, 0, .05);
         }
-        .plan-alert {
-          background: rgba(249,115,22,0.1);
-          border: 1px solid rgba(249,115,22,0.2);
-          padding: 1rem;
-          border-radius: 0.75rem;
-          margin-bottom: 1.5rem;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
+
+        .upload-card .material-symbols-outlined {
+          font-size: 2.5rem;
+        }
+
+        @media (max-width: 900px) {
+          .photos-top {
+            grid-template-columns: 1fr;
+          }
         }
       `}</style>
 
-      <h2 style={{ fontSize: '1.5rem', fontWeight: 900, marginBottom: '1rem' }}>Gestión de Fotos</h2>
-      
-      {planRules && (
-        <div className="plan-alert">
-          <div>
-            <p style={{ fontWeight: 600, color: '#f97316' }}>Plan {planRules.plan_name.toUpperCase()}</p>
-            <p style={{ fontSize: '0.875rem', color: '#cbd5e1' }}>Puedes subir hasta {planRules.max_photos} foto(s).</p>
-          </div>
-          {images.length >= planRules.max_photos && location.business_plan !== 'dominio' && (
-            <button className="btn" style={{ background: '#f97316', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.5rem', border: 'none', fontWeight: 800, cursor: 'pointer' }}>
-              Mejorar Plan
-            </button>
-          )}
+      <div className="biz-section-head">
+        <div>
+          <div className="biz-page-kicker">/ fotos del local</div>
+          <h2>Mejora tu frente visual</h2>
+          <p>Las imagenes correctas elevan confianza, ayudan a ubicar el local y mejoran la calidad percibida de tu punto.</p>
         </div>
-      )}
+      </div>
 
-      {loading ? <p>Cargando fotos...</p> : (
+      <section className="photos-top">
+        <div className="photos-limit-card">
+          <div className="biz-page-kicker">/ capacidad</div>
+          <h3>Gestiona tu cupo de imagenes</h3>
+          <p>{planRules ? `Tu plan ${planRules.plan_name.toUpperCase()} permite hasta ${planRules.max_photos} foto(s).` : 'Cargando reglas del plan...'}</p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '.55rem', marginTop: '1rem' }}>
+            <span className="biz-chip orange">Subidas: {images.length}</span>
+            {planRules && <span className="biz-chip">{planRules.max_photos} maximo</span>}
+          </div>
+        </div>
+
+        <aside className="photos-guide-card">
+          <div className="biz-page-kicker">/ recomendacion</div>
+          <h3>Evita fotos genericas</h3>
+          <p>Muestra frente, interior y punto de intercambio real. Las imagenes deben ayudar a reconocer el lugar y transmitir confianza.</p>
+          {planRules && images.length >= planRules.max_photos && location.business_plan !== 'legend' && (
+            <button className="biz-btn-primary" style={{ width: '100%', marginTop: '1rem' }}>Mejorar plan</button>
+          )}
+        </aside>
+      </section>
+
+      {loading ? (
+        <div className="biz-card"><p className="biz-text-muted">Cargando fotos...</p></div>
+      ) : (
         <div className="photo-grid">
           {images.map(img => (
             <div key={img.id} className="photo-card">
               <img src={img.image_url} alt="Local" className="photo-img" />
               <div className="photo-actions">
-                <button className="btn-icon" title="Marcar como principal"><span className="material-symbols-outlined">star</span></button>
-                <button className="btn-icon danger" onClick={() => handleDelete(img.id)} title="Eliminar"><span className="material-symbols-outlined">delete</span></button>
+                <button className="btn-icon" title="Marcar como principal">
+                  <span className="material-symbols-outlined">star</span>
+                </button>
+                <button className="btn-icon danger" onClick={() => handleDelete(img.id)} title="Eliminar">
+                  <span className="material-symbols-outlined">delete</span>
+                </button>
               </div>
             </div>
           ))}
 
           {(!planRules || images.length < planRules.max_photos) && (
             <div className="upload-card" onClick={handleUploadFake}>
-              <span className="material-symbols-outlined" style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>add_photo_alternate</span>
-              <span style={{ fontWeight: 600 }}>{uploading ? 'Subiendo...' : 'Subir Foto'}</span>
+              <span className="material-symbols-outlined">add_photo_alternate</span>
+              <strong style={{ font: "italic 900 1.5rem 'Barlow Condensed'", textTransform: 'uppercase', lineHeight: '.9' }}>
+                {uploading ? 'Subiendo...' : 'Subir foto'}
+              </strong>
+              <span style={{ fontSize: '.9rem', textAlign: 'center', maxWidth: '14rem' }}>Agrega una imagen clara para reforzar la ficha de tu local.</span>
             </div>
           )}
         </div>

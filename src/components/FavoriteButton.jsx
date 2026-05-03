@@ -46,7 +46,7 @@ export default function FavoriteButton({ targetUserId, size = 'default', showLab
         cursor: 'pointer',
         padding: showLabel ? '0.25rem 0.5rem' : 0,
         borderRadius: showLabel ? '0.5rem' : '50%',
-        color: isFav ? '#ef4444' : (isDark ? '#94a3b8' : '#64748b'),
+        color: isFav ? '#ef4444' : (isDark ? 'var(--color-text-secondary)' : 'var(--color-text-muted)'),
         transition: 'all 0.2s ease',
       }}
     >

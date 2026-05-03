@@ -2,9 +2,9 @@ import React, { useEffect, useState } from 'react'
 import { useAdminStore } from '../stores/adminStore'
 import { useAuthStore } from '../stores/authStore'
 
-const card = { background: 'white', borderRadius: '1rem', padding: '1.5rem', border: '1px solid #e7e5e4', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }
+const card = { background: "var(--admin-panel)", borderRadius: "0.5rem", padding: "1.25rem", border: "1px solid var(--admin-line)" }
 
-const planColors = { gratis: '#64748b', plus: '#3b82f6', pro: '#ea580c' }
+const planColors = { gratis: "var(--admin-muted2)", plus: '#3b82f6', pro: 'var(--color-primary)' }
 const planIcons = { gratis: 'person', plus: 'star', pro: 'workspace_premium' }
 
 export default function AdminPlans() {
@@ -40,11 +40,11 @@ export default function AdminPlans() {
   return (
     <div style={{ paddingBottom: '2rem' }}>
       <div style={{ marginBottom: '2rem' }}>
-        <h1 style={{ fontSize: '1.875rem', fontWeight: 900, color: '#020617', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <span className="material-symbols-outlined" style={{ color: '#ea580c', fontSize: '2rem' }}>diamond</span>
+        <h1 style={{ fontSize: '1.875rem', fontWeight: 900, color: "#f5f5f5", letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <span className="material-symbols-outlined" style={{ color: 'var(--color-primary)', fontSize: '2rem' }}>diamond</span>
           Planes de Usuarios
         </h1>
-        <p style={{ fontSize: '0.9375rem', color: '#64748b', marginTop: '0.25rem' }}>
+        <p style={{ fontSize: '0.9375rem', color: "var(--admin-muted2)", marginTop: '0.25rem' }}>
           Editá los límites, features y reglas de matching de cada plan. Los cambios se aplican inmediatamente.
         </p>
       </div>
@@ -56,7 +56,7 @@ export default function AdminPlans() {
       )}
 
       {plans.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '4rem', color: '#94a3b8' }}>
+        <div style={{ textAlign: 'center', padding: '4rem', color: "var(--admin-muted)" }}>
           {loading ? 'Cargando planes...' : 'No se encontraron planes en plan_rules. Verificá que la tabla exista y tenga datos.'}
         </div>
       ) : (
@@ -64,7 +64,7 @@ export default function AdminPlans() {
           {plans.map(plan => {
             const isEditing = editingId === plan.id
             const justSaved = saved === plan.id
-            const color = planColors[plan.plan_name] || '#64748b'
+            const color = planColors[plan.plan_name] || "var(--admin-muted2)"
             const icon = planIcons[plan.plan_name] || 'person'
 
             return (
@@ -79,8 +79,8 @@ export default function AdminPlans() {
                     <span className="material-symbols-outlined" style={{ fontSize: '1.5rem' }}>{icon}</span>
                   </div>
                   <div>
-                    <h3 style={{ fontSize: '1.25rem', fontWeight: 900, color: '#0f172a', textTransform: 'capitalize', margin: 0 }}>{plan.plan_name}</h3>
-                    <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: 0 }}>
+                    <h3 style={{ fontSize: '1.25rem', fontWeight: 900, color: "#f5f5f5", textTransform: 'capitalize', margin: 0 }}>{plan.plan_name}</h3>
+                    <p style={{ fontSize: '0.75rem', color: "var(--admin-muted)", margin: 0 }}>
                       Boost: +{((plan.priority_boost || 0) * 100).toFixed(0)}% · Ranking: {plan.match_depth}
                     </p>
                   </div>
@@ -89,36 +89,36 @@ export default function AdminPlans() {
                 {isEditing ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                     {/* Limits */}
-                    <h4 style={{ fontSize: '0.6875rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>Límites</h4>
+                    <h4 style={{ fontSize: '0.6875rem', fontWeight: 800, color: "var(--admin-muted2)", textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>Límites</h4>
                     {[
                       { key: 'max_active_albums', label: 'Máx álbumes activos', type: 'number' },
                       { key: 'favorite_limit', label: 'Límite de favoritos', type: 'number' },
                       { key: 'chat_expiration_hours', label: 'Expiración chat (horas)', type: 'number' },
                     ].map(f => (
                       <div key={f.key}>
-                        <label style={{ display: 'block', fontSize: '0.6875rem', fontWeight: 700, color: '#475569', marginBottom: '0.25rem' }}>{f.label}</label>
+                        <label style={{ display: 'block', fontSize: '0.6875rem', fontWeight: 700, color: "var(--admin-muted)", marginBottom: '0.25rem' }}>{f.label}</label>
                         <input type={f.type} value={editForm[f.key] ?? ''} onChange={e => setEditForm({ ...editForm, [f.key]: e.target.value === '' ? null : Number(e.target.value) })}
                           placeholder="Sin límite"
-                          style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: '0.5rem', border: '1px solid #e2e8f0', fontSize: '0.8125rem' }} />
+                          style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: '0.5rem', border: "1px solid var(--admin-line)", fontSize: '0.8125rem' }} />
                       </div>
                     ))}
 
                     {/* Ranking */}
-                    <h4 style={{ fontSize: '0.6875rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0.5rem 0 0' }}>Ranking</h4>
+                    <h4 style={{ fontSize: '0.6875rem', fontWeight: 800, color: "var(--admin-muted2)", textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0.5rem 0 0' }}>Ranking</h4>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
                       <div>
-                        <label style={{ display: 'block', fontSize: '0.6875rem', fontWeight: 700, color: '#475569', marginBottom: '0.25rem' }}>Profundidad Match</label>
+                        <label style={{ display: 'block', fontSize: '0.6875rem', fontWeight: 700, color: "var(--admin-muted)", marginBottom: '0.25rem' }}>Profundidad Match</label>
                         <select value={editForm.match_depth || 'basic'} onChange={e => setEditForm({ ...editForm, match_depth: e.target.value })}
-                          style={{ width: '100%', padding: '0.5rem', borderRadius: '0.5rem', border: '1px solid #e2e8f0', fontSize: '0.8125rem' }}>
+                          style={{ width: '100%', padding: '0.5rem', borderRadius: '0.5rem', border: "1px solid var(--admin-line)", fontSize: '0.8125rem' }}>
                           <option value="basic">Basic</option>
                           <option value="optimized">Optimized</option>
                           <option value="advanced">Advanced</option>
                         </select>
                       </div>
                       <div>
-                        <label style={{ display: 'block', fontSize: '0.6875rem', fontWeight: 700, color: '#475569', marginBottom: '0.25rem' }}>Refresh Level</label>
+                        <label style={{ display: 'block', fontSize: '0.6875rem', fontWeight: 700, color: "var(--admin-muted)", marginBottom: '0.25rem' }}>Refresh Level</label>
                         <select value={editForm.match_refresh_level || 'low'} onChange={e => setEditForm({ ...editForm, match_refresh_level: e.target.value })}
-                          style={{ width: '100%', padding: '0.5rem', borderRadius: '0.5rem', border: '1px solid #e2e8f0', fontSize: '0.8125rem' }}>
+                          style={{ width: '100%', padding: '0.5rem', borderRadius: '0.5rem', border: "1px solid var(--admin-line)", fontSize: '0.8125rem' }}>
                           <option value="low">Low</option>
                           <option value="medium">Medium</option>
                           <option value="high">High</option>
@@ -126,14 +126,14 @@ export default function AdminPlans() {
                       </div>
                     </div>
                     <div>
-                      <label style={{ display: 'block', fontSize: '0.6875rem', fontWeight: 700, color: '#475569', marginBottom: '0.25rem' }}>Priority Boost (0.00 - 0.20)</label>
+                      <label style={{ display: 'block', fontSize: '0.6875rem', fontWeight: 700, color: "var(--admin-muted)", marginBottom: '0.25rem' }}>Priority Boost (0.00 - 0.20)</label>
                       <input type="number" step="0.01" min="0" max="0.20" value={editForm.priority_boost ?? 0}
                         onChange={e => setEditForm({ ...editForm, priority_boost: Number(e.target.value) })}
-                        style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: '0.5rem', border: '1px solid #e2e8f0', fontSize: '0.8125rem' }} />
+                        style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: '0.5rem', border: "1px solid var(--admin-line)", fontSize: '0.8125rem' }} />
                     </div>
 
                     {/* Feature Flags */}
-                    <h4 style={{ fontSize: '0.6875rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0.5rem 0 0' }}>Features</h4>
+                    <h4 style={{ fontSize: '0.6875rem', fontWeight: 800, color: "var(--admin-muted2)", textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0.5rem 0 0' }}>Features</h4>
                     {[
                       { key: 'can_use_optimized_ranking', label: 'Ranking Optimizado' },
                       { key: 'can_use_advanced_ranking', label: 'Ranking Avanzado' },
@@ -152,7 +152,7 @@ export default function AdminPlans() {
                       <button onClick={handleSave} disabled={saving} style={{ flex: 1, background: '#10b981', color: 'white', border: 'none', padding: '0.625rem', borderRadius: '0.5rem', fontWeight: 700, cursor: 'pointer', opacity: saving ? 0.6 : 1 }}>
                         {saving ? '⏳ Guardando...' : '💾 Guardar'}
                       </button>
-                      <button onClick={() => setEditingId(null)} style={{ background: '#f1f5f9', color: '#64748b', border: 'none', padding: '0.625rem 1rem', borderRadius: '0.5rem', fontWeight: 700, cursor: 'pointer' }}>Cancelar</button>
+                      <button onClick={() => setEditingId(null)} style={{ background: "var(--admin-panel2)", color: "var(--admin-muted2)", border: 'none', padding: '0.625rem 1rem', borderRadius: '0.5rem', fontWeight: 700, cursor: 'pointer' }}>Cancelar</button>
                     </div>
                   </div>
                 ) : (
@@ -167,12 +167,12 @@ export default function AdminPlans() {
                         { label: 'Refresh', value: plan.match_refresh_level, icon: 'sync' },
                         { label: 'Boost', value: `+${((plan.priority_boost || 0) * 100).toFixed(0)}%`, icon: 'trending_up' },
                       ].map(item => (
-                        <div key={item.label} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0.75rem', background: '#f8fafc', borderRadius: '0.5rem', fontSize: '0.8125rem' }}>
-                          <span style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', color: '#475569' }}>
-                            <span className="material-symbols-outlined" style={{ fontSize: '1rem', color: '#94a3b8' }}>{item.icon}</span>
+                        <div key={item.label} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0.75rem', background: "var(--admin-panel2)", borderRadius: '0.5rem', fontSize: '0.8125rem' }}>
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', color: "var(--admin-muted)" }}>
+                            <span className="material-symbols-outlined" style={{ fontSize: '1rem', color: "var(--admin-muted)" }}>{item.icon}</span>
                             {item.label}
                           </span>
-                          <span style={{ fontWeight: 800, color: '#0f172a' }}>{item.value}</span>
+                          <span style={{ fontWeight: 800, color: "#f5f5f5" }}>{item.value}</span>
                         </div>
                       ))}
                     </div>
@@ -189,7 +189,7 @@ export default function AdminPlans() {
                       ].map(f => (
                         <span key={f.key} style={{
                           padding: '0.25rem 0.5rem', borderRadius: '0.375rem', fontSize: '0.6875rem', fontWeight: 700,
-                          background: plan[f.key] ? '#ecfdf5' : '#f1f5f9', color: plan[f.key] ? '#10b981' : '#94a3b8'
+                          background: plan[f.key] ? '#ecfdf5' : "var(--admin-panel2)", color: plan[f.key] ? '#10b981' : "var(--admin-muted)"
                         }}>{plan[f.key] ? '✓' : '✕'} {f.label}</span>
                       ))}
                     </div>

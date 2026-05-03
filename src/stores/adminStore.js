@@ -72,6 +72,7 @@ export const useAdminStore = create((set, get) => ({
       { count: totalTrades },
       { count: pendingReports },
       { count: totalLocations },
+      { count: totalAffiliates },
     ] = await Promise.all([
       supabase.from('profiles').select('*', { count: 'exact', head: true }),
       supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('is_premium', true),
@@ -79,6 +80,7 @@ export const useAdminStore = create((set, get) => ({
       supabase.from('trades').select('*', { count: 'exact', head: true }),
       supabase.from('reports').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
       supabase.from('locations').select('*', { count: 'exact', head: true }),
+      supabase.from('affiliates').select('*', { count: 'exact', head: true }),
     ])
 
     // Active users (last 24h)
@@ -117,6 +119,7 @@ export const useAdminStore = create((set, get) => ({
         pendingLocationRequests: pendingLocationRequests || 0,
         reportedChatCount: reportedChatCount || 0,
         totalLocations: totalLocations || 0,
+        totalAffiliates: totalAffiliates || 0,
       },
       loading: false,
     })
@@ -389,40 +392,87 @@ export const useAdminStore = create((set, get) => ({
   },
 
   approveLocationRequest: async (requestId, adminId) => {
-    const { data: request } = await supabase.from('location_requests').select('*').eq('id', requestId).single()
-    if (!request) return
+    try {
+      const { data: request, error: fetchErr } = await supabase
+        .from('location_requests')
+        .select('*, profile:user_id(name, email)')
+        .eq('id', requestId)
+        .single()
+      
+      if (fetchErr || !request) throw new Error('No se encontró la solicitud')
 
-    // 1. Create location
-    const { error: locError } = await supabase.from('locations').insert({
-      name: request.name,
-      address: request.address,
-      city: request.city,
-      department: request.department,
-      lat: request.lat,
-      lng: request.lng,
-      whatsapp: request.whatsapp,
-      business_plan: request.business_plan,
-      owner_user_id: request.user_id,
-      is_active: true
-    })
+      // 1. Create location
+      const { error: locError } = await supabase.from('locations').insert({
+        name: request.name,
+        address: request.address,
+        city: request.city,
+        department: request.department,
+        lat: request.lat,
+        lng: request.lng,
+        whatsapp: request.whatsapp,
+        business_plan: request.business_plan || 'gratis',
+        owner_user_id: request.user_id,
+        is_active: true,
+        type: 'store'
+      })
 
-    if (locError) return locError
+      if (locError) throw locError
 
-    // 2. Update request status
-    await supabase.from('location_requests').update({ status: 'approved' }).eq('id', requestId)
-    
-    // 3. Update user profile to grant business access
-    await supabase.from('profiles').update({
-      business_access: true,
-      business_status: 'approved',
-      account_type: 'business'
-    }).eq('id', request.user_id)
-    
-    // 4. Log action
-    get().logAction(adminId, 'APPROVE_LOCATION', 'location_request', requestId, { name: request.name })
-    
-    get().fetchLocationRequests()
-    get().fetchLocations()
+      // 2. Update request status
+      const { error: reqErr } = await supabase
+        .from('location_requests')
+        .update({ status: 'approved' })
+        .eq('id', requestId)
+      
+      if (reqErr) throw reqErr
+      
+      // 3. Update user profile to grant business access (only if user exists)
+      if (request.user_id) {
+        const { error: profErr } = await supabase.from('profiles').update({
+          business_access: true,
+          business_status: 'approved',
+          account_type: 'business',
+          plan_name: request.business_plan || 'gratis'
+        }).eq('id', request.user_id)
+        
+        if (profErr) console.error('Error updating profile:', profErr)
+      }
+      
+      // 4. Log action
+      get().logAction(adminId, 'APPROVE_LOCATION', 'location_request', requestId, { name: request.name })
+      
+      // 5. Send Email (Edge Function)
+      try {
+        const targetEmail = request.applicant_email || request.profile?.email
+        if (targetEmail) {
+          await supabase.functions.invoke('send-email', {
+            body: { 
+              to: targetEmail,
+              subject: 'Tu local fue aprobado 🎉',
+              template: 'business_approved',
+              data: {
+                name: request.applicant_name || request.profile?.name || 'Comerciante',
+                plan: request.business_plan === 'legend' ? 'PartnerStore' :
+                      request.business_plan === 'dominio' ? 'Plan Dominio' : 
+                      request.business_plan === 'turbo' ? 'Plan Turbo' : 'Plan Gratuito',
+                link: 'https://figusuy.vercel.app/login?type=business'
+              }
+            }
+          })
+        }
+      } catch (emailErr) {
+        console.error('Error sending email:', emailErr)
+      }
+
+      await get().fetchLocationRequests()
+      await get().fetchLocations()
+      set({ loading: false })
+      return null // Success
+    } catch (err) {
+      console.error('Approval failed:', err)
+      set({ loading: false })
+      return err
+    }
   },
 
   rejectLocationRequest: async (requestId, reason, adminId) => {
@@ -622,6 +672,69 @@ export const useAdminStore = create((set, get) => ({
     const { adminRole, adminPermissions } = get()
     if (adminRole === 'god_admin') return true
     return adminPermissions.includes(permission)
+  },
+
+  // ========== RANKING ==========
+  userRankings: [],
+  businessRankings: [],
+
+  fetchUserRankings: async () => {
+    const { data } = await supabase
+      .from('user_rankings')
+      .select('*, user:user_id(name, email, avatar_url, is_premium, plan_name)')
+      .order('final_user_rank', { ascending: false })
+    set({ userRankings: data || [] })
+  },
+
+  fetchBusinessRankings: async () => {
+    const { data } = await supabase
+      .from('business_rankings')
+      .select('*, location:location_id(name, business_plan, type, is_active)')
+      .order('final_business_rank', { ascending: false })
+    set({ businessRankings: data || [] })
+  },
+
+  getUserRanking: async (userId) => {
+    const { data } = await supabase
+      .from('user_rankings')
+      .select('*')
+      .eq('user_id', userId)
+      .maybeSingle()
+    return data
+  },
+
+  getBusinessRanking: async (locationId) => {
+    const { data } = await supabase
+      .from('business_rankings')
+      .select('*')
+      .eq('location_id', locationId)
+      .maybeSingle()
+    return data
+  },
+
+  calculateUserRanking: async (userId, adminId) => {
+    const { data, error } = await supabase.rpc('calculate_user_ranking', { target_user_id: userId })
+    if (error) { console.error('calculateUserRanking error:', error); return null }
+    if (adminId) get().logAction(adminId, 'RECALCULATE_USER_RANK', 'user', userId, data)
+    return data
+  },
+
+  calculateBusinessRanking: async (locationId, adminId) => {
+    const { data, error } = await supabase.rpc('calculate_business_ranking', { target_location_id: locationId })
+    if (error) { console.error('calculateBusinessRanking error:', error); return null }
+    if (adminId) get().logAction(adminId, 'RECALCULATE_BUSINESS_RANK', 'location', locationId, data)
+    return data
+  },
+
+  recalculateAllRankings: async (adminId) => {
+    set({ loading: true })
+    const { data, error } = await supabase.rpc('recalculate_all_rankings')
+    set({ loading: false })
+    if (error) { console.error('recalculateAllRankings error:', error); return null }
+    if (adminId) get().logAction(adminId, 'RECALCULATE_ALL_RANKINGS', 'system', null, data)
+    await get().fetchUserRankings()
+    await get().fetchBusinessRankings()
+    return data
   },
 
   // ========== SPONSORED (promos) ==========

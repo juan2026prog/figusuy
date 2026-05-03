@@ -4,6 +4,7 @@ import { useAuthStore } from '../stores/authStore'
 import { useAppStore } from '../stores/appStore'
 import { supabase } from '../lib/supabase'
 import FavoriteButton from '../components/FavoriteButton'
+import ReputationStars from '../components/ReputationStars'
 import { useFavoritesStore } from '../stores/favoritesStore'
 
 export default function ChatPage() {
@@ -13,10 +14,9 @@ export default function ChatPage() {
   const { messages, fetchMessages, sendMessage, subscribeToMessages } = useAppStore()
   const [text, setText] = useState('')
   const [otherUser, setOtherUser] = useState(null)
+  const [otherStars, setOtherStars] = useState(1)
   const [exchangeData, setExchangeData] = useState({ theyCanGiveMe: [], iCanGiveThem: [], loading: true, albumName: '' })
   const bottomRef = useRef(null)
-
-  const [isExpired, setIsExpired] = useState(false)
 
   useEffect(() => {
     if (chatId && profile?.id) {
@@ -32,17 +32,17 @@ export default function ChatPage() {
           const other = chat.user_1 === profile.id ? chat.profile2 : chat.profile1
           setOtherUser(other)
 
-          const [myMissingRes, myDupRes, theirMissingRes, theirDupRes, expirationRes] = await Promise.all([
+          // Fetch other user's star rating
+          supabase.rpc('get_user_stars', { p_user_id: other.id })
+            .then(({ data }) => setOtherStars(data || 1))
+            .catch(() => setOtherStars(1))
+
+          const [myMissingRes, myDupRes, theirMissingRes, theirDupRes] = await Promise.all([
             supabase.from('stickers_missing').select('sticker_number').eq('user_id', profile.id).eq('album_id', chat.album_id),
             supabase.from('stickers_duplicate').select('sticker_number').eq('user_id', profile.id).eq('album_id', chat.album_id),
             supabase.from('stickers_missing').select('sticker_number').eq('user_id', other.id).eq('album_id', chat.album_id),
-            supabase.from('stickers_duplicate').select('sticker_number').eq('user_id', other.id).eq('album_id', chat.album_id),
-            supabase.rpc('get_chat_expiration_state', { p_chat_id: chatId, p_user_id: profile.id })
+            supabase.from('stickers_duplicate').select('sticker_number').eq('user_id', other.id).eq('album_id', chat.album_id)
           ])
-
-          if (expirationRes.data?.is_expired) {
-            setIsExpired(true)
-          }
 
           const myMissing = new Set((myMissingRes.data || []).map(s => String(s.sticker_number)))
           const myDup = new Set((myDupRes.data || []).map(s => String(s.sticker_number)))
@@ -52,7 +52,7 @@ export default function ChatPage() {
           const theyCanGiveMe = theirDup.filter(num => myMissing.has(num))
           const iCanGiveThem = [...myDup].filter(num => theirMissing.has(num))
 
-          setExchangeData({ theyCanGiveMe, iCanGiveThem, loading: false, albumName: chat.album?.name || 'Álbum' })
+          setExchangeData({ theyCanGiveMe, iCanGiveThem, loading: false, albumName: chat.album?.name || 'Album' })
         }
       }
 
@@ -66,7 +66,7 @@ export default function ChatPage() {
   }, [messages])
 
   const handleSend = () => {
-    if (!text.trim() || isExpired) return
+    if (!text.trim()) return
     sendMessage(chatId, profile.id, text.trim())
     setText('')
   }
@@ -75,26 +75,26 @@ export default function ChatPage() {
 
   const handleBlock = async () => {
     if (!otherUser) return
-    const confirm = window.confirm(`¿Estás seguro de que querés bloquear a ${otherUser.name}? Ya no podrás interactuar con este usuario.`)
+    const confirm = window.confirm(`Estas seguro de que queres bloquear a ${otherUser.name}? Ya no podras interactuar con este usuario.`)
     if (!confirm) return
-    
+
     await supabase.from('user_blocks').insert({
       blocker_id: profile.id,
       blocked_id: otherUser.id,
       reason: 'Bloqueado desde chat'
     })
-    
+
     await removeFavorite(profile.id, otherUser.id)
-    
+
     alert('Usuario bloqueado')
     navigate('/chats')
   }
 
   const handleReport = async () => {
     if (!otherUser) return
-    const reason = window.prompt(`¿Por qué estás reportando a ${otherUser.name}?`)
+    const reason = window.prompt(`Por que estas reportando a ${otherUser.name}?`)
     if (!reason) return
-    
+
     await supabase.from('reports').insert({
       reporter_id: profile.id,
       reported_user_id: otherUser.id,
@@ -103,7 +103,7 @@ export default function ChatPage() {
       reason: reason,
       status: 'pending'
     })
-    alert('Reporte enviado. Un administrador lo revisará a la brevedad.')
+    alert('Reporte enviado. Un administrador lo revisara a la brevedad.')
   }
 
   const formatMessageTime = (isoString) => {
@@ -114,441 +114,286 @@ export default function ChatPage() {
 
   const otherName = otherUser?.name || 'Cargando...'
   const otherInitial = otherName[0]?.toUpperCase() || '?'
-  const locationText = otherUser ? `${otherUser.city || otherUser.department || 'Sin ubicación'} · ${exchangeData.albumName}` : 'Cargando...'
+  const locationText = otherUser ? `${otherUser.city || otherUser.department || 'Sin ubicacion'} · ${exchangeData.albumName}` : 'Cargando...'
+  const incomingCount = exchangeData.theyCanGiveMe.length
+  const outgoingCount = exchangeData.iCanGiveThem.length
+  const totalMoves = incomingCount + outgoingCount
 
   return (
     <div className="chat-page-root">
       <style>{`
         .chat-page-root {
-          background-color: #020617; /* slate-950 */
-          height: 100vh;
-          color: white;
-          display: flex;
-          flex-direction: column;
-          overflow: hidden;
+          --bg:#0b0b0b; --panel:#121212; --panel2:#181818; --panel3:#202020; --line:rgba(255,255,255,.08); --line2:rgba(255,255,255,.14);
+          --text:#f5f5f5; --muted:rgba(245,245,245,.56); --muted2:rgba(245,245,245,.34); --orange:#ff5a00; --orange2:#cc4800; --green:#22c55e; --red:#ef4444; --yellow:#facc15; --blue:#38bdf8;
+          min-height:100vh; background:var(--bg); color:var(--text); font-family:'Barlow',sans-serif;
         }
-
-        .chat-container {
-          max-width: 48rem;
-          width: 100%;
-          margin: 0 auto;
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          background-color: #020617;
-          border-left: 1px solid #1e293b;
-          border-right: 1px solid #1e293b;
-          position: relative;
-          overflow: hidden;
+        .chat-page-root * { box-sizing:border-box; }
+        .chat-layout { min-height:100vh; display:grid; grid-template-columns:minmax(0,1fr) 320px; }
+        .chat-main { min-height:100vh; display:flex; flex-direction:column; background:radial-gradient(circle at 18% 0%, rgba(255,90,0,.06), transparent 24%), var(--bg); border-right:1px solid var(--line); }
+        .chat-header { position:sticky; top:0; z-index:20; display:flex; justify-content:space-between; align-items:center; gap:18px; min-height:90px; padding:16px 18px; border-bottom:1px solid var(--line); background:rgba(11,11,11,.96); backdrop-filter:blur(8px); }
+        .header-left { display:flex; gap:12px; align-items:center; min-width:0; }
+        .chat-back-btn,.ghost-btn,.danger-btn,.send-btn,.cta-btn { font-family:inherit; cursor:pointer; }
+        .chat-back-btn { width:42px; height:42px; border:1px solid var(--line2); background:var(--panel); color:#fff; font:900 1.15rem 'Barlow Condensed'; }
+        .chat-avatar { width:54px; height:54px; overflow:hidden; display:grid; place-items:center; background:var(--orange); font:italic 900 1.7rem 'Barlow Condensed'; flex-shrink:0; }
+        .chat-avatar img { width:100%; height:100%; object-fit:cover; }
+        .header-copy { min-width:0; }
+        .header-kicker,.summary-label,.side-label { font:900 .7rem 'Barlow Condensed'; letter-spacing:.16em; text-transform:uppercase; color:var(--orange); }
+        .chat-name-row { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+        .chat-header-name { margin:0; font:italic 900 clamp(1.5rem,3vw,2rem) 'Barlow Condensed'; line-height:.88; text-transform:uppercase; }
+        .chat-header-loc { margin:.25rem 0 0; color:var(--muted); font-size:.84rem; }
+        .status-pill,.mini-pill { display:inline-flex; align-items:center; gap:6px; padding:4px 8px; border:1px solid var(--line2); background:#0d0d0d; font:900 .63rem 'Barlow Condensed'; letter-spacing:.08em; text-transform:uppercase; }
+        .status-pill.green,.mini-pill.green { color:var(--green); border-color:rgba(34,197,94,.35); background:rgba(34,197,94,.07); }
+        .status-pill.orange,.mini-pill.orange { color:var(--orange); border-color:rgba(255,90,0,.35); background:rgba(255,90,0,.08); }
+        .status-pill.blue,.mini-pill.blue { color:var(--blue); border-color:rgba(56,189,248,.35); background:rgba(56,189,248,.08); }
+        .header-actions { display:flex; gap:8px; align-items:center; }
+        .ghost-btn,.danger-btn,.cta-btn { border:1px solid var(--line2); background:transparent; color:#fff; padding:.72rem .95rem; font:900 .76rem 'Barlow Condensed'; letter-spacing:.08em; text-transform:uppercase; }
+        .ghost-btn:hover,.cta-btn:hover { border-color:var(--orange); color:var(--orange); }
+        .danger-btn { color:#fca5a5; border-color:rgba(239,68,68,.35); background:rgba(239,68,68,.08); }
+        .hero-strip { display:grid; grid-template-columns:minmax(0,1.15fr) minmax(240px,.85fr); gap:1px; background:var(--line); border-bottom:1px solid var(--line); }
+        .hero-main,.hero-side { padding:16px 18px; background:var(--panel); }
+        .hero-main { background:linear-gradient(135deg, rgba(255,90,0,.12) 0%, rgba(255,90,0,.03) 30%, transparent 50%), var(--panel); }
+        .hero-title { margin:8px 0 0; font:italic 900 clamp(2.2rem,4.2vw,3.4rem) 'Barlow Condensed'; line-height:.88; text-transform:uppercase; }
+        .hero-title span { color:var(--orange); }
+        .hero-copy { margin-top:8px; color:var(--muted); font-size:.92rem; line-height:1.55; max-width:52rem; }
+        .hero-stats { display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; }
+        .hero-stat { min-width:110px; padding:10px 12px; border:1px solid var(--line); background:#0d0d0d; }
+        .hero-stat b { display:block; font:italic 900 1.7rem 'Barlow Condensed'; line-height:.9; }
+        .hero-stat span { font:900 .7rem 'Barlow Condensed'; letter-spacing:.08em; text-transform:uppercase; color:var(--muted2); }
+        .hero-side { display:flex; flex-direction:column; justify-content:space-between; gap:12px; background:linear-gradient(180deg, rgba(255,90,0,.08) 0%, rgba(255,90,0,0) 100%), var(--panel2); }
+        .hero-side-title { font:italic 900 1.75rem 'Barlow Condensed'; line-height:.9; text-transform:uppercase; }
+        .hero-side p { color:var(--muted); font-size:.9rem; line-height:1.5; margin:8px 0 0; }
+        .exchange-strip { padding:14px 18px; border-bottom:1px solid var(--line); background:var(--panel); }
+        .exchange-grid { display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--line); border:1px solid var(--line); }
+        .exchange-box { background:#0d0d0d; padding:14px; }
+        .exchange-title { margin-bottom:10px; font:900 .72rem 'Barlow Condensed'; letter-spacing:.12em; text-transform:uppercase; }
+        .exchange-title.green { color:var(--green); }
+        .exchange-title.orange { color:var(--orange); }
+        .chips { display:flex; flex-wrap:wrap; gap:6px; }
+        .chip { border:1px solid var(--line2); padding:6px 9px; background:#090909; font:900 .78rem 'Barlow Condensed'; }
+        .chip.green { color:var(--green); border-color:rgba(34,197,94,.34); background:rgba(34,197,94,.07); }
+        .chip.orange { color:var(--orange); border-color:rgba(255,90,0,.34); background:rgba(255,90,0,.08); }
+        .safety-strip { padding:10px 18px; border-bottom:1px solid rgba(250,204,21,.2); background:rgba(250,204,21,.06); color:#fde68a; font-size:.78rem; font-weight:700; }
+        .chat-messages { flex:1; overflow:auto; padding:22px 18px 24px; display:flex; flex-direction:column; gap:14px; }
+        .empty-chat { padding:48px 20px; text-align:center; color:var(--muted2); }
+        .empty-chat b { display:block; margin-bottom:8px; font:italic 900 2rem 'Barlow Condensed'; text-transform:uppercase; color:#fff; }
+        .empty-chat span { font-size:.9rem; }
+        .msg-row { display:flex; width:100%; }
+        .msg-left { justify-content:flex-start; }
+        .msg-right { justify-content:flex-end; }
+        .bubble { max-width:min(82%,560px); padding:12px 14px; border:1px solid var(--line); }
+        .bubble-other { background:var(--panel); color:var(--text); }
+        .bubble-own { background:var(--orange); border-color:var(--orange); color:#fff; }
+        .msg-text { margin:0; font-size:.92rem; line-height:1.45; white-space:pre-wrap; }
+        .msg-time { margin:.45rem 0 0; text-align:right; font:800 .6rem 'Barlow Condensed'; letter-spacing:.08em; text-transform:uppercase; opacity:.58; }
+        .chat-footer { border-top:1px solid var(--line); background:#0b0b0b; padding:14px 18px 16px; padding-bottom:max(16px, env(safe-area-inset-bottom)); }
+        .input-row { display:grid; grid-template-columns:1fr auto; gap:10px; align-items:end; }
+        .input-wrap { padding:11px 13px; border:1px solid var(--line2); background:var(--panel); }
+        .input-wrap:focus-within { border-color:var(--orange); }
+        .chat-input { width:100%; min-height:24px; max-height:120px; resize:none; border:0; outline:0; background:transparent; color:#fff; font-size:.92rem; }
+        .chat-input::placeholder { color:var(--muted2); }
+        .send-btn { height:48px; padding:0 20px; border:1px solid var(--orange); background:var(--orange); color:#fff; font:900 .88rem 'Barlow Condensed'; letter-spacing:.08em; text-transform:uppercase; }
+        .send-btn:disabled { opacity:.45; cursor:not-allowed; }
+        .premium-note { margin-top:8px; color:var(--muted2); font-size:.72rem; }
+        .expired-box { padding:14px; border:1px solid rgba(239,68,68,.3); background:rgba(239,68,68,.08); text-align:center; color:#fca5a5; font-weight:800; }
+        .expired-box .cta-btn { margin-top:10px; background:var(--orange); border-color:var(--orange); color:#fff; }
+        .chat-side { padding:18px; display:flex; flex-direction:column; gap:14px; background:var(--panel); overflow:auto; }
+        .side-card { padding:16px; border:1px solid var(--line); background:#0d0d0d; }
+        .side-title { margin:10px 0 0; font:italic 900 1.8rem 'Barlow Condensed'; text-transform:uppercase; line-height:.9; }
+        .side-card p { margin:8px 0 0; color:var(--muted); font-size:.88rem; line-height:1.5; }
+        .side-user { display:flex; gap:12px; align-items:center; }
+        .side-user .chat-avatar { width:48px; height:48px; font-size:1.4rem; }
+        .side-user strong { display:block; font:italic 900 1.2rem 'Barlow Condensed'; line-height:.9; text-transform:uppercase; }
+        .side-user span { display:block; margin-top:4px; color:var(--muted); font-size:.82rem; }
+        .side-row { display:flex; justify-content:space-between; gap:10px; padding:10px 0; border-bottom:1px solid var(--line); }
+        .side-row:last-child { border-bottom:0; }
+        .side-row span { color:var(--muted); font-size:.84rem; }
+        .side-row b { font:900 1rem 'Barlow Condensed'; text-transform:uppercase; }
+        .side-cta { background:linear-gradient(180deg, rgba(255,90,0,.1) 0%, rgba(255,90,0,0) 100%), var(--panel2); }
+        .cta-btn { width:100%; margin-top:14px; background:#0b0b0b; border-color:#0b0b0b; color:#fff; }
+        @media (max-width:1024px) {
+          .chat-layout { grid-template-columns:1fr; }
+          .chat-side { display:none; }
+          .chat-main { border-right:0; }
         }
-
-        .chat-header {
-          height: 5rem;
-          padding: 0 1.25rem;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          border-bottom: 1px solid #1e293b;
-          background-color: #020617;
-          position: sticky;
-          top: 0;
-          z-index: 50;
-        }
-
-        .chat-header-left {
-          display: flex;
-          align-items: center;
-          gap: 0.75rem;
-          min-width: 0;
-        }
-
-        .chat-back-btn {
-          width: 2.5rem;
-          height: 2.5rem;
-          border-radius: 1rem;
-          background-color: #0f172a;
-          border: 1px solid #1e293b;
-          color: white;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-        }
-
-        .chat-header-avatar {
-          width: 2.75rem;
-          height: 2.75rem;
-          border-radius: 1rem;
-          background-color: #ea580c; /* brand-600 */
-          color: white;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-weight: 900;
-          flex-shrink: 0;
-        }
-
-        .chat-header-info {
-          min-width: 0;
-        }
-
-        .chat-header-name-row {
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-          flex-wrap: wrap;
-        }
-
-        .chat-header-name {
-          font-weight: 900;
-          font-size: 1.125rem;
-          margin: 0;
-          color: white;
-        }
-
-        .badge-online {
-          padding: 0.25rem 0.5rem;
-          border-radius: 9999px;
-          background-color: rgba(6, 78, 59, 0.4);
-          color: #6ee7b7;
-          font-size: 10px;
-          font-weight: 900;
-        }
-
-        .badge-match {
-          padding: 0.25rem 0.5rem;
-          border-radius: 9999px;
-          background-color: rgba(124, 45, 18, 0.4);
-          color: #fdba74;
-          font-size: 10px;
-          font-weight: 900;
-        }
-
-        .chat-header-loc {
-          font-size: 0.75rem;
-          color: #64748b;
-          margin: 0.125rem 0 0 0;
-        }
-
-        .chat-header-actions {
-          display: flex;
-          gap: 0.5rem;
-        }
-
-        .action-btn-report {
-          padding: 0.5rem 1rem;
-          border-radius: 0.75rem;
-          background-color: rgba(127, 29, 29, 0.3);
-          border: 1px solid rgba(127, 29, 29, 0.5);
-          color: #fca5a5;
-          font-size: 0.75rem;
-          font-weight: 900;
-          cursor: pointer;
-        }
-
-        .action-btn-block {
-          padding: 0.5rem 1rem;
-          border-radius: 0.75rem;
-          background-color: #0f172a;
-          border: 1px solid #334155;
-          color: #94a3b8;
-          font-size: 0.75rem;
-          font-weight: 900;
-          cursor: pointer;
-        }
-
-        .exchange-summary {
-          padding: 1rem 1.25rem;
-          border-bottom: 1px solid #1e293b;
-        }
-
-        .exchange-card {
-          border-radius: 1.5rem;
-          background-color: #0f172a;
-          border: 1px solid #1e293b;
-          padding: 1rem;
-          display: grid;
-          grid-template-columns: 1fr;
-          gap: 1rem;
-        }
-
-        @media (min-width: 640px) {
-          .exchange-card {
-            grid-template-columns: 1fr 1fr;
-          }
-        }
-
-        .exchange-title {
-          font-size: 11px;
-          font-weight: 900;
-          margin-bottom: 0.5rem;
-        }
-
-        .text-emerald { color: #6ee7b7; }
-        .text-orange { color: #fdba74; }
-
-        .exchange-chips {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 0.5rem;
-        }
-
-        .chip {
-          padding: 0.5rem 0.75rem;
-          border-radius: 0.75rem;
-          font-size: 0.8125rem;
-          font-weight: 900;
-          border-width: 1px;
-          border-style: solid;
-        }
-
-        .chip-emerald {
-          background-color: rgba(6, 78, 59, 0.3);
-          border-color: rgba(6, 78, 59, 0.6);
-          color: #6ee7b7;
-        }
-
-        .chip-orange {
-          background-color: rgba(124, 45, 18, 0.3);
-          border-color: rgba(124, 45, 18, 0.6);
-          color: #fdba74;
-        }
-
-        .safety-note {
-          padding: 0.75rem 1.25rem;
-          background-color: rgba(120, 53, 15, 0.2);
-          border-bottom: 1px solid rgba(120, 53, 15, 0.4);
-        }
-
-        .safety-note p {
-          font-size: 0.75rem;
-          font-weight: 700;
-          color: #fef3c7;
-          margin: 0;
-        }
-
-        .chat-messages {
-          flex: 1;
-          overflow-y: auto;
-          padding: 1.5rem 1.25rem;
-          display: flex;
-          flex-direction: column;
-          gap: 1rem;
-        }
-
-        .msg-row {
-          display: flex;
-          width: 100%;
-        }
-
-        .msg-left { justify-content: flex-start; }
-        .msg-right { justify-content: flex-end; }
-
-        .bubble {
-          max-width: 82%;
-          padding: 0.75rem 1rem;
-          border-radius: 1.5rem;
-          position: relative;
-        }
-
-        .bubble-other {
-          background-color: #0f172a;
-          border: 1px solid #1e293b;
-          color: white;
-          border-bottom-left-radius: 0.25rem;
-        }
-
-        .bubble-own {
-          background-color: #ea580c;
-          color: white;
-          border-bottom-right-radius: 0.25rem;
-        }
-
-        .msg-text {
-          font-size: 0.875rem;
-          margin: 0;
-        }
-
-        .msg-time {
-          font-size: 10px;
-          margin-top: 0.375rem;
-          font-weight: 700;
-          opacity: 0.6;
-        }
-
-        .chat-footer {
-          padding: 1rem 1.25rem;
-          border-top: 1px solid #1e293b;
-          background-color: #020617;
-          padding-bottom: max(1rem, env(safe-area-inset-bottom));
-        }
-
-        .input-row {
-          display: flex;
-          align-items: flex-end;
-          gap: 0.75rem;
-        }
-
-        .chat-input-wrapper {
-          flex: 1;
-          background-color: #0f172a;
-          border: 1px solid #1e293b;
-          border-radius: 1.5rem;
-          padding: 0.75rem 1rem;
-        }
-
-        .chat-input {
-          width: 100%;
-          background: transparent;
-          border: none;
-          resize: none;
-          outline: none;
-          font-size: 0.875rem;
-          font-weight: 500;
-          color: white;
-        }
-
-        .chat-input::placeholder {
-          color: #94a3b8;
-        }
-
-        .chat-send-btn {
-          height: 3rem;
-          padding: 0 1.25rem;
-          border-radius: 1rem;
-          background-color: #f97316;
-          color: white;
-          font-weight: 900;
-          border: none;
-          cursor: pointer;
-          flex-shrink: 0;
-        }
-
-        .chat-send-btn:disabled {
-          opacity: 0.5;
-          cursor: not-allowed;
-        }
-
-        .premium-note {
-          font-size: 11px;
-          color: #94a3b8;
-          margin-top: 0.5rem;
+        @media (max-width:760px) {
+          .chat-header { min-height:78px; padding:12px; }
+          .header-actions { display:none; }
+          .hero-strip { grid-template-columns:1fr; }
+          .exchange-grid { grid-template-columns:1fr; }
+          .chat-messages { padding:16px 12px; }
+          .exchange-strip,.safety-strip,.chat-footer,.hero-main,.hero-side { padding-left:12px; padding-right:12px; }
+          .bubble { max-width:88%; }
+          .hero-title { font-size:2.2rem; }
         }
       `}</style>
 
-      <div className="chat-container">
-        {/* Header */}
-        <header className="chat-header">
-          <div className="chat-header-left">
-            <button className="chat-back-btn" onClick={() => navigate('/chats')}>
-              ←
-            </button>
-            <div className="chat-header-avatar">
-              {otherInitial}
-            </div>
-            <div className="chat-header-info">
-              <div className="chat-header-name-row">
-                <h2 className="chat-header-name">{otherName}</h2>
-                {otherUser?.id && <FavoriteButton targetUserId={otherUser.id} size="sm" showLabel />}
-                <span className="badge-online">En línea</span>
-                <span className="badge-match">Intercambio fuerte</span>
+      <div className="chat-layout">
+        <main className="chat-main">
+          <header className="chat-header">
+            <div className="header-left">
+              <button className="chat-back-btn" onClick={() => navigate('/chats')}>&larr;</button>
+              <div className="chat-avatar">
+                {otherUser?.avatar_url ? (
+                  <img src={otherUser.avatar_url} alt={otherName} />
+                ) : (
+                  otherInitial
+                )}
               </div>
-              <p className="chat-header-loc">{locationText}</p>
+              <div className="header-copy">
+                <div className="chat-name-row">
+                  <h2 className="chat-header-name">{otherName}</h2>
+                  <ReputationStars stars={otherStars} size="sm" inline />
+                  {otherUser?.id && <FavoriteButton targetUserId={otherUser.id} size="sm" showLabel />}
+                  <span className="status-pill green">En linea</span>
+                  <span className="status-pill orange">Intercambio fuerte</span>
+                </div>
+                <p className="chat-header-loc">{locationText}</p>
+              </div>
             </div>
-          </div>
-          <div className="chat-header-actions">
-            <button className="action-btn-block" onClick={handleBlock}>Bloquear</button>
-            <button className="action-btn-report" onClick={handleReport}>Reportar</button>
-          </div>
-        </header>
+            <div className="header-actions">
+              <button className="ghost-btn" onClick={handleBlock}>Bloquear</button>
+              <button className="danger-btn" onClick={handleReport}>Reportar</button>
+            </div>
+          </header>
 
-        {/* Exchange summary */}
-        {!exchangeData.loading && (exchangeData.theyCanGiveMe.length > 0 || exchangeData.iCanGiveThem.length > 0) && (
-          <div className="exchange-summary">
-            <div className="exchange-card">
-              {exchangeData.theyCanGiveMe.length > 0 && (
-                <div style={{ marginBottom: exchangeData.iCanGiveThem.length > 0 ? '1rem' : '0' }}>
-                  <p className="exchange-title text-emerald">{otherName} te puede dar</p>
-                  <div className="exchange-chips">
-                    {exchangeData.theyCanGiveMe.map(num => (
-                      <span key={`they-${num}`} className="chip chip-emerald">{num}</span>
-                    ))}
+          <section className="hero-strip">
+            <div className="hero-main">
+              <div className="header-kicker">// intercambio activo</div>
+              <h1 className="hero-title">Cerra el <span>cruce</span> sin vueltas.</h1>
+              <p className="hero-copy">Usa el chat para confirmar figuritas, ordenar el intercambio y cerrar un encuentro con menos friccion.</p>
+              <div className="hero-stats">
+                <div className="hero-stat">
+                  <b>{incomingCount}</b>
+                  <span>Te puede dar</span>
+                </div>
+                <div className="hero-stat">
+                  <b>{outgoingCount}</b>
+                  <span>Vos le das</span>
+                </div>
+                <div className="hero-stat">
+                  <b>{totalMoves}</b>
+                  <span>Figus en juego</span>
+                </div>
+              </div>
+            </div>
+            <aside className="hero-side">
+              <div>
+                <div className="summary-label">Siguiente accion</div>
+                <div className="hero-side-title">Coordina punto, horario y canje.</div>
+                <p>Si el cruce esta claro, avancen a una confirmacion simple en un lugar publico.</p>
+              </div>
+              <div className="hero-stats">
+                <span className="mini-pill blue">{exchangeData.albumName || 'Album'}</span>
+                <span className="mini-pill green">Chat activo</span>
+              </div>
+            </aside>
+          </section>
+
+          {!exchangeData.loading && (incomingCount > 0 || outgoingCount > 0) && (
+            <section className="exchange-strip">
+              <div className="exchange-grid">
+                {incomingCount > 0 && (
+                  <div className="exchange-box">
+                    <div className="exchange-title green">{otherName} te puede dar</div>
+                    <div className="chips">
+                      {exchangeData.theyCanGiveMe.map(num => (
+                        <span key={`they-${num}`} className="chip green">{num}</span>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
-              {exchangeData.iCanGiveThem.length > 0 && (
-                <div>
-                  <p className="exchange-title text-orange">Vos le podés dar</p>
-                  <div className="exchange-chips">
-                    {exchangeData.iCanGiveThem.map(num => (
-                      <span key={`me-${num}`} className="chip chip-orange">{num}</span>
-                    ))}
+                )}
+                {outgoingCount > 0 && (
+                  <div className="exchange-box">
+                    <div className="exchange-title orange">Vos le podes dar</div>
+                    <div className="chips">
+                      {exchangeData.iCanGiveThem.map(num => (
+                        <span key={`me-${num}`} className="chip orange">{num}</span>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Safety Note */}
-        <div className="safety-note">
-          <p>🛡️ Recomendamos coordinar intercambios en lugares públicos. Si sos menor, usá la app acompañado por un adulto responsable.</p>
-        </div>
-
-        {/* Messages */}
-        <div className="chat-messages">
-          {messages.length === 0 && (
-            <div style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>
-              <p style={{ fontSize: '0.875rem' }}>Empezá la conversación 👋</p>
-            </div>
+                )}
+              </div>
+            </section>
           )}
-          {messages.map(msg => (
-            <div key={msg.id} className={`msg-row ${msg.sender_id === profile?.id ? 'msg-right' : 'msg-left'}`}>
-              <div className={`bubble ${msg.sender_id === profile?.id ? 'bubble-own' : 'bubble-other'}`}>
-                <p className="msg-text">{msg.text}</p>
-                <p className="msg-time">{formatMessageTime(msg.created_at)}</p>
+
+          <div className="safety-strip">Coordin a en lugares publicos. No compartas datos sensibles ni pagos por fuera.</div>
+
+          <section className="chat-messages">
+            {messages.length === 0 && (
+              <div className="empty-chat">
+                <b>Empeza la conversacion</b>
+                <span>Da el primer paso para cerrar este intercambio.</span>
+              </div>
+            )}
+            {messages.map(msg => (
+              <div key={msg.id} className={`msg-row ${msg.sender_id === profile?.id ? 'msg-right' : 'msg-left'}`}>
+                <div className={`bubble ${msg.sender_id === profile?.id ? 'bubble-own' : 'bubble-other'}`}>
+                  <p className="msg-text">{msg.text}</p>
+                  <p className="msg-time">{formatMessageTime(msg.created_at)}</p>
+                </div>
+              </div>
+            ))}
+            <div ref={bottomRef} />
+          </section>
+
+          <footer className="chat-footer">
+            <div className="input-row">
+              <div className="input-wrap">
+                <textarea
+                  rows="1"
+                  placeholder="Escribi un mensaje..."
+                  className="chat-input"
+                  value={text}
+                  onChange={e => setText(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() } }}
+                />
+              </div>
+              <button className="send-btn" onClick={handleSend} disabled={!text.trim()}>Enviar</button>
+            </div>
+            <p className="premium-note">¿Querés saber si leyó tu mensaje? Activa el <a href="/premium" style={{color: 'var(--orange)', textDecoration: 'none'}}>doble check azul con Plus</a>.</p>
+          </footer>
+        </main>
+
+        <aside className="chat-side">
+          <section className="side-card">
+            <div className="side-label">Usuario</div>
+            <div className="side-title">Perfil del cruce</div>
+            <div className="side-user">
+              <div className="chat-avatar">
+                {otherUser?.avatar_url ? <img src={otherUser.avatar_url} alt={otherName} /> : otherInitial}
+              </div>
+              <div>
+                <strong>{otherName}</strong>
+                <span>{otherUser?.city || otherUser?.department || 'Sin ubicacion'}{otherUser?.is_verified ? ' · Verificada' : ''}</span>
+                <div style={{ marginTop: '6px' }}>
+                  <ReputationStars stars={otherStars} size="sm" showLabel />
+                </div>
               </div>
             </div>
-          ))}
-          <div ref={bottomRef} />
-        </div>
+          </section>
 
-        <footer className="chat-footer">
-          {isExpired ? (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem' }}>
-              <p style={{ color: '#ef4444', fontWeight: 700, fontSize: '0.875rem', margin: 0 }}>Este chat venció en tu plan actual.</p>
-              <button 
-                onClick={() => navigate('/premium')}
-                style={{ padding: '0.75rem 1.5rem', borderRadius: '1rem', background: '#f97316', color: 'white', fontWeight: 900, border: 'none', cursor: 'pointer' }}
-              >
-                Reactivar con Plus
-              </button>
-            </div>
-          ) : (
-            <>
-              <div className="input-row">
-                <div className="chat-input-wrapper">
-                  <textarea 
-                    rows="1" 
-                    placeholder="Escribí un mensaje..." 
-                    className="chat-input"
-                    value={text}
-                    onChange={e => setText(e.target.value)}
-                    onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-                  />
-                </div>
-                <button 
-                  className="chat-send-btn" 
-                  onClick={handleSend}
-                  disabled={!text.trim()}
-                >
-                  Enviar
-                </button>
-              </div>
-              <p className="premium-note">En plan Gratis, el chat dura 3 días. Premium tiene chat ilimitado.</p>
-            </>
-          )}
-        </footer>
+          <section className="side-card side-cta">
+            <div className="side-label">Cerrar cruce</div>
+            <div className="side-title">Confirma el intercambio</div>
+            <p>Si ya validaron las figuritas, el siguiente paso es acordar horario y punto de encuentro publico.</p>
+            <button className="cta-btn" onClick={() => navigate('/matches')}>Ver mas matches</button>
+          </section>
+
+          <section className="side-card">
+            <div className="side-label">Resumen</div>
+            <div className="side-title">Lectura rapida</div>
+            <div className="side-row"><span>Te da</span><b>{incomingCount} figus</b></div>
+            <div className="side-row"><span>Le das</span><b>{outgoingCount} figus</b></div>
+            <div className="side-row"><span>Album</span><b>{exchangeData.albumName || 'Album'}</b></div>
+            <div className="side-row"><span>Estado</span><b>Activo</b></div>
+          </section>
+
+          <section className="side-card">
+            <div className="side-label">Consejo</div>
+            <div className="side-title">Antes del encuentro</div>
+            <p>Confirma por mensaje las figuritas exactas para evitar confusiones y coordina siempre en un punto visible.</p>
+          </section>
+        </aside>
       </div>
     </div>
   )

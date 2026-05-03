@@ -61,54 +61,10 @@ function scoreMutuality(theyCanGiveMe: number[], iCanGiveThem: number[]): number
   return strongOne ? 8 : 0
 }
 
-/** 15 pts max — tiered decay by recency */
-function scoreActivity(lastActive: string | null): { score: number; daysSince: number } {
-  if (!lastActive) return { score: 0, daysSince: 999 }
-  const daysSince = (Date.now() - new Date(lastActive).getTime()) / (1000 * 60 * 60 * 24)
-  let score = 0
-  if (daysSince <= 1) score = 15
-  else if (daysSince <= 3) score = 12
-  else if (daysSince <= 7) score = 8
-  else if (daysSince <= 14) score = 4
-  else if (daysSince <= 30) score = 1
-  else score = 0
-  return { score, daysSince: Math.round(daysSince) }
-}
-
-/** 15 pts max — tiered by km, 0 if >50km */
-function scoreDistance(km: number): number {
-  if (km === Infinity) return 0
-  if (km <= 1) return 15
-  if (km <= 3) return 13
-  if (km <= 5) return 10
-  if (km <= 10) return 7
-  if (km <= 25) return 4
-  if (km <= 50) return 2
-  return 0
-}
-
-/** 5 pts max — profile completeness (3 pts) + normalized rating (2 pts) */
-function scoreQuality(profile: Record<string, unknown>): number {
-  let completeness = 0
-  if (profile.name && profile.name !== "User") completeness++
-  if (profile.avatar_url) completeness++
-  if (profile.city || profile.department) completeness++
-  if (profile.lat && profile.lng) completeness++
-  const completenessScore = (completeness / 4) * 3
-
-  const rating = (profile.rating as number) || 5
-  const ratingNorm = Math.max(0, Math.min(10, rating) - 1) / 9
-  const ratingScore = ratingNorm * 2
-
-  return completenessScore + ratingScore
-}
-
-/** 5 pts max — plan tiebreaker (never compensates for low compatibility) */
-function scorePlanBoost(planName: string): number {
-  const plan = (planName || "gratis").toLowerCase()
-  if (plan.includes("pro")) return 5
-  if (plan.includes("plus")) return 2.5
-  return 0
+/** Global ranking integration (tiebreaker) */
+function scoreRanking(rankData: any): number {
+  if (!rankData) return 50
+  return rankData.final_user_rank || 50
 }
 
 // ── Plan-gated Limits ─────────────────────────────────────
@@ -236,8 +192,8 @@ serve(async (req: Request) => {
         ? new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
         : new Date(0).toISOString()
 
-    // 5. Batch fetch all candidate data in 3 parallel queries (no N+1)
-    const [profilesRes, otherMissingRes, otherDupRes] = await Promise.all([
+    // 5. Batch fetch all candidate data in parallel queries (no N+1)
+    const [profilesRes, otherMissingRes, otherDupRes, rankingsRes] = await Promise.all([
       supabaseAdmin
         .from("profiles")
         .select("*")
@@ -253,11 +209,16 @@ serve(async (req: Request) => {
         .select("user_id, sticker_number")
         .eq("album_id", albumId)
         .in("user_id", candidateIds),
+      supabaseAdmin
+        .from("user_rankings")
+        .select("user_id, final_user_rank, badges, premium_boost_applied")
+        .in("user_id", candidateIds)
     ])
 
     const candidateProfiles = profilesRes.data || []
     const allOtherMissing = otherMissingRes.data || []
     const allOtherDup = otherDupRes.data || []
+    const candidateRankings = rankingsRes.data || []
 
     // 6. Score each candidate
     const results = []
@@ -290,13 +251,13 @@ serve(async (req: Request) => {
       // QT-4: distance gate (plan-based)
       if (maxDistance !== Infinity && distKm > maxDistance) continue
 
-      // Activity
-      const { score: actScore, daysSince } = scoreActivity(p.last_active)
-
-      // QT-2: stale user cutoff
+      // Activity check for UI 
+      const daysSince = p.last_active ? (Date.now() - new Date(p.last_active).getTime()) / (1000 * 60 * 60 * 24) : 999
       if (daysSince > MAX_STALE_DAYS) continue
 
-      // Score all components
+      const rankingData = candidateRankings.find(r => r.user_id === p.id) || null
+      
+      // Core Match Relevance (Contextual overlap)
       const compatScore = scoreCompatibility(
         theyCanGiveMe,
         iCanGiveThem,
@@ -304,11 +265,22 @@ serve(async (req: Request) => {
         myDuplicates.length
       )
       const mutScore = scoreMutuality(theyCanGiveMe, iCanGiveThem)
+      
+      // Tiebreakers: global rank & distance
+      const globalRankScore = scoreRanking(rankingData)
       const distScore = scoreDistance(distKm)
-      const qualScore = scoreQuality(p)
-      const planScore = scorePlanBoost(p.plan_name || "gratis")
+      
+      // FORMULA: Contextual Relevance (60%) + Distance (20%) + Global User Rank (20%)
+      const contextualScore = compatScore + mutScore // max 60 (35 + 25)
+      const distanceWeighted = (distScore / 15) * 20 // max 20
+      const rankWeighted = (globalRankScore / 100) * 20 // max 20
+      
+      let rawScore = contextualScore + distanceWeighted + rankWeighted
 
-      const rawScore = compatScore + mutScore + actScore + distScore + qualScore + planScore
+      // Apply Boost Multiplier (up to 1.20x max, never replacing relevance)
+      const boostMultiplier = rankingData?.premium_boost_applied > 1.0 ? rankingData.premium_boost_applied : 1.0
+      rawScore = rawScore * boostMultiplier
+      
       const finalScore = Math.max(0, Math.min(100, Math.round(rawScore * 100) / 100))
 
       // QT-5: minimum score floor
@@ -326,6 +298,7 @@ serve(async (req: Request) => {
         department: p.department,
         city: p.city,
         last_active: p.last_active,
+        badges: rankingData?.badges || [],
       }
 
       results.push({
@@ -341,14 +314,14 @@ serve(async (req: Request) => {
         daysSinceActive: daysSince,
         score: finalScore,
         isTopMatch: false, // set after sort
-        planBoostApplied: planScore > 0,
+        planBoostApplied: boostMultiplier > 1.0,
+        badges: rankingData?.badges || [],
         _scoreBreakdown: {
           compatibility: Math.round(compatScore * 100) / 100,
           mutuality: mutScore,
-          activity: actScore,
-          distance: distScore,
-          quality: Math.round(qualScore * 100) / 100,
-          plan: planScore,
+          distance: Math.round(distanceWeighted * 100) / 100,
+          globalRank: Math.round(rankWeighted * 100) / 100,
+          boost: boostMultiplier,
         },
       })
     }

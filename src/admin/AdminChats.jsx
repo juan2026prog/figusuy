@@ -3,7 +3,7 @@ import { useAdminStore } from '../stores/adminStore'
 import { useAuthStore } from '../stores/authStore'
 import { supabase } from '../lib/supabase'
 
-const card = { background: '#ffffff', borderRadius: '1rem', padding: '1.25rem', border: '1px solid #e7e5e4', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }
+const card = { background: "var(--admin-panel)", borderRadius: "0.5rem", padding: "1.25rem", border: "1px solid var(--admin-line)" }
 
 export default function AdminChats() {
   const { reportedChats, fetchReportedChats, closeChatReport, escalateChatReport, blockUser, logAction, loading } = useAdminStore()
@@ -68,11 +68,11 @@ export default function AdminChats() {
   return (
     <div style={{ paddingBottom: '2rem' }}>
       <div style={{ marginBottom: '2rem' }}>
-        <h1 style={{ fontSize: '1.875rem', fontWeight: 900, color: '#020617', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <span className="material-symbols-outlined" style={{ color: '#ea580c', fontSize: '2rem' }}>chat</span>
+        <h1 style={{ fontSize: '1.875rem', fontWeight: 900, color: "#f5f5f5", letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <span className="material-symbols-outlined" style={{ color: 'var(--color-primary)', fontSize: '2rem' }}>chat</span>
           Moderación de Chats
         </h1>
-        <p style={{ fontSize: '0.9375rem', color: '#64748b', marginTop: '0.25rem' }}>
+        <p style={{ fontSize: '0.9375rem', color: "var(--admin-muted2)", marginTop: '0.25rem' }}>
           Revisión de conversaciones reportadas. Cada acceso se registra en auditoría.
         </p>
       </div>
@@ -80,32 +80,32 @@ export default function AdminChats() {
       <div style={{ display: 'grid', gridTemplateColumns: selectedChat ? '1fr 1.5fr' : '1fr', gap: '1.5rem', transition: 'all 0.3s' }}>
         {/* Reports List */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <h2 style={{ fontSize: '1rem', fontWeight: 700, color: '#0f172a' }}>Reportes ({reportedChats.length})</h2>
+          <h2 style={{ fontSize: '1rem', fontWeight: 700, color: "#f5f5f5" }}>Reportes ({reportedChats.length})</h2>
           {reportedChats.map(report => (
             <div
               key={report.id}
               onClick={() => viewChat(report)}
               style={{
                 ...card, cursor: 'pointer', padding: '1rem',
-                borderColor: selectedChat?.id === report.id ? '#ea580c' : report.status === 'escalated' ? '#ef4444' : '#e7e5e4',
-                background: selectedChat?.id === report.id ? '#fff7ed' : report.status === 'resolved' ? '#f8fafc' : 'white',
+                borderColor: selectedChat?.id === report.id ? 'var(--color-primary)' : report.status === 'escalated' ? '#ef4444' : "var(--admin-line)",
+                background: selectedChat?.id === report.id ? '#fff7ed' : report.status === 'resolved' ? "var(--admin-panel2)" : 'white',
                 opacity: report.status === 'resolved' ? 0.6 : 1
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
-                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: report.status === 'escalated' ? '#ef4444' : '#ea580c', background: report.status === 'escalated' ? '#fef2f2' : '#fff7ed', padding: '0.125rem 0.5rem', borderRadius: '1rem' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: report.status === 'escalated' ? '#ef4444' : 'var(--color-primary)', background: report.status === 'escalated' ? '#fef2f2' : '#fff7ed', padding: '0.125rem 0.5rem', borderRadius: '1rem' }}>
                   {report.status?.toUpperCase() || 'PENDIENTE'}
                 </span>
-                <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                <span style={{ fontSize: '0.75rem', color: "var(--admin-muted)" }}>
                   {new Date(report.created_at).toLocaleDateString()}
                 </span>
               </div>
-              <p style={{ fontSize: '0.875rem', fontWeight: 600, color: '#0f172a', margin: '0.25rem 0' }}>{report.reason}</p>
-              <p style={{ fontSize: '0.75rem', color: '#64748b' }}>Reportero: {report.reporter?.name}</p>
+              <p style={{ fontSize: '0.875rem', fontWeight: 600, color: "#f5f5f5", margin: '0.25rem 0' }}>{report.reason}</p>
+              <p style={{ fontSize: '0.75rem', color: "var(--admin-muted2)" }}>Reportero: {report.reporter?.name}</p>
             </div>
           ))}
           {reportedChats.length === 0 && (
-            <div style={{ ...card, textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>No hay chats reportados.</div>
+            <div style={{ ...card, textAlign: 'center', padding: '3rem', color: "var(--admin-muted)" }}>No hay chats reportados.</div>
           )}
         </div>
 
@@ -115,23 +115,23 @@ export default function AdminChats() {
             <div style={{ borderBottom: '1px solid #f1f5f9', paddingBottom: '1rem', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
                 <h3 style={{ fontSize: '1rem', fontWeight: 800 }}>Visor de Conversación</h3>
-                <p style={{ fontSize: '0.75rem', color: '#64748b' }}>Chat ID: {selectedChat.reported_chat_id} • Estado: <strong>{selectedChat.status}</strong></p>
+                <p style={{ fontSize: '0.75rem', color: "var(--admin-muted2)" }}>Chat ID: {selectedChat.reported_chat_id} • Estado: <strong>{selectedChat.status}</strong></p>
               </div>
-              <button onClick={() => setSelectedChat(null)} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}>
+              <button onClick={() => setSelectedChat(null)} style={{ background: 'none', border: 'none', color: "var(--admin-muted)", cursor: 'pointer' }}>
                 <span className="material-symbols-outlined">close</span>
               </button>
             </div>
 
             <div style={{ flex: 1, overflowY: 'auto', padding: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               {loadingMessages ? (
-                <div style={{ textAlign: 'center', color: '#94a3b8', marginTop: '2rem' }}>Cargando historial...</div>
+                <div style={{ textAlign: 'center', color: "var(--admin-muted)", marginTop: '2rem' }}>Cargando historial...</div>
               ) : (
                 messages.map(msg => (
                   <div key={msg.id} style={{ alignSelf: 'flex-start', maxWidth: '85%' }}>
-                    <div style={{ fontSize: '0.75rem', color: '#64748b', marginBottom: '0.25rem', marginLeft: '0.5rem' }}>
+                    <div style={{ fontSize: '0.75rem', color: "var(--admin-muted2)", marginBottom: '0.25rem', marginLeft: '0.5rem' }}>
                       {msg.sender?.name} • {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </div>
-                    <div style={{ background: '#f1f5f9', padding: '0.75rem 1rem', borderRadius: '1rem 1rem 1rem 0.25rem', fontSize: '0.875rem', color: '#1e293b' }}>
+                    <div style={{ background: "var(--admin-panel2)", padding: '0.75rem 1rem', borderRadius: '1rem 1rem 1rem 0.25rem', fontSize: '0.875rem', color: "var(--admin-line)" }}>
                       {msg.text}
                     </div>
                   </div>
@@ -142,8 +142,8 @@ export default function AdminChats() {
             {/* Internal Note */}
             <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '0.75rem', marginTop: '0.5rem' }}>
               <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem' }}>
-                <input type="text" value={noteText} onChange={e => setNoteText(e.target.value)} placeholder="Nota interna..." style={{ flex: 1, padding: '0.5rem 0.75rem', borderRadius: '0.5rem', border: '1px solid #e2e8f0', fontSize: '0.8125rem' }} />
-                <button onClick={handleAddNote} style={{ padding: '0.5rem 0.75rem', borderRadius: '0.5rem', background: '#f1f5f9', color: '#475569', border: 'none', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}>Agregar Nota</button>
+                <input type="text" value={noteText} onChange={e => setNoteText(e.target.value)} placeholder="Nota interna..." style={{ flex: 1, padding: '0.5rem 0.75rem', borderRadius: '0.5rem', border: "1px solid var(--admin-line)", fontSize: '0.8125rem' }} />
+                <button onClick={handleAddNote} style={{ padding: '0.5rem 0.75rem', borderRadius: '0.5rem', background: "var(--admin-panel2)", color: "var(--admin-muted)", border: 'none', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}>Agregar Nota</button>
               </div>
             </div>
 
@@ -152,10 +152,10 @@ export default function AdminChats() {
               <button onClick={() => handleBlockUser(selectedChat.reported_user_id)} style={{ flex: 1, background: '#ef4444', color: 'white', border: 'none', padding: '0.625rem', borderRadius: '0.5rem', fontWeight: 700, cursor: 'pointer', fontSize: '0.8125rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.375rem' }}>
                 <span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>block</span> Bloquear
               </button>
-              <button onClick={() => handleEscalate(selectedChat.id)} style={{ flex: 1, background: '#fff7ed', color: '#ea580c', border: '1px solid #fed7aa', padding: '0.625rem', borderRadius: '0.5rem', fontWeight: 700, cursor: 'pointer', fontSize: '0.8125rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.375rem' }}>
+              <button onClick={() => handleEscalate(selectedChat.id)} style={{ flex: 1, background: "rgba(249, 115, 22, 0.1)", color: 'var(--color-primary)', border: '1px solid #fed7aa', padding: '0.625rem', borderRadius: '0.5rem', fontWeight: 700, cursor: 'pointer', fontSize: '0.8125rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.375rem' }}>
                 <span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>priority_high</span> Escalar
               </button>
-              <button onClick={() => handleClose(selectedChat.id)} style={{ flex: 1, background: '#ecfdf5', color: '#10b981', border: '1px solid #a7f3d0', padding: '0.625rem', borderRadius: '0.5rem', fontWeight: 700, cursor: 'pointer', fontSize: '0.8125rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.375rem' }}>
+              <button onClick={() => handleClose(selectedChat.id)} style={{ flex: 1, background: "rgba(16, 185, 129, 0.1)", color: '#10b981', border: '1px solid #a7f3d0', padding: '0.625rem', borderRadius: '0.5rem', fontWeight: 700, cursor: 'pointer', fontSize: '0.8125rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.375rem' }}>
                 <span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>check_circle</span> Cerrar
               </button>
             </div>

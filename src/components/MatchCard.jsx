@@ -2,31 +2,25 @@ import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
 import { useAppStore } from '../stores/appStore'
-import { useThemeStore } from '../stores/themeStore'
 import { usePushNotifications } from '../hooks/usePushNotifications'
-import { getCompatibilityLevel } from '../lib/matching'
-import { getAvatarGradient } from '../lib/avatarColors'
+import { getUserBadges } from '../lib/ranking'
 import FavoriteButton from './FavoriteButton'
+import ReputationStars from './ReputationStars'
 
-const r = { md: '0.75rem', lg: '1rem', xl: '1.25rem', '2xl': '1.5rem', '3xl': '1.75rem', full: '9999px' }
-
-export default function MatchCard({ match, isLocked = false, isTopMatch = false }) {
+export default function MatchCard({ match, isLocked = false, isTopMatch = false, idx = null }) {
   const navigate = useNavigate()
   const { profile } = useAuthStore()
   const { createOrGetChat, selectedAlbum } = useAppStore()
-  const { isDark } = useThemeStore()
   const [contactLoading, setContactLoading] = useState(false)
   const { permission, requestPermission } = usePushNotifications()
 
   const canGive = match.theyCanGiveMe || []
   const canReceive = match.iCanGiveThem || []
-  const totalExchange = canGive.length + canReceive.length
 
   const handleContact = async () => {
     if (!profile?.id || !match.userId || contactLoading || isLocked) return
     setContactLoading(true)
 
-    // Solicitar permiso de notificaciones contextualmente al abrir el primer chat
     if (permission === 'default') {
       await requestPermission()
     }
@@ -55,162 +49,100 @@ export default function MatchCard({ match, isLocked = false, isTopMatch = false 
     ? `${match.profile.city}, ${match.profile.department || ''}`
     : (match.profile?.department || 'Uruguay')
 
-  // Boceto specific styling
-  const baseBg = isDark ? '#0f172a' : 'white'
-  const borderColor = isTopMatch ? '#ea580c' : (isDark ? '#1e293b' : '#e2e8f0')
-  const borderStyle = isTopMatch ? `2px solid ${borderColor}` : `1px solid ${borderColor}`
-
-  // Green / Emerald palette for "Te da"
-  const emeraldText = isDark ? '#6ee7b7' : '#047857'
-  const emeraldBadgeBg = isDark ? 'rgba(2, 44, 34, 0.3)' : '#ecfdf5'
-  const emeraldBadgeBorder = isDark ? '#064e3b' : '#a7f3d0'
-
-  // Orange palette for "Le das"
-  const orangeText = isDark ? '#fdba74' : '#c2410c'
-  const orangeBadgeBg = isDark ? 'rgba(67, 20, 7, 0.3)' : '#fff7ed'
-  const orangeBadgeBorder = isDark ? '#7c2d12' : '#fed7aa'
+  const userName = match.profile?.name || match.name || 'Usuario'
+  const avatarLetter = userName[0]?.toUpperCase() || '?'
+  const avatarUrl = match.profile?.avatar_url
+  
+  const rankLabel = isTopMatch ? 'Top' : 'Match'
+  const rankNumber = idx !== null ? `#${idx + 1}` : (isTopMatch ? '#1' : '-')
 
   return (
-    <article style={{
-      borderRadius: r['3xl'], background: baseBg, border: borderStyle,
-      padding: '1rem', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
-      position: 'relative', overflow: 'hidden',
-      opacity: isLocked ? 0.6 : 1, transition: 'all 0.2s ease-in-out'
-    }}>
-      
+    <article className={`match-card ${isTopMatch ? 'top' : ''}`} style={isLocked ? { opacity: 0.6 } : {}}>
       {isLocked && (
         <div style={{
           position: 'absolute', inset: 0, 
-          background: isDark ? 'rgba(2, 6, 23, 0.55)' : 'rgba(255, 255, 255, 0.55)',
+          background: 'rgba(2, 6, 23, 0.55)',
           backdropFilter: 'blur(2px)', WebkitBackdropFilter: 'blur(2px)',
           display: 'flex', alignItems: 'center', justifyContent: 'flex-end', paddingRight: '1rem',
           zIndex: 10
         }}>
-          <button style={{
-            padding: '0.5rem 1rem', borderRadius: r.xl, background: '#ea580c',
-            color: 'white', fontWeight: 900, fontSize: '0.875rem', border: 'none', cursor: 'pointer'
-          }}>
-            Desbloquear
+          <button className="btn orange" onClick={() => navigate('/premium')}>
+            Desbloquear Plus
           </button>
         </div>
       )}
 
-      {/* Grid container mirroring the xl:grid-cols-[260px_1fr_1fr_180px] */}
-      <div style={{
-        display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-        gap: '1rem', alignItems: 'center'
-      }} className="match-grid-container">
-        
-        {/* User Info */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', minWidth: 0 }}>
-          <div style={{
-            width: '3rem', height: '3rem', borderRadius: r['2xl'], 
-            background: isTopMatch ? '#ea580c' : (isDark ? 'white' : '#0f172a'),
-            color: isTopMatch ? 'white' : (isDark ? '#020617' : 'white'),
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontWeight: 900, fontSize: '1.125rem', flexShrink: 0
-          }}>
-            {match.profile?.name?.[0]?.toUpperCase() || match.name?.[0]?.toUpperCase() || '?'}
-          </div>
-          <div style={{ minWidth: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.25rem' }}>
-              <h3 style={{ fontWeight: 900, fontSize: '1.125rem', margin: 0, color: isDark ? 'white' : '#0f172a' }}>
-                {match.profile?.name || match.name || 'Usuario'}
-              </h3>
-              <FavoriteButton targetUserId={match.userId || match.profile?.id} />
-              {match.isMutual && (
-                <span style={{
-                  padding: '0.25rem 0.5rem', borderRadius: r.full,
-                  background: isDark ? '#431407' : '#ffedd5',
-                  color: isDark ? '#fdba74' : '#c2410c',
-                  fontSize: '0.625rem', fontWeight: 900
-                }}>Mutuo</span>
-              )}
-            </div>
-            <p style={{ fontSize: '0.75rem', color: isDark ? '#94a3b8' : '#64748b', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {locationStr} · {distanceStr} · {lastActive || 'Recientemente'}
-            </p>
-          </div>
-        </div>
-
-        {/* Te da (Green) */}
+      <div className="match-rank">
         <div>
-          <p style={{ fontSize: '0.75rem', fontWeight: 900, color: emeraldText, marginBottom: '0.5rem', margin: '0 0 0.5rem 0' }}>
-            Te da ({canGive.length})
-          </p>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-            {canGive.slice(0, 4).map(n => (
-              <span key={n} style={{
-                padding: '0.375rem 0.625rem', borderRadius: r.xl,
-                background: emeraldBadgeBg, border: `1px solid ${emeraldBadgeBorder}`,
-                fontSize: '0.875rem', fontWeight: 900, color: isDark ? '#d1fae5' : '#064e3b'
-              }}>{n}</span>
-            ))}
-            {canGive.length > 4 && (
-              <span style={{
-                padding: '0.375rem 0.625rem', borderRadius: r.xl,
-                background: emeraldBadgeBg, border: `1px solid ${emeraldBadgeBorder}`,
-                fontSize: '0.875rem', fontWeight: 900, color: isDark ? '#d1fae5' : '#064e3b'
-              }}>+{canGive.length - 4}</span>
-            )}
-            {canGive.length === 0 && <span style={{ fontSize: '0.875rem', color: isDark ? '#64748b' : '#94a3b8' }}>Ninguna</span>}
-          </div>
-        </div>
-
-        {/* Le das (Orange) */}
-        <div>
-          <p style={{ fontSize: '0.75rem', fontWeight: 900, color: orangeText, marginBottom: '0.5rem', margin: '0 0 0.5rem 0' }}>
-            Le das ({canReceive.length})
-          </p>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-            {canReceive.slice(0, 4).map(n => (
-              <span key={n} style={{
-                padding: '0.375rem 0.625rem', borderRadius: r.xl,
-                background: orangeBadgeBg, border: `1px solid ${orangeBadgeBorder}`,
-                fontSize: '0.875rem', fontWeight: 900, color: isDark ? '#ffedd5' : '#7c2d12'
-              }}>{n}</span>
-            ))}
-            {canReceive.length > 4 && (
-              <span style={{
-                padding: '0.375rem 0.625rem', borderRadius: r.xl,
-                background: orangeBadgeBg, border: `1px solid ${orangeBadgeBorder}`,
-                fontSize: '0.875rem', fontWeight: 900, color: isDark ? '#ffedd5' : '#7c2d12'
-              }}>+{canReceive.length - 4}</span>
-            )}
-            {canReceive.length === 0 && <span style={{ fontSize: '0.875rem', color: isDark ? '#64748b' : '#94a3b8' }}>Ninguna</span>}
-          </div>
-        </div>
-
-        {/* Actions & Score */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem' }}>
-          <div>
-            <p style={{ fontSize: '1.5rem', fontWeight: 900, margin: 0, color: isTopMatch ? '#ea580c' : (isDark ? 'white' : '#0f172a'), lineHeight: 1 }}>
-              {match.score || 0}
-            </p>
-            <p style={{ fontSize: '0.6875rem', color: isDark ? '#64748b' : '#64748b', fontWeight: 700, margin: '0.25rem 0 0 0' }}>
-              Cerrás {Math.min(canGive.length, canReceive.length) || (canGive.length > 0 ? canGive.length : canReceive.length) || 0}
-            </p>
-          </div>
-          <button onClick={handleContact} disabled={contactLoading} style={{
-            padding: '0.75rem 1.25rem', borderRadius: r['2xl'],
-            background: isTopMatch ? '#ea580c' : (isDark ? 'white' : '#0f172a'),
-            color: isTopMatch ? 'white' : (isDark ? '#020617' : 'white'),
-            fontWeight: 900, fontSize: '0.875rem', border: 'none', cursor: contactLoading ? 'not-allowed' : 'pointer',
-            opacity: contactLoading ? 0.7 : 1
-          }}>
-            {contactLoading ? '...' : 'Contactar'}
-          </button>
+          <b>{rankNumber}</b>
+          <span>{rankLabel}</span>
         </div>
       </div>
-      
-      {/* Media query style to handle the xl breakpoint from boceto cleanly without creating external css class */}
-      <style>{`
-        @media (min-width: 1280px) {
-          .match-grid-container {
-            grid-template-columns: 260px 1fr 1fr 180px !important;
-          }
-        }
-      `}</style>
+
+      <div className="match-body">
+        <div className="match-head">
+          <div className="profile-mini">
+            <div className="avatar">
+              {avatarUrl ? <img src={avatarUrl} alt={userName} /> : avatarLetter}
+            </div>
+            <div>
+              <div className="match-name" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {userName}
+                <ReputationStars stars={match.profile?.star_rating || match.star_rating || 1} size="xs" inline />
+                <div style={{ display: 'inline-flex', verticalAlign: 'middle', transform: 'scale(0.8)', transformOrigin: 'left center' }}>
+                  <FavoriteButton targetUserId={match.userId || match.profile?.id} />
+                </div>
+              </div>
+              <div className="match-meta">
+                {locationStr} · {distanceStr} · {lastActive || 'Recientemente'}
+              </div>
+            </div>
+          </div>
+          <div className="match-score-mobile">{match.score || 0}</div>
+        </div>
+
+        <div className="badges">
+          {match.isMutual && <span className="badge green">Mutuo</span>}
+          {match.distance != null && match.distance <= 5 && <span className="badge blue">Cerca</span>}
+          {canGive.length > canReceive.length && canReceive.length > 0 && <span className="badge orange">Fuerte para vos</span>}
+          {getUserBadges(match.badges || match.profile?.badges || []).slice(0, 2).map(b => (
+            <span key={b.label} className="badge" style={{ color: b.color, borderColor: `${b.color}40`, backgroundColor: `${b.color}15` }}>
+              {b.emoji} {b.label}
+            </span>
+          ))}
+        </div>
+
+        <div className="sticker-exchange">
+          <div className="sticker-box give">
+            <h4>Te puede dar ({canGive.length})</h4>
+            <div className="chips">
+              {canGive.slice(0, 8).map(n => (
+                <span key={n} className="chip green">{n}</span>
+              ))}
+              {canGive.length > 8 && <span className="chip green">+{canGive.length - 8}</span>}
+              {canGive.length === 0 && <span className="chip" style={{ borderColor: 'var(--line)', color: 'var(--muted)' }}>Ninguna</span>}
+            </div>
+          </div>
+          <div className="sticker-box take">
+            <h4>Vos le das ({canReceive.length})</h4>
+            <div className="chips">
+              {canReceive.slice(0, 8).map(n => (
+                <span key={n} className="chip orange">{n}</span>
+              ))}
+              {canReceive.length > 8 && <span className="chip orange">+{canReceive.length - 8}</span>}
+              {canReceive.length === 0 && <span className="chip" style={{ borderColor: 'var(--line)', color: 'var(--muted)' }}>Ninguna</span>}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="match-action">
+        <div className="score-big">{match.score || 0}</div>
+        <small>score</small>
+        <button className="btn orange" onClick={handleContact} disabled={contactLoading}>
+          {contactLoading ? '...' : 'Abrir chat'}
+        </button>
+      </div>
     </article>
   )
 }

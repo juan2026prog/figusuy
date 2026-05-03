@@ -13,7 +13,6 @@ export default function PlansModal({ isOpen, onClose }) {
   const { matches } = useAppStore()
   const { profile } = useAuthStore()
   const { isPremium } = usePremiumAccess()
-  const hiddenMatches = isPremium ? 0 : Math.max(0, (matches?.length || 0) - 3)
 
   useEffect(() => {
     if (isOpen) {
@@ -74,12 +73,11 @@ export default function PlansModal({ isOpen, onClose }) {
   if (!isOpen) return null
 
   const features = [
-    { name: 'Intercambios/mes', plus: '10', pro: 'Ilimitados', icon: '🔍' },
-    { name: 'Álbumes', plus: '3', pro: 'Ilimitados', icon: '📖' },
-    { name: 'Chat', plus: 'Ilimitado', pro: 'Ilimitado', icon: '💬' },
-    { name: 'Visibilidad', plus: 'Alta', pro: 'Máxima + ⭐', icon: '⚡' },
-    { name: 'Alertas', plus: '+20 falt.', pro: 'Tiempo real', icon: '🔔' },
-    { name: 'Búsqueda', plus: '250m+', pro: 'Todo UY', icon: '📍' },
+    { name: 'Filtro por Distancia', plus: 'Sí', pro: 'Sí', icon: '📍' },
+    { name: 'Confirmación Lectura', plus: 'Sí', pro: 'Sí', icon: '💬' },
+    { name: 'Posicionamiento', plus: 'Alto', pro: 'N°1 (Top)', icon: '⚡' },
+    { name: 'Alertas Radar', plus: '-', pro: 'Tiempo real', icon: '🔔' },
+    { name: 'Modo Fantasma', plus: '-', pro: 'Sí', icon: '👻' },
   ]
 
   const premiumPlans = plans.filter(p => p.price > 0).sort((a, b) => a.price - b.price)
@@ -98,16 +96,16 @@ export default function PlansModal({ isOpen, onClose }) {
           </header>
 
           {/* Urgency Banner */}
-          {hiddenMatches > 0 && (
+          {!isPremium && (
             <div className="mb-lg" style={{
-              background: 'linear-gradient(135deg, #fef3c7, #fde68a)',
+              background: 'linear-gradient(135deg, #fffbeb, #fef3c7)',
               borderRadius: 'var(--radius-lg)', padding: '0.75rem 1rem',
               border: '1px solid #fcd34d', textAlign: 'center',
             }}>
-              <p className="text-sm font-bold" style={{ color: '#92400e' }}>
-                🔒 Tenés {hiddenMatches} intercambio{hiddenMatches > 1 ? 's' : ''} oculto{hiddenMatches > 1 ? 's' : ''}
+              <p className="text-sm font-bold" style={{ color: '#d97706' }}>
+                🚀 Acelerá tus intercambios
               </p>
-              <p className="text-xs" style={{ color: '#a16207' }}>Desbloqueá Premium para verlos todos</p>
+              <p className="text-xs" style={{ color: '#b45309' }}>Encontrá lo que buscás, más rápido y cerca tuyo</p>
             </div>
           )}
 
@@ -116,7 +114,7 @@ export default function PlansModal({ isOpen, onClose }) {
             <div className="card" style={{ padding: '0.5rem', minWidth: '20rem' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 4.5rem 4.5rem', gap: '0.375rem', padding: '0.5rem', borderBottom: '2px solid var(--color-border-light)' }}>
                 <span className="text-xs font-bold text-muted"></span>
-                <span className="text-xs font-bold text-center" style={{ color: '#ea580c' }}>Plus</span>
+                <span className="text-xs font-bold text-center" style={{ color: 'var(--color-primary)' }}>Plus</span>
                 <span className="text-xs font-bold text-center" style={{ color: '#f59e0b' }}>Pro ⭐</span>
               </div>
               {features.map((f, i) => (
@@ -126,7 +124,7 @@ export default function PlansModal({ isOpen, onClose }) {
                   borderBottom: i < features.length - 1 ? '1px solid var(--color-border-light)' : 'none',
                 }}>
                   <span className="text-xs font-semibold">{f.icon} {f.name}</span>
-                  <span className="text-xs text-center font-semibold" style={{ color: '#ea580c' }}>{f.plus}</span>
+                  <span className="text-xs text-center font-semibold" style={{ color: 'var(--color-primary)' }}>{f.plus}</span>
                   <span className="text-xs text-center font-bold" style={{ color: '#f59e0b' }}>{f.pro}</span>
                 </div>
               ))}
@@ -144,7 +142,7 @@ export default function PlansModal({ isOpen, onClose }) {
                   disabled={loading}
                   className={`btn btn-lg w-full ${loading ? 'btn-loading' : ''}`}
                   style={{
-                    background: isPro ? '#1c1917' : '#ea580c',
+                    background: isPro ? '#1c1917' : 'var(--color-primary)',
                     color: 'white', fontWeight: 900,
                     boxShadow: isPro ? '0 4px 12px rgba(15, 23, 42, 0.3)' : '0 4px 12px rgba(234, 88, 12, 0.3)',
                     border: 'none',

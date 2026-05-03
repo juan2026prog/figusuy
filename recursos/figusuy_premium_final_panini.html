@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FigusUY — Premium Final</title>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,400;0,700;0,800;0,900;1,700;1,900&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root{
+      --bg:#0b0b0b;
+      --panel:#121212;
+      --panel2:#181818;
+      --panel3:#202020;
+      --line:rgba(255,255,255,.08);
+      --line2:rgba(255,255,255,.14);
+      --text:#f5f5f5;
+      --muted:rgba(245,245,245,.54);
+      --muted2:rgba(245,245,245,.34);
+      --orange:#ff5a00;
+      --orange2:#cc4800;
+      --green:#22c55e;
+      --blue:#3b82f6;
+      --yellow:#facc15;
+      --red:#ef4444;
+    }
+
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:Barlow,sans-serif;background:var(--bg);color:var(--text)}
+    button,a{font-family:inherit} a{text-decoration:none;color:inherit}
+
+    .page{min-height:100vh;background:var(--bg)}
+
+    .topbar{
+      min-height:82px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:18px;
+      padding:14px 22px;
+      border-bottom:1px solid var(--line);
+      background:#0b0b0b;
+      position:sticky;
+      top:0;
+      z-index:20;
+    }
+    .top-kicker{font:900 .72rem 'Barlow Condensed';letter-spacing:.16em;text-transform:uppercase;color:var(--orange)}
+    .top-title{font:italic 900 2.45rem 'Barlow Condensed';text-transform:uppercase;line-height:.9;margin-top:3px}
+    .btn{border:1px solid var(--line2);background:transparent;color:#fff;padding:.85rem 1.15rem;font:900 .88rem 'Barlow Condensed';letter-spacing:.08em;text-transform:uppercase;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+    .btn:hover{border-color:var(--orange);color:var(--orange)}
+    .btn.orange{background:var(--orange);border-color:var(--orange);color:#fff}
+    .btn.orange:hover{background:var(--orange2);border-color:var(--orange2)}
+    .btn.dark{background:#0b0b0b;border-color:#0b0b0b;color:#fff}.btn.block{width:100%}
+
+    .wrap{max-width:1420px;margin:0 auto;padding:28px 22px 76px}
+
+    .hero{
+      display:grid;
+      grid-template-columns:1.05fr .95fr;
+      gap:22px;
+      margin-bottom:22px;
+    }
+    .hero-main{
+      position:relative;
+      overflow:hidden;
+      min-height:340px;
+      background:linear-gradient(135deg,#181818 0%,#101010 55%,rgba(255,90,0,.2) 100%);
+      border:1px solid var(--line);
+      padding:32px;
+      display:flex;
+      flex-direction:column;
+      justify-content:space-between;
+    }
+    .hero-main:before{
+      content:'PREMIUM';
+      position:absolute;
+      right:20px;
+      top:-18px;
+      font:italic 900 8.8rem 'Barlow Condensed';
+      color:rgba(255,255,255,.035);
+      line-height:1;
+      pointer-events:none;
+    }
+    .kicker{font:900 .72rem 'Barlow Condensed';letter-spacing:.16em;text-transform:uppercase;color:var(--orange)}
+    .hero-title{font:italic 900 clamp(3.2rem,6vw,6rem) 'Barlow Condensed';line-height:.84;text-transform:uppercase;margin-top:8px;position:relative;z-index:1;max-width:780px}
+    .hero-title span{color:var(--orange)}
+    .hero-sub{color:var(--muted);font-size:1.02rem;line-height:1.6;max-width:620px;margin-top:16px;position:relative;z-index:1}
+    .hero-badges{display:flex;gap:8px;flex-wrap:wrap;margin-top:26px;position:relative;z-index:1}
+    .badge{border:1px solid var(--line2);background:#0d0d0d;padding:7px 10px;font:900 .76rem 'Barlow Condensed';letter-spacing:.08em;text-transform:uppercase;color:#fff}.badge.orange{border-color:rgba(255,90,0,.35);color:var(--orange);background:rgba(255,90,0,.08)}.badge.green{border-color:rgba(34,197,94,.35);color:var(--green);background:rgba(34,197,94,.07)}
+
+    .current-plan{
+      background:var(--panel);
+      border:1px solid var(--line);
+      display:flex;
+      flex-direction:column;
+      justify-content:space-between;
+      padding:24px;
+      min-height:340px;
+    }
+    .current-plan .label{font:900 .7rem 'Barlow Condensed';letter-spacing:.16em;text-transform:uppercase;color:var(--orange)}
+    .current-plan h2{font:italic 900 3.2rem 'Barlow Condensed';text-transform:uppercase;line-height:.86;margin-top:10px}
+    .current-plan p{color:var(--muted);line-height:1.55;margin-top:10px}
+    .usage-box{margin-top:22px;border:1px solid var(--line);background:#0d0d0d;padding:16px}
+    .usage-top{display:flex;justify-content:space-between;font:900 .78rem 'Barlow Condensed';letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px;color:var(--muted2)}
+    .bar{height:18px;background:#090909;border:1px solid var(--line2);position:relative;overflow:hidden}.bar div{height:100%;background:var(--orange);width:33%}.bar:before,.bar:after{content:'';position:absolute;top:0;bottom:0;width:1px;background:rgba(255,255,255,.42)}.bar:before{left:50%}.bar:after{left:75%}
+
+    .section-head{display:flex;justify-content:space-between;align-items:flex-end;gap:18px;margin:34px 0 18px}.section-head h2{font:italic 900 3rem 'Barlow Condensed';text-transform:uppercase;line-height:.9}.section-head p{color:var(--muted);font-size:.95rem;margin-top:7px}.section-head .btn{white-space:nowrap}
+
+    .plans{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);margin-bottom:34px}
+    .plan{position:relative;background:var(--panel);padding:28px;display:flex;flex-direction:column;min-height:620px;overflow:hidden}
+    .plan:before{content:'';position:absolute;inset:0 0 auto 0;height:4px;background:transparent}.plan.recommended{background:var(--panel2)}.plan.recommended:before{background:var(--orange)}.plan.pro{background:linear-gradient(135deg,#181818 0%,#101010 60%,rgba(255,90,0,.16) 100%)}
+    .plan-ribbon{position:absolute;right:16px;top:16px;background:var(--orange);color:#fff;padding:5px 9px;font:900 .65rem 'Barlow Condensed';letter-spacing:.1em;text-transform:uppercase}
+    .plan-icon{width:62px;height:62px;display:grid;place-items:center;background:#0d0d0d;border:1px solid var(--line2);font-size:1.8rem;margin-bottom:18px}.plan.recommended .plan-icon{background:rgba(255,90,0,.1);border-color:rgba(255,90,0,.3)}
+    .plan-name{font:italic 900 2.6rem 'Barlow Condensed';text-transform:uppercase;line-height:.86}.plan-concept{color:var(--muted);font-size:.92rem;line-height:1.45;margin-top:9px;min-height:48px}
+    .price{display:flex;align-items:flex-end;gap:6px;margin:28px 0 22px}.price b{font:italic 900 4.2rem 'Barlow Condensed';line-height:.8}.price span{color:var(--muted2);font-size:.82rem;font-weight:800;margin-bottom:4px}
+    .features{display:grid;gap:12px;margin-bottom:26px;flex:1}.feature{display:grid;grid-template-columns:20px 1fr;gap:9px;color:var(--muted);font-size:.92rem;line-height:1.35}.check{color:var(--green);font-weight:900}.plan.recommended .check,.plan.pro .check{color:var(--orange)}
+    .plan-note{margin-top:12px;color:var(--muted2);font-size:.78rem;text-align:center;line-height:1.45}
+
+    .comparison{background:var(--panel);border:1px solid var(--line);overflow:auto;margin-bottom:34px}.table-head{display:flex;justify-content:space-between;gap:16px;align-items:center;padding:20px 22px;background:var(--panel2);border-bottom:1px solid var(--line)}.table-head h2{font:italic 900 2.4rem 'Barlow Condensed';text-transform:uppercase;line-height:.9}.table-head p{color:var(--muted);font-size:.9rem;margin-top:6px}
+    table{width:100%;border-collapse:collapse;min-width:760px}th,td{padding:16px 18px;border-bottom:1px solid var(--line);text-align:left}th{font:900 .82rem 'Barlow Condensed';letter-spacing:.08em;text-transform:uppercase;color:var(--muted2);background:#0d0d0d}td{font-size:.92rem;color:var(--muted)}td strong{color:#fff}.td-orange{color:var(--orange);font-weight:900}.td-green{color:var(--green);font-weight:900}
+
+    .benefits{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);margin-bottom:34px}.benefit{background:var(--panel);padding:24px}.benefit-icon{width:54px;height:54px;display:grid;place-items:center;background:#0d0d0d;border:1px solid var(--line2);font-size:1.6rem;margin-bottom:16px}.benefit h3{font:italic 900 1.8rem 'Barlow Condensed';line-height:.9;text-transform:uppercase}.benefit p{color:var(--muted);line-height:1.5;font-size:.9rem;margin-top:10px}
+
+    .faq{max-width:900px;margin:0 auto}.faq h2{font:italic 900 3rem 'Barlow Condensed';line-height:.9;text-transform:uppercase;text-align:center;margin-bottom:22px}.faq-item{background:var(--panel);border:1px solid var(--line);margin-bottom:10px}.faq-item summary{cursor:pointer;list-style:none;padding:18px 20px;font:900 1rem 'Barlow Condensed';letter-spacing:.05em;text-transform:uppercase;display:flex;justify-content:space-between;gap:14px}.faq-item summary::-webkit-details-marker{display:none}.faq-item p{border-top:1px solid var(--line);padding:16px 20px;color:var(--muted);line-height:1.55;font-size:.92rem}.faq-item summary span{color:var(--orange)}
+
+    @media(max-width:1050px){.hero,.plans,.benefits{grid-template-columns:1fr}.plan{min-height:auto}.section-head{display:block}.section-head .btn{margin-top:14px}.current-plan{min-height:auto}}
+    @media(max-width:720px){.wrap{padding:16px 12px 64px}.topbar{align-items:flex-start}.top-title{font-size:2rem}.hero-main{padding:22px}.hero-title{font-size:3.2rem}.current-plan h2{font-size:2.6rem}.table-head{display:block}.plans{gap:14px;background:transparent;border:0}.plan{border:1px solid var(--line)}.benefits{gap:14px;background:transparent;border:0}.benefit{border:1px solid var(--line)}.price b{font-size:3.6rem}.btn.block{width:100%}}
+  </style>
+</head>
+<body>
+<div class="page">
+  <header class="topbar">
+    <div><div class="top-kicker">Planes</div><div class="top-title">Premium</div></div>
+    <button class="btn" onclick="history.back()">← Volver</button>
+  </header>
+
+  <main class="wrap">
+    <section class="hero">
+      <div class="hero-main">
+        <div>
+          <div class="kicker">// completá más rápido</div>
+          <h1 class="hero-title">Más matches, mejores cruces y <span>menos tiempo perdido.</span></h1>
+          <p class="hero-sub">Arrancá gratis o desbloqueá más oportunidades para encontrar antes las figuritas que te faltan.</p>
+          <div class="hero-badges"><span class="badge green">✓ Plan gratis disponible</span><span class="badge orange">✓ Matches por compatibilidad</span><span class="badge">✓ Sin ubicación exacta</span></div>
+        </div>
+      </div>
+
+      <aside class="current-plan">
+        <div>
+          <div class="label">Tu plan actual</div>
+          <h2>Gratis</h2>
+          <p>Te quedan 1 de 3 matches gratis este mes. Hay más oportunidades cerca, pero algunas están bloqueadas por tu plan actual.</p>
+          <div class="usage-box"><div class="usage-top"><span>Uso mensual</span><span>1 / 3</span></div><div class="bar"><div></div></div></div>
+        </div>
+        <a class="btn orange block" href="#planes">Ver planes</a>
+      </aside>
+    </section>
+
+    <section id="planes">
+      <div class="section-head"><div><div class="kicker">// planes</div><h2>Elegí cómo querés completar</h2><p>No pagás por funciones sueltas. Pagás por encontrar mejores oportunidades.</p></div></div>
+      <div class="plans">
+        <article class="plan">
+          <div class="plan-icon">🎒</div>
+          <h3 class="plan-name">Gratis</h3>
+          <p class="plan-concept">Para empezar y probar si hay gente cerca.</p>
+          <div class="price"><b>$0</b><span>/mes UYU</span></div>
+          <div class="features">
+            <div class="feature"><span class="check">✓</span><span>Duración de chat: <strong>3 días</strong></span></div>
+            <div class="feature"><span class="check">✓</span><span>Álbumes activos: <strong>1</strong></span></div>
+            <div class="feature"><span class="check">✓</span><span>Matches cercanos desde <strong>500m</strong></span></div>
+            <div class="feature"><span class="check">✓</span><span>Máx. matches mensuales: <strong>3</strong></span></div>
+          </div>
+          <button class="btn block">Plan actual</button>
+          <p class="plan-note">Ideal para probar la app sin pagar.</p>
+        </article>
+
+        <article class="plan recommended">
+          <div class="plan-ribbon">Recomendado</div>
+          <div class="plan-icon">💎</div>
+          <h3 class="plan-name">Plus</h3>
+          <p class="plan-concept">Para encontrar intercambios que realmente valen la pena.</p>
+          <div class="price"><b>$99</b><span>/mes UYU</span></div>
+          <div class="features">
+            <div class="feature"><span class="check">✓</span><span>Chat <strong>ilimitado</strong></span></div>
+            <div class="feature"><span class="check">✓</span><span>Hasta <strong>3 álbumes activos</strong></span></div>
+            <div class="feature"><span class="check">✓</span><span>Matches cercanos desde <strong>250m</strong></span></div>
+            <div class="feature"><span class="check">✓</span><span>Hasta <strong>10 matches mensuales</strong></span></div>
+            <div class="feature"><span class="check">✓</span><span>Alertas si alguien tiene <strong>20+ figuritas</strong> que te faltan</span></div>
+            <div class="feature"><span class="check">✓</span><span>Ver quién necesita tus repetidas con <strong>10+ coincidencias</strong></span></div>
+            <div class="feature"><span class="check">✓</span><span><strong>Mayor visibilidad</strong> en matches relevantes</span></div>
+          </div>
+          <button class="btn orange block">Elegir Plus</button>
+          <p class="plan-note">Mejor para usuarios activos que quieren avanzar más rápido.</p>
+        </article>
+
+        <article class="plan pro">
+          <div class="plan-icon">🚀</div>
+          <h3 class="plan-name">Pro</h3>
+          <p class="plan-concept">Para usuarios que quieren acceso total y máxima flexibilidad.</p>
+          <div class="price"><b>$199</b><span>/mes UYU</span></div>
+          <div class="features">
+            <div class="feature"><span class="check">✓</span><span>Todo lo de Plus</span></div>
+            <div class="feature"><span class="check">✓</span><span>Álbumes activos <strong>ilimitados</strong></span></div>
+            <div class="feature"><span class="check">✓</span><span>Matches <strong>ilimitados</strong></span></div>
+            <div class="feature"><span class="check">✓</span><span>Búsqueda en <strong>todo Uruguay</strong></span></div>
+            <div class="feature"><span class="check">✓</span><span>Alertas completas en tiempo real</span></div>
+            <div class="feature"><span class="check">✓</span><span>Ver quién necesita tus repetidas <strong>sin mínimo</strong></span></div>
+            <div class="feature"><span class="check">✓</span><span><strong>Alta visibilidad</strong> en matches relevantes</span></div>
+            <div class="feature"><span class="check">✓</span><span>Perfil destacado + badge Premium</span></div>
+          </div>
+          <button class="btn orange block">Elegir Pro</button>
+          <p class="plan-note">Sin promesas de primer lugar: más visibilidad cuando el match es relevante.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="comparison">
+      <div class="table-head"><div><div class="kicker">// comparación</div><h2>Comparación rápida</h2><p>Simple, claro y sin prometer posiciones falsas.</p></div><button class="btn orange">Ver tabla completa</button></div>
+      <table>
+        <thead><tr><th>Función</th><th>Gratis</th><th>Plus</th><th>Pro</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Matches mensuales</strong></td><td>3</td><td class="td-orange">10</td><td class="td-green">Ilimitados</td></tr>
+          <tr><td><strong>Álbumes activos</strong></td><td>1</td><td class="td-orange">3</td><td class="td-green">Ilimitados</td></tr>
+          <tr><td><strong>Chat</strong></td><td>3 días</td><td class="td-orange">Ilimitado</td><td class="td-green">Ilimitado</td></tr>
+          <tr><td><strong>Cercanía</strong></td><td>Desde 500m</td><td class="td-orange">Desde 250m</td><td class="td-green">Todo Uruguay</td></tr>
+          <tr><td><strong>Alertas</strong></td><td>No</td><td class="td-orange">Matches fuertes 20+</td><td class="td-green">Completas</td></tr>
+          <tr><td><strong>Visibilidad</strong></td><td>Normal</td><td class="td-orange">Mayor relevante</td><td class="td-green">Alta relevante</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="benefits">
+      <article class="benefit"><div class="benefit-icon">⚡</div><h3>Menos tiempo buscando</h3><p>La app prioriza oportunidades reales para que no pierdas tiempo con intercambios débiles.</p></article>
+      <article class="benefit"><div class="benefit-icon">🔔</div><h3>Alertas útiles</h3><p>Enterate cuando aparece alguien con muchas figuritas que necesitás o cuando alguien busca tus repetidas.</p></article>
+      <article class="benefit"><div class="benefit-icon">🛡️</div><h3>Sin promesas falsas</h3><p>La visibilidad depende de compatibilidad, actividad y cercanía. Premium mejora oportunidades, no garantiza posiciones.</p></article>
+    </section>
+
+    <section class="faq">
+      <h2>Preguntas frecuentes</h2>
+      <details class="faq-item"><summary>¿Premium me hace aparecer primero? <span>▼</span></summary><p>No. Premium aumenta tu visibilidad en matches relevantes, pero el orden también depende de compatibilidad, cercanía, actividad y seguridad.</p></details>
+      <details class="faq-item"><summary>¿La app muestra mi ubicación exacta? <span>▼</span></summary><p>No. FigusUY debe mostrar distancia aproximada o zona, nunca ubicación exacta de otro usuario.</p></details>
+      <details class="faq-item"><summary>¿Puedo usar más de un álbum? <span>▼</span></summary><p>Sí. Gratis permite 1 álbum activo, Plus permite hasta 3 y Pro permite álbumes ilimitados.</p></details>
+    </section>
+  </main>
+</div>
+</body>
+</html>

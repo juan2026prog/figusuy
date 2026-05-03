@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FigusUY — Tiendas y Puntos</title>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,400;0,700;0,800;0,900;1,700;1,900&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root{
+      --bg:#0b0b0b;
+      --panel:#121212;
+      --panel2:#181818;
+      --panel3:#202020;
+      --line:rgba(255,255,255,.08);
+      --line2:rgba(255,255,255,.14);
+      --text:#f5f5f5;
+      --muted:rgba(245,245,245,.54);
+      --muted2:rgba(245,245,245,.34);
+      --orange:#ff5a00;
+      --orange2:#cc4800;
+      --green:#22c55e;
+      --blue:#38bdf8;
+      --yellow:#facc15;
+      --red:#ef4444;
+    }
+
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:Barlow,sans-serif;background:var(--bg);color:var(--text)}
+    button,input,select{font-family:inherit}
+
+    .page{min-height:100vh;background:var(--bg)}
+
+    .topbar{
+      min-height:82px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:18px;
+      padding:14px 22px;
+      border-bottom:1px solid var(--line);
+      background:#0b0b0b;
+      position:sticky;
+      top:0;
+      z-index:30;
+    }
+    .top-kicker{font:900 .72rem 'Barlow Condensed';letter-spacing:.16em;text-transform:uppercase;color:var(--orange)}
+    .top-title{font:italic 900 2.45rem 'Barlow Condensed';text-transform:uppercase;line-height:.9;margin-top:3px}
+    .top-actions{display:flex;gap:10px;align-items:center}
+    .btn{border:1px solid var(--line2);background:transparent;color:#fff;padding:.85rem 1.15rem;font:900 .88rem 'Barlow Condensed';letter-spacing:.08em;text-transform:uppercase;cursor:pointer}
+    .btn:hover{border-color:var(--orange);color:var(--orange)}
+    .btn.orange{background:var(--orange);border-color:var(--orange);color:#fff}
+    .btn.orange:hover{background:var(--orange2);border-color:var(--orange2)}
+    .btn.block{width:100%}
+
+    .wrap{max-width:1480px;margin:0 auto;padding:28px 22px 72px}
+
+    .hero{
+      display:grid;
+      grid-template-columns:1.1fr .9fr;
+      gap:22px;
+      margin-bottom:22px;
+    }
+    .hero-card{
+      background:linear-gradient(135deg,#181818 0%,#101010 52%,rgba(255,90,0,.18) 100%);
+      border:1px solid var(--line);
+      padding:30px;
+      position:relative;
+      overflow:hidden;
+      min-height:270px;
+      display:flex;
+      flex-direction:column;
+      justify-content:space-between;
+    }
+    .hero-card:before{content:'PUNTOS';position:absolute;right:20px;top:-18px;font:italic 900 8rem 'Barlow Condensed';color:rgba(255,255,255,.035);line-height:1}
+    .kicker{font:900 .72rem 'Barlow Condensed';letter-spacing:.16em;text-transform:uppercase;color:var(--orange)}
+    .hero-title{font:italic 900 clamp(3rem,6vw,5.5rem) 'Barlow Condensed';line-height:.88;text-transform:uppercase;max-width:720px;position:relative;z-index:1;margin-top:8px}
+    .hero-title span{color:var(--orange)}
+    .hero-sub{color:var(--muted);font-size:1rem;line-height:1.6;max-width:560px;margin-top:14px;position:relative;z-index:1}
+    .hero-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);margin-top:28px;position:relative;z-index:1}
+    .hero-stat{background:rgba(18,18,18,.9);padding:18px}
+    .hero-stat b{display:block;font:italic 900 2.4rem 'Barlow Condensed';line-height:.9}.hero-stat span{font:900 .72rem 'Barlow Condensed';letter-spacing:.08em;text-transform:uppercase;color:var(--muted2)}.hero-stat.orange b{color:var(--orange)}.hero-stat.green b{color:var(--green)}.hero-stat.blue b{color:var(--blue)}
+
+    .hero-map-card{background:var(--panel);border:1px solid var(--line);padding:16px;display:grid;grid-template-rows:auto 1fr;min-height:270px}
+    .map-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:14px}
+    .map-title{font:italic 900 1.8rem 'Barlow Condensed';text-transform:uppercase;line-height:.9}.map-mini{font-size:.82rem;color:var(--muted)}
+    .map-preview{position:relative;background:#0f0f0f;border:1px solid var(--line);overflow:hidden;min-height:190px}
+    .map-grid{position:absolute;inset:0;background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:42px 42px;opacity:.7}
+    .map-road{position:absolute;height:2px;background:rgba(255,255,255,.12);transform-origin:left}.r1{width:110%;top:45%;left:-5%;transform:rotate(-12deg)}.r2{width:90%;top:62%;left:10%;transform:rotate(18deg)}.r3{width:80%;top:30%;left:20%;transform:rotate(31deg)}
+    .pin{position:absolute;width:22px;height:22px;background:var(--orange);border:3px solid #0b0b0b;box-shadow:0 0 0 1px rgba(255,255,255,.15);display:grid;place-items:center;font-size:.55rem;font-weight:900}.pin.store{background:var(--green)}.pin.safe{background:var(--blue)}.pin.one{left:22%;top:42%}.pin.two{left:54%;top:34%}.pin.three{left:67%;top:65%}.pin.four{left:38%;top:70%}.pin-label{position:absolute;background:#0b0b0b;border:1px solid var(--line2);padding:6px 8px;font:900 .65rem 'Barlow Condensed';letter-spacing:.08em;text-transform:uppercase}.l1{left:18%;top:26%}.l2{right:8%;bottom:12%}
+
+    .filters-panel{background:var(--panel);border:1px solid var(--line);margin-bottom:22px;overflow:hidden}
+    .filters-top{display:grid;grid-template-columns:repeat(3,1fr) 1.4fr auto;gap:1px;background:var(--line);border-bottom:1px solid var(--line)}
+    .field{background:var(--panel2);padding:13px}
+    .field label{display:block;font:900 .62rem 'Barlow Condensed';letter-spacing:.14em;text-transform:uppercase;color:var(--muted2);margin-bottom:6px}
+    .field select,.field input{width:100%;height:38px;background:#0b0b0b;border:1px solid var(--line2);color:#fff;padding:0 10px;font-weight:700;outline:none}
+    .field input:focus,.field select:focus{border-color:var(--orange)}
+    .near-field{display:flex;align-items:end;background:var(--panel2);padding:13px}.near-field .btn{height:38px;padding:.55rem 1rem;white-space:nowrap}
+    .tabs{display:flex;gap:1px;background:var(--line);overflow:auto}.tab{border:0;background:var(--panel);color:var(--muted);padding:13px 18px;font:900 .82rem 'Barlow Condensed';letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;cursor:pointer}.tab.active{background:var(--orange);color:#fff}.tab:hover{color:#fff}
+
+    .layout{display:grid;grid-template-columns:1fr 420px;gap:22px;align-items:start}
+    .list{display:grid;gap:14px}
+    .section-title{display:flex;justify-content:space-between;align-items:end;gap:14px;margin-bottom:10px}.section-title h2{font:italic 900 2.35rem 'Barlow Condensed';text-transform:uppercase;line-height:.9}.section-title p{color:var(--muted);font-size:.92rem;margin-top:5px}.count-pill{border:1px solid var(--line2);padding:7px 10px;font:900 .75rem 'Barlow Condensed';letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+
+    .point-card{background:var(--panel);border:1px solid var(--line);display:grid;grid-template-columns:96px 1fr auto;gap:0;position:relative;overflow:hidden;transition:.18s}
+    .point-card:hover{border-color:rgba(255,90,0,.5);transform:translateY(-2px)}
+    .point-card.dominio{border:2px solid var(--orange);box-shadow:0 18px 44px rgba(255,90,0,.14)}.point-card.turbo{border-color:rgba(255,90,0,.45)}
+    .premium-ribbon{position:absolute;top:0;right:0;background:var(--orange);padding:5px 10px;font:900 .64rem 'Barlow Condensed';letter-spacing:.1em;text-transform:uppercase;z-index:3}
+    .point-icon{background:#0d0d0d;border-right:1px solid var(--line);display:grid;place-items:center;text-align:center;padding:10px}.icon-box{width:58px;height:58px;display:grid;place-items:center;background:rgba(255,90,0,.12);border:1px solid rgba(255,90,0,.28);font-size:1.5rem}.point-card.exchange .icon-box{background:rgba(56,189,248,.1);border-color:rgba(56,189,248,.28)}.point-card.store .icon-box{background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.28)}
+    .point-body{padding:16px 18px}.badges{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}.badge{border:1px solid var(--line2);background:#0b0b0b;padding:4px 7px;font:900 .62rem 'Barlow Condensed';letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}.badge.exchange{color:var(--blue);border-color:rgba(56,189,248,.3);background:rgba(56,189,248,.08)}.badge.store{color:var(--green);border-color:rgba(34,197,94,.3);background:rgba(34,197,94,.08)}.badge.orange{color:var(--orange);border-color:rgba(255,90,0,.35);background:rgba(255,90,0,.09)}
+    .point-name{font:italic 900 1.85rem 'Barlow Condensed';text-transform:uppercase;line-height:.9;margin-bottom:6px}.point-loc{font-size:.86rem;color:var(--muted);font-weight:600;margin-bottom:6px}.point-address{display:flex;gap:7px;align-items:flex-start;color:rgba(245,245,245,.72);font-size:.84rem;font-weight:700;margin-bottom:8px;line-height:1.35}.point-address span{color:var(--orange);font-size:.9rem}.promo-box{margin-top:12px;border:1px solid rgba(255,90,0,.28);background:rgba(255,90,0,.08);padding:10px 12px;display:flex;justify-content:space-between;gap:12px;align-items:center}.promo-box b{font:900 .78rem 'Barlow Condensed';letter-spacing:.08em;text-transform:uppercase;color:var(--orange)}.promo-box p{font-size:.78rem;color:var(--muted);margin-top:2px}.promo-link{border:1px solid rgba(255,90,0,.45);background:#0b0b0b;color:#fff;padding:7px 10px;font:900 .68rem 'Barlow Condensed';letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;cursor:pointer}.promo-link:hover{background:var(--orange);border-color:var(--orange)}.point-desc{font-size:.9rem;color:var(--muted);line-height:1.45;max-width:680px}.meta-row{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px}.meta{background:#0b0b0b;border:1px solid var(--line);padding:5px 8px;font-size:.76rem;color:var(--muted);font-weight:700}.meta.distance{color:var(--orange)}
+    .point-actions{display:grid;gap:1px;background:var(--line);min-width:150px}.action{border:0;background:var(--panel2);color:#fff;padding:0 16px;font:900 .78rem 'Barlow Condensed';letter-spacing:.08em;text-transform:uppercase;cursor:pointer}.action.primary{background:var(--orange)}.action:hover{filter:brightness(1.12)}
+
+    .map-side{position:sticky;top:104px;display:grid;gap:14px}
+    .map-card{background:var(--panel);border:1px solid var(--line);padding:16px}.map-card h3{font:italic 900 1.9rem 'Barlow Condensed';text-transform:uppercase;line-height:.9;margin-bottom:12px}.map-frame{height:360px;background:#0f0f0f;border:1px solid var(--line);position:relative;overflow:hidden}.map-frame iframe,.hero-google-map iframe{width:100%;height:100%;border:0;display:block;filter:grayscale(1) invert(.9) contrast(.9)}.hero-google-map{height:190px;border:1px solid var(--line);overflow:hidden;background:#0f0f0f}.map-frame .map-preview{height:100%;min-height:0;border:0}
+    .map-selected{padding:14px;background:#0b0b0b;border:1px solid var(--line);margin-top:12px}.map-selected b{display:block;font:italic 900 1.4rem 'Barlow Condensed';text-transform:uppercase}.map-selected span{display:block;color:var(--muted);font-size:.82rem;margin-top:4px}
+    .cta-card{background:linear-gradient(135deg,var(--orange),#c2410c);border:1px solid var(--orange2);padding:22px;color:#fff}.cta-card h3{font:italic 900 2.2rem 'Barlow Condensed';line-height:.9;text-transform:uppercase}.cta-card p{color:rgba(255,255,255,.82);line-height:1.5;margin:9px 0 16px}.cta-card .btn{background:#0b0b0b;border-color:#0b0b0b;color:#fff}
+    .safety{background:rgba(250,204,21,.08);border:1px solid rgba(250,204,21,.22);padding:16px;color:#facc15;font-size:.86rem;line-height:1.5}
+
+    .empty{background:var(--panel);border:1px solid var(--line);padding:42px;text-align:center}.empty h3{font:italic 900 2rem 'Barlow Condensed';text-transform:uppercase}.empty p{color:var(--muted);margin:8px 0 18px}
+
+    @media(max-width:1180px){.hero,.layout{grid-template-columns:1fr}.map-side{position:static}.filters-top{grid-template-columns:1fr 1fr}.near-field{grid-column:1/-1}.point-card{grid-template-columns:80px 1fr}.point-actions{grid-column:1/-1;grid-template-columns:repeat(3,1fr);min-height:44px}.hero-map-card{display:none}}
+    @media(max-width:720px){.wrap{padding:16px 12px 64px}.topbar{align-items:flex-start}.top-actions{display:none}.top-title{font-size:2rem}.hero-card{padding:22px}.hero-stats{grid-template-columns:1fr}.filters-top{grid-template-columns:1fr}.tabs{width:100%}.point-card{grid-template-columns:1fr}.point-icon{display:none}.point-actions{grid-template-columns:1fr}.section-title{display:block}.count-pill{display:inline-block;margin-top:10px}.map-side{display:none}}
+  </style>
+</head>
+<body>
+<div class="page">
+  <header class="topbar">
+    <div><div class="top-kicker">Puntos y negocios</div><div class="top-title">Tiendas / Puntos</div></div>
+    <div class="top-actions"><button class="btn">Ver mapa</button><button class="btn orange">Sumar mi local</button></div>
+  </header>
+
+  <main class="wrap">
+    <section class="hero">
+      <div class="hero-card">
+        <div>
+          <div class="kicker">// Mapa de intercambios</div>
+          <h1 class="hero-title">Encontrá dónde <span>intercambiar</span> o comprar cerca.</h1>
+          <p class="hero-sub">Tiendas aliadas, puntos seguros y zonas recomendadas para hacer tus cruces de figuritas con más confianza.</p>
+        </div>
+        <div class="hero-stats">
+          <div class="hero-stat orange"><b>42</b><span>Puntos activos</span></div>
+          <div class="hero-stat green"><b>18</b><span>Tiendas aliadas</span></div>
+          <div class="hero-stat blue"><b>24</b><span>Puntos seguros</span></div>
+        </div>
+      </div>
+
+      <aside class="hero-map-card">
+        <div class="map-head"><div><div class="map-title">Montevideo</div><div class="map-mini">Puntos cercanos y zonas sugeridas</div></div><button class="btn orange">Cerca mío</button></div>
+        <div class="hero-google-map">
+          <iframe loading="lazy" allowfullscreen referrerpolicy="no-referrer-when-downgrade" src="https://maps.google.com/maps?q=Montevideo%2C%20Uruguay&t=&z=12&ie=UTF8&iwloc=&output=embed"></iframe>
+        </div>
+      </aside>
+    </section>
+
+    <section class="filters-panel">
+      <div class="filters-top">
+        <div class="field"><label>País</label><select><option>Uruguay</option></select></div>
+        <div class="field"><label>Departamento</label><select><option>Montevideo</option><option>Canelones</option></select></div>
+        <div class="field"><label>Barrio / Zona</label><select><option>Todos</option><option>Cordón</option><option>Pocitos</option></select></div>
+        <div class="field"><label>Buscar</label><input placeholder="Buscar tienda, punto o zona..." /></div>
+        <div class="near-field"><button class="btn orange">📍 Cerca mío</button></div>
+      </div>
+      <div class="tabs"><button class="tab active">Todos</button><button class="tab">Puntos de intercambio</button><button class="tab">Tiendas aliadas</button><button class="tab">Destacados</button></div>
+    </section>
+
+    <section class="layout">
+      <div>
+        <div class="section-title"><div><div class="kicker">Resultados ordenados</div><h2>Lugares útiles para tus cruces</h2><p>Priorizamos cercanía, calidad, plan del negocio y utilidad real.</p></div><span class="count-pill">42 resultados</span></div>
+
+        <div class="list">
+          <article class="point-card dominio store">
+            <div class="premium-ribbon">Patrocinador de la zona</div>
+            <div class="point-icon"><div class="icon-box">🏪</div></div>
+            <div class="point-body">
+              <div class="badges"><span class="badge store">Tienda aliada</span><span class="badge orange">Dominio</span><span class="badge">Abierto</span></div>
+              <h3 class="point-name">Collectibles</h3>
+              <p class="point-loc">Tienda · Cordón · Montevideo</p>
+              <div class="point-address"><span>📍</span> Vazquez 1418, Montevideo</div>
+              <p class="point-desc">Comprá sobres, coordiná intercambios y usalo como punto de encuentro para completar tu álbum.</p>
+              <div class="meta-row"><span class="meta">🕒 Lun a Vie 12–18</span><span class="meta">📱 WhatsApp</span><span class="meta distance">📍 850 m</span></div>
+              <div class="promo-box"><div><b>Promo activa</b><p>Display + álbum de regalo hasta agotar stock.</p></div><button class="promo-link">Ver promo</button></div>
+            </div>
+            <div class="point-actions"><button class="action primary">WhatsApp</button><button class="action">Cómo llegar</button><button class="action">Detalle</button></div>
+          </article>
+
+          <article class="point-card exchange">
+            <div class="point-icon"><div class="icon-box">🔄</div></div>
+            <div class="point-body">
+              <div class="badges"><span class="badge exchange">Punto de intercambio</span><span class="badge">Público</span></div>
+              <h3 class="point-name">Plaza Líber Seregni</h3>
+              <p class="point-loc">Punto seguro · Cordón · Montevideo</p>
+              <div class="point-address"><span>📍</span> Eduardo Víctor Haedo y Joaquín Requena, Montevideo</div>
+              <p class="point-desc">Zona pública sugerida para coordinar encuentros de intercambio de figuritas.</p>
+              <div class="meta-row"><span class="meta">🌳 Plaza</span><span class="meta">👥 Alta circulación</span><span class="meta distance">📍 1.1 km</span></div>
+            </div>
+            <div class="point-actions"><button class="action primary">Ver mapa</button><button class="action">Cómo llegar</button><button class="action">Detalle</button></div>
+          </article>
+
+          <article class="point-card turbo store">
+            <div class="premium-ribbon">Destacado</div>
+            <div class="point-icon"><div class="icon-box">☕</div></div>
+            <div class="point-body">
+              <div class="badges"><span class="badge store">Tienda aliada</span><span class="badge orange">Turbo</span></div>
+              <h3 class="point-name">Café Centro</h3>
+              <p class="point-loc">Café · Centro · Montevideo</p>
+              <div class="point-address"><span>📍</span> Av. 18 de Julio 1234, Montevideo</div>
+              <p class="point-desc">Espacio aliado para encontrarse, conversar y hacer intercambios rápidos.</p>
+              <div class="meta-row"><span class="meta">🕒 9–20</span><span class="meta">☕ Consumo opcional</span><span class="meta distance">📍 1.6 km</span></div>
+              <div class="promo-box"><div><b>Promo del local</b><p>10% off mostrando tu perfil FigusUY.</p></div><button class="promo-link">Ver promo</button></div>
+            </div>
+            <div class="point-actions"><button class="action primary">WhatsApp</button><button class="action">Cómo llegar</button><button class="action">Detalle</button></div>
+          </article>
+
+          <article class="point-card exchange">
+            <div class="point-icon"><div class="icon-box">📍</div></div>
+            <div class="point-body">
+              <div class="badges"><span class="badge exchange">Zona sugerida</span><span class="badge">Shopping</span></div>
+              <h3 class="point-name">Zona Tres Cruces</h3>
+              <p class="point-loc">Zona sugerida · Tres Cruces · Montevideo</p>
+              <div class="point-address"><span>📍</span> Bv. Artigas 1825, Montevideo</div>
+              <p class="point-desc">Punto de referencia con alta circulación para coordinar intercambios.</p>
+              <div class="meta-row"><span class="meta">🚏 Terminal</span><span class="meta">👥 Alta afluencia</span><span class="meta distance">📍 2.3 km</span></div>
+            </div>
+            <div class="point-actions"><button class="action primary">Ver mapa</button><button class="action">Cómo llegar</button><button class="action">Detalle</button></div>
+          </article>
+        </div>
+      </div>
+
+      <aside class="map-side">
+        <section class="map-card">
+          <h3>Mapa</h3>
+          <div class="map-frame">
+            <iframe loading="lazy" allowfullscreen referrerpolicy="no-referrer-when-downgrade" src="https://maps.google.com/maps?q=Vazquez%201418%2C%20Montevideo%2C%20Uruguay&t=&z=15&ie=UTF8&iwloc=&output=embed"></iframe>
+          </div>
+          <div class="map-selected"><b>Collectibles</b><span>Vazquez 1418 · Cordón · 850 m · Tienda aliada</span></div>
+        </section>
+
+        <section class="cta-card"><h3>¿Tenés un local?</h3><p>Aparecé en FigusUY y hacé que más coleccionistas encuentren tu espacio.</p><button class="btn block">Sumar mi local</button></section>
+
+        <section class="safety">Recomendamos hacer intercambios en lugares públicos. Si sos menor, andá acompañado por un adulto responsable.</section>
+      </aside>
+    </section>
+  </main>
+</div>
+</body>
+</html>

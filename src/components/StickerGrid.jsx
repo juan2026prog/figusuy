@@ -24,7 +24,7 @@ export default function StickerGrid({ totalStickers, missingStickers, duplicateS
       ...btnBase,
       background: isDark ? 'rgba(255,255,255,0.06)' : '#fff',
       color: isDark ? 'rgba(255,255,255,0.45)' : '#a8a29e',
-      border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : '#e7e5e4'}`,
+      border: `1px solid ${isDark ? 'var(--color-border-light)' : '#e7e5e4'}`,
     }
   }
 

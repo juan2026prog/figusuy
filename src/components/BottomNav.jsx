@@ -1,6 +1,7 @@
 import React from 'react'
 import { NavLink } from 'react-router-dom'
 import { useAppStore } from '../stores/appStore'
+import { useFeatureFlagStore } from '../stores/featureFlagStore'
 
 export default function BottomNav() {
   const { matches, chats } = useAppStore()
@@ -8,13 +9,15 @@ export default function BottomNav() {
   const matchCount = matches?.length || 0
   const unreadChats = chats?.filter(c => c.has_unread)?.length || 0
 
+  const isFeatureEnabled = useFeatureFlagStore(state => state.isFeatureEnabled)
+
   const navItems = [
-    { path: '/album', icon: 'menu_book', label: 'Álbum' },
+    { path: '/album', icon: 'menu_book', label: 'Álbum', feature: 'album' },
     { path: '/matches', icon: 'swap_horiz', label: 'Intercambios', badge: matchCount },
-    { path: '/chats', icon: 'chat', label: 'Chats', badge: unreadChats },
+    { path: '/chats', icon: 'chat', label: 'Chats', badge: unreadChats, feature: 'chats' },
     { path: '/favorites', icon: 'favorite', label: 'Favoritos' },
     { path: '/profile', icon: 'person', label: 'Perfil' },
-  ]
+  ].filter(item => !item.feature || isFeatureEnabled(item.feature))
 
   return (
     <nav className="bottom-nav" style={{ zIndex: 100 }}>

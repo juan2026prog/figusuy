@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { getUserLocation, watchUserLocation, getAddressFromCoords, URUGUAY_DEPARTMENTS } from '../utils/location';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../stores/authStore';
+import UniversalAddressAutocomplete from './UniversalAddressAutocomplete';
 
 export default function LocationSelector({ onLocationSaved, className = '' }) {
   const { profile, updateProfile } = useAuthStore();
@@ -99,7 +100,7 @@ export default function LocationSelector({ onLocationSaved, className = '' }) {
         if (onLocationSaved) onLocationSaved(updateData);
       } catch (err) {
         console.error('GPS Activation Error:', err);
-        setErrorMsg(err.message || 'No se pudo obtener la ubicación GPS.');
+        setErrorMsg(err.message || 'No se pudo obtener la ubicación automática.');
         setIsGPSActive(false);
       } finally {
         setLoading(false);
@@ -113,8 +114,8 @@ export default function LocationSelector({ onLocationSaved, className = '' }) {
   };
 
   const handleSaveManual = async () => {
-    if (!department) {
-      setErrorMsg('Selecciona al menos un departamento.');
+    if (!department && !neighborhood) {
+      setErrorMsg('Ingresa una zona o dirección.');
       return;
     }
     setLoading(true);
@@ -189,8 +190,7 @@ export default function LocationSelector({ onLocationSaved, className = '' }) {
           content: "";
           height: 18px; width: 18px;
           left: 3px; bottom: 3px;
-          background-color: white;
-          transition: .4s;
+          background-color: var(--color-text); transition: .4s;
           border-radius: 50%;
         }
         input:checked + .slider { background-color: var(--color-brand-600); }
@@ -257,8 +257,7 @@ export default function LocationSelector({ onLocationSaved, className = '' }) {
 
         .btn-save {
           background: var(--color-brand-600);
-          color: white;
-          padding: 0.75rem;
+          color: var(--color-text); padding: 0.75rem;
           border-radius: var(--radius-lg);
           font-weight: 800;
           border: none;
@@ -272,7 +271,7 @@ export default function LocationSelector({ onLocationSaved, className = '' }) {
       <div className="loc-header">
         <h3 className="loc-title">Tu Zona</h3>
         <label className="loc-toggle">
-          GPS Automático
+          Ubicación Inteligente
           <div className="switch">
             <input 
               type="checkbox" 
@@ -298,11 +297,11 @@ export default function LocationSelector({ onLocationSaved, className = '' }) {
         <div className="loc-status-box">
           <span className="material-symbols-outlined detected-icon">location_on</span>
           <div>
-            <p style={{ margin: 0, fontWeight: 700, fontSize: '0.9375rem' }}>
+            <p style={{ margin: 0, fontWeight: 800, fontSize: '1rem', color: 'var(--color-text)' }}>
               {detectedArea?.neighborhood || profile?.neighborhood || 'Zona Detectada'}
             </p>
-            <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
-              {detectedArea?.city || profile?.city || 'Actualizándose por GPS...'}
+            <p style={{ margin: 0, fontSize: '0.8125rem', color: 'var(--color-text-secondary)', fontWeight: 500 }}>
+              {detectedArea?.city || profile?.city || 'Actualizando ubicación...'}
             </p>
           </div>
         </div>
@@ -310,23 +309,25 @@ export default function LocationSelector({ onLocationSaved, className = '' }) {
 
       {!loading && !isGPSActive && (
         <div className="manual-form">
-          <div className="form-group">
-            <label>Departamento</label>
-            <select value={department} onChange={e => setDepartment(e.target.value)}>
-              <option value="">Seleccioná...</option>
-              {URUGUAY_DEPARTMENTS.map(d => (
-                <option key={d} value={d}>{d}</option>
-              ))}
-            </select>
-          </div>
-          <div className="form-group">
-            <label>Barrio / Zona</label>
-            <input 
-              type="text" 
-              placeholder="Ej: Pocitos, Centro" 
-              value={neighborhood}
-              onChange={e => setNeighborhood(e.target.value)}
+          <div className="form-group" style={{ marginBottom: '1rem' }}>
+            <UniversalAddressAutocomplete
+              countryCode="uy"
+              label="Buscar Zona o Ciudad"
+              value={neighborhood || department}
+              onChange={(val) => {
+                // We keep the typed text just in case, or wait for select
+              }}
+              onAddressSelect={(data) => {
+                setDepartment(data.department || data.state || '');
+                setNeighborhood(data.neighborhood || data.locality || data.city || '');
+              }}
+              placeholder="Ej: Pocitos, Montevideo"
             />
+            {department && (
+               <div style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)', marginTop: '0.5rem' }}>
+                 Seleccionado: {neighborhood ? `${neighborhood}, ` : ''}{department}
+               </div>
+            )}
           </div>
           <button className="btn-save" onClick={handleSaveManual}>
             Guardar Zona Manual

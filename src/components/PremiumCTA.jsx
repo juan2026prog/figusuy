@@ -10,7 +10,6 @@ export default function PremiumCTA({ variant = 'inline' }) {
   const { matches } = useAppStore()
   const { profile } = useAuthStore()
   const { isPremium } = usePremiumAccess()
-  const hiddenMatches = isPremium ? 0 : Math.max(0, (matches?.length || 0) - 3)
   const [userCount, setUserCount] = useState(null)
 
   useEffect(() => {
@@ -28,18 +27,12 @@ export default function PremiumCTA({ variant = 'inline' }) {
         <div className="deco-circle deco-circle-amber-sm" style={{ right: '2rem', bottom: '-0.5rem', width: '3rem', height: '3rem' }} />
 
         <div style={{ position: 'relative', zIndex: 1 }}>
-          <span className="block text-3xl mb-sm">👑</span>
+          <span className="block text-3xl mb-sm">🚀</span>
           <h3 className="text-lg font-bold mb-xs">
-            {hiddenMatches > 0
-              ? `Tenés ${hiddenMatches} intercambio${hiddenMatches > 1 ? 's' : ''} oculto${hiddenMatches > 1 ? 's' : ''}`
-              : 'Desbloquear todos los intercambios'
-            }
+            Acelerá tu búsqueda
           </h3>
           <p className="text-sm mb-lg leading-relaxed" style={{ opacity: 0.85 }}>
-            {hiddenMatches > 0
-              ? 'Desbloqueá Premium para ver todos los resultados y contactar sin límites.'
-              : 'Accedé a intercambios ilimitados, filtros avanzados y prioridad en el ranking.'
-            }
+            Usá filtros de distancia, detectá si leen tus mensajes y encontrá figuritas más rápido con Plus.
           </p>
 
           {/* Social proof */}
@@ -67,16 +60,13 @@ export default function PremiumCTA({ variant = 'inline' }) {
         background: 'linear-gradient(135deg, #fef3c7, #fde68a)',
         border: '1px solid #fcd34d',
       }}>
-      <span className="text-xl">👑</span>
+      <span className="text-xl">🚀</span>
       <div style={{ flex: 1 }}>
         <p className="text-sm font-bold" style={{ color: '#92400e' }}>
-          {hiddenMatches > 0
-            ? `${hiddenMatches} intercambio${hiddenMatches > 1 ? 's' : ''} oculto${hiddenMatches > 1 ? 's' : ''}`
-            : 'Hay más intercambios disponibles'
-          }
+          Acelerá tu búsqueda
         </p>
         <p className="text-xs" style={{ color: '#a16207' }}>
-          Desbloquear con Premium →
+          Filtros de distancia y más →
         </p>
       </div>
     </div>

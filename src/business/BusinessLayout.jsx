@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../stores/authStore'
+import { getBusinessPlanLabel } from '../lib/businessPlans'
 
 export default function BusinessLayout() {
   const { user } = useAuthStore()
@@ -22,11 +23,9 @@ export default function BusinessLayout() {
       .select('*')
       .eq('owner_user_id', user.id)
       .single()
-    
+
     if (error) {
-      console.warn("No location found for user", error)
-      // They don't have a location, redirect to home or somewhere to create one.
-      // For now, let's keep them here but they see no data
+      console.warn('No location found for user', error)
     } else {
       setLocation(data)
     }
@@ -38,15 +37,31 @@ export default function BusinessLayout() {
     { path: '/business/profile', label: 'Mi perfil', icon: 'storefront' },
     { path: '/business/photos', label: 'Fotos', icon: 'photo_library' },
     { path: '/business/promo', label: 'Promo activa', icon: 'campaign' },
-    { path: '/business/metrics', label: 'Métricas', icon: 'insights' },
-    { path: '/business/billing', label: 'Plan y facturación', icon: 'payments' },
+    { path: '/business/metrics', label: 'Metricas', icon: 'insights' },
+    { path: '/business/billing', label: 'Plan y facturacion', icon: 'payments' },
+    ...(location?.business_plan === 'legend' ? [{ path: '/business/legend', label: 'Validaciones PartnerStore', icon: 'workspace_premium' }] : []),
     { path: '/business/help', label: 'Ayuda', icon: 'help' }
   ]
 
   if (loading) {
     return (
-      <div className="flex-center" style={{ minHeight: '100vh', background: '#020617' }}>
-        <p style={{ color: 'white' }}>Cargando panel...</p>
+      <div className="biz-loading-shell">
+        <style>{`
+          .biz-loading-shell {
+            min-height: 100vh;
+            display: grid;
+            place-items: center;
+            background: #0b0b0b;
+            color: #f5f5f5;
+            font-family: 'Barlow', sans-serif;
+          }
+          .biz-loading-shell p {
+            font: italic 900 2.2rem 'Barlow Condensed';
+            text-transform: uppercase;
+            letter-spacing: .04em;
+          }
+        `}</style>
+        <p>Cargando panel...</p>
       </div>
     )
   }
@@ -55,147 +70,445 @@ export default function BusinessLayout() {
     <div className="business-layout">
       <style>{`
         .business-layout {
-          display: flex;
+          --bg: #0b0b0b;
+          --panel: #121212;
+          --panel2: #181818;
+          --panel3: #202020;
+          --line: rgba(255, 255, 255, .08);
+          --line2: rgba(255, 255, 255, .14);
+          --text: #f5f5f5;
+          --muted: rgba(245, 245, 245, .58);
+          --muted2: rgba(245, 245, 245, .34);
+          --orange: #ff5a00;
+          --orange2: #cc4800;
+          --green: #22c55e;
+          --blue: #38bdf8;
+          --yellow: #facc15;
           min-height: 100vh;
-          background: #020617;
-          color: #f8fafc;
+          display: flex;
+          background:
+            radial-gradient(circle at top right, rgba(255, 90, 0, .1), transparent 26%),
+            linear-gradient(180deg, #0b0b0b 0%, #090909 100%);
+          color: var(--text);
+          font-family: 'Barlow', sans-serif;
         }
 
+        .business-layout * { box-sizing: border-box; }
+
         .biz-sidebar {
-          width: 260px;
-          background: #0f172a;
-          border-right: 1px solid #1e293b;
+          width: 290px;
           display: flex;
           flex-direction: column;
+          background:
+            linear-gradient(180deg, rgba(255, 90, 0, .08) 0%, rgba(255, 90, 0, 0) 22%),
+            #090909;
+          border-right: 1px solid var(--line);
         }
 
         .biz-sidebar-header {
+          position: relative;
+          overflow: hidden;
           padding: 1.5rem;
-          border-bottom: 1px solid #1e293b;
+          border-bottom: 1px solid var(--line);
         }
+
+        .biz-sidebar-header::before {
+          content: 'BUSINESS';
+          position: absolute;
+          right: .6rem;
+          top: -.1rem;
+          font: italic 900 3.8rem 'Barlow Condensed';
+          line-height: .85;
+          color: rgba(255, 255, 255, .04);
+          pointer-events: none;
+        }
+
+        .biz-sidebar-kicker,
+        .biz-page-kicker {
+          font: 900 .72rem 'Barlow Condensed';
+          letter-spacing: .16em;
+          text-transform: uppercase;
+          color: var(--orange);
+        }
+
         .biz-sidebar-header h2 {
-          font-size: 1.25rem;
-          font-weight: 900;
-          color: #f97316;
-          margin-bottom: 0.25rem;
-          letter-spacing: -0.02em;
+          position: relative;
+          z-index: 1;
+          margin: .4rem 0 0;
+          font: italic 900 2.25rem 'Barlow Condensed';
+          line-height: .88;
+          text-transform: uppercase;
         }
+
         .biz-sidebar-header p {
-          font-size: 0.8125rem;
-          color: #94a3b8;
-          font-weight: 500;
+          position: relative;
+          z-index: 1;
+          margin-top: .55rem;
+          color: var(--muted);
+          font-size: .9rem;
+          line-height: 1.45;
+        }
+
+        .biz-plan-chip {
+          display: inline-flex;
+          align-items: center;
+          gap: .45rem;
+          margin-top: .9rem;
+          padding: .45rem .6rem;
+          border: 1px solid rgba(255, 90, 0, .35);
+          background: rgba(255, 90, 0, .08);
+          color: var(--orange);
+          font: 900 .7rem 'Barlow Condensed';
+          letter-spacing: .08em;
+          text-transform: uppercase;
         }
 
         .biz-nav {
           flex: 1;
-          padding: 1.5rem 1rem;
+          padding: 1.2rem .9rem;
           display: flex;
           flex-direction: column;
-          gap: 0.5rem;
+          gap: .45rem;
         }
 
         .biz-nav-item {
           display: flex;
           align-items: center;
-          gap: 0.75rem;
-          padding: 0.75rem 1rem;
-          border-radius: 0.75rem;
-          color: #cbd5e1;
+          gap: .8rem;
+          padding: .9rem 1rem;
+          border: 1px solid transparent;
+          color: var(--muted);
           text-decoration: none;
-          font-weight: 600;
-          font-size: 0.9375rem;
-          transition: all 0.2s;
+          font: 900 .9rem 'Barlow Condensed';
+          letter-spacing: .04em;
+          text-transform: uppercase;
+          transition: .2s ease;
         }
+
         .biz-nav-item:hover {
-          background: #1e293b;
-          color: white;
+          border-color: var(--line2);
+          background: #121212;
+          color: #fff;
         }
+
         .biz-nav-item.active {
-          background: #f97316;
-          color: white;
+          border-color: rgba(255, 90, 0, .35);
+          background: rgba(255, 90, 0, .08);
+          color: #fff;
         }
+
         .biz-nav-item .material-symbols-outlined {
-          font-size: 1.25rem;
+          font-size: 1.2rem;
         }
 
         .biz-main {
           flex: 1;
+          min-width: 0;
           display: flex;
           flex-direction: column;
-          min-width: 0;
-          overflow-y: auto;
-          height: 100vh;
+          min-height: 100vh;
         }
 
         .biz-header {
-          padding: 1.5rem 2rem;
-          background: #0f172a;
-          border-bottom: 1px solid #1e293b;
+          position: sticky;
+          top: 0;
+          z-index: 20;
           display: flex;
           justify-content: space-between;
           align-items: center;
-          position: sticky;
-          top: 0;
-          z-index: 10;
+          gap: 1rem;
+          padding: 1.15rem 1.5rem;
+          border-bottom: 1px solid var(--line);
+          background: rgba(11, 11, 11, .95);
+          backdrop-filter: blur(8px);
         }
-        
-        .biz-content {
-          padding: 2rem;
-          flex: 1;
+
+        .biz-header-copy h1 {
+          margin: 0;
+          font: italic 900 2rem 'Barlow Condensed';
+          text-transform: uppercase;
+          line-height: .9;
+        }
+
+        .biz-header-copy p {
+          margin: .35rem 0 0;
+          color: var(--muted);
+          font-size: .84rem;
         }
 
         .biz-exit-btn {
-          display: flex;
+          display: inline-flex;
           align-items: center;
-          gap: 0.5rem;
-          background: #1e293b;
-          border: 1px solid #334155;
-          color: #e2e8f0;
-          padding: 0.5rem 1rem;
-          border-radius: 0.5rem;
-          font-size: 0.8125rem;
-          font-weight: 600;
+          gap: .5rem;
+          padding: .78rem 1rem;
+          border: 1px solid var(--line2);
+          background: transparent;
+          color: #fff;
+          font: 900 .8rem 'Barlow Condensed';
+          letter-spacing: .08em;
+          text-transform: uppercase;
           cursor: pointer;
-          transition: all 0.2s;
-        }
-        .biz-exit-btn:hover {
-          background: #334155;
         }
 
-        @media (max-width: 1024px) {
+        .biz-exit-btn:hover {
+          border-color: var(--orange);
+          color: var(--orange);
+        }
+
+        .biz-content {
+          flex: 1;
+          width: 100%;
+          max-width: 1280px;
+          margin: 0 auto;
+          padding: 1.5rem;
+        }
+
+        .biz-page,
+        .biz-two-col,
+        .biz-grid-2,
+        .biz-grid-3,
+        .biz-grid-auto {
+          display: grid;
+          gap: 1.25rem;
+        }
+
+        .biz-two-col {
+          grid-template-columns: minmax(0, 1.45fr) minmax(300px, .95fr);
+          align-items: start;
+        }
+
+        .biz-grid-2 {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .biz-grid-3 {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .biz-grid-auto {
+          grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        }
+
+        .biz-section-head {
+          display: flex;
+          justify-content: space-between;
+          align-items: end;
+          gap: 1rem;
+          margin-bottom: .15rem;
+        }
+
+        .biz-section-head h2,
+        .biz-card-title {
+          margin: .45rem 0 0;
+          font: italic 900 2.4rem 'Barlow Condensed';
+          line-height: .9;
+          text-transform: uppercase;
+        }
+
+        .biz-section-head p,
+        .biz-card-copy,
+        .biz-text-muted {
+          color: var(--muted);
+          line-height: 1.58;
+        }
+
+        .biz-card,
+        .biz-panel,
+        .biz-kpi,
+        .biz-action-card,
+        .biz-table-card {
+          border: 1px solid var(--line);
+          background: var(--panel);
+        }
+
+        .biz-card,
+        .biz-panel,
+        .biz-table-card {
+          padding: 1.35rem;
+        }
+
+        .biz-card.emphasis {
+          background:
+            linear-gradient(180deg, rgba(255, 90, 0, .1) 0%, rgba(255, 90, 0, 0) 100%),
+            var(--panel2);
+        }
+
+        .biz-kpi {
+          padding: 1.2rem;
+          background: #0d0d0d;
+        }
+
+        .biz-kpi-label {
+          color: var(--muted2);
+          font: 900 .72rem 'Barlow Condensed';
+          letter-spacing: .08em;
+          text-transform: uppercase;
+        }
+
+        .biz-kpi-value {
+          display: block;
+          margin-top: .45rem;
+          font: italic 900 2.4rem 'Barlow Condensed';
+          line-height: .88;
+          text-transform: uppercase;
+        }
+
+        .biz-btn-primary,
+        .biz-btn-secondary,
+        .biz-btn-danger {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: .45rem;
+          padding: .82rem 1.1rem;
+          border: 1px solid var(--line2);
+          font: 900 .82rem 'Barlow Condensed';
+          letter-spacing: .08em;
+          text-transform: uppercase;
+          text-decoration: none;
+          cursor: pointer;
+        }
+
+        .biz-btn-primary {
+          background: var(--orange);
+          border-color: var(--orange);
+          color: #fff;
+        }
+
+        .biz-btn-primary:hover {
+          background: var(--orange2);
+          border-color: var(--orange2);
+        }
+
+        .biz-btn-secondary {
+          background: transparent;
+          color: #fff;
+        }
+
+        .biz-btn-secondary:hover {
+          border-color: var(--orange);
+          color: var(--orange);
+        }
+
+        .biz-btn-danger {
+          background: rgba(239, 68, 68, .08);
+          border-color: rgba(239, 68, 68, .35);
+          color: #fca5a5;
+        }
+
+        .biz-chip {
+          display: inline-flex;
+          align-items: center;
+          gap: .45rem;
+          padding: .42rem .62rem;
+          border: 1px solid var(--line2);
+          background: #0d0d0d;
+          font: 900 .7rem 'Barlow Condensed';
+          letter-spacing: .08em;
+          text-transform: uppercase;
+        }
+
+        .biz-chip.orange {
+          color: var(--orange);
+          border-color: rgba(255, 90, 0, .35);
+          background: rgba(255, 90, 0, .08);
+        }
+
+        .biz-chip.green {
+          color: var(--green);
+          border-color: rgba(34, 197, 94, .35);
+          background: rgba(34, 197, 94, .08);
+        }
+
+        .biz-chip.blue {
+          color: var(--blue);
+          border-color: rgba(56, 189, 248, .35);
+          background: rgba(56, 189, 248, .08);
+        }
+
+        .biz-empty-state {
+          padding: 2rem;
+          border: 1px solid var(--line);
+          background: var(--panel);
+        }
+
+        .biz-empty-state h2 {
+          margin: 0 0 .7rem;
+          font: italic 900 2.4rem 'Barlow Condensed';
+          line-height: .9;
+          text-transform: uppercase;
+        }
+
+        .biz-empty-state p {
+          margin-bottom: 1.4rem;
+          color: var(--muted);
+          line-height: 1.58;
+        }
+
+        @media (max-width: 1100px) {
           .business-layout {
             flex-direction: column;
           }
+
           .biz-sidebar {
             width: 100%;
-            height: auto;
-            border-right: none;
-            border-bottom: 1px solid #1e293b;
+            border-right: 0;
+            border-bottom: 1px solid var(--line);
           }
+
           .biz-nav {
             flex-direction: row;
             overflow-x: auto;
-            padding: 1rem;
-            gap: 1rem;
+            padding: .9rem;
           }
+
           .biz-nav-item {
             white-space: nowrap;
-            padding: 0.5rem 1rem;
           }
-          .biz-header {
-            padding: 1rem;
+
+          .biz-two-col,
+          .biz-grid-2,
+          .biz-grid-3 {
+            grid-template-columns: 1fr;
           }
+        }
+
+        @media (max-width: 720px) {
+          .biz-header,
           .biz-content {
             padding: 1rem;
+          }
+
+          .biz-header {
+            display: block;
+          }
+
+          .biz-exit-btn {
+            width: 100%;
+            margin-top: .85rem;
+          }
+
+          .biz-section-head {
+            display: block;
+          }
+
+          .biz-section-head h2,
+          .biz-card-title {
+            font-size: 2rem;
           }
         }
       `}</style>
 
       <aside className="biz-sidebar">
         <div className="biz-sidebar-header">
+          <div className="biz-sidebar-kicker">/ panel negocios</div>
           <h2>FigusUY Negocios</h2>
-          <p>Mi local</p>
+          <p>Gestiona tu local, mejora tu visibilidad y mantene activo tu punto dentro del ecosistema.</p>
+          <div className="biz-plan-chip">
+            {getBusinessPlanLabel(location?.business_plan)}
+          </div>
         </div>
+
         <nav className="biz-nav">
           {navItems.map(item => (
             <NavLink
@@ -213,9 +526,10 @@ export default function BusinessLayout() {
 
       <main className="biz-main">
         <header className="biz-header">
-          <div>
-            <h1 style={{ fontSize: '1.25rem', fontWeight: 800 }}>{location ? location.name : 'Configurando local...'}</h1>
-            <p style={{ fontSize: '0.8125rem', color: '#94a3b8' }}>{location?.business_plan === 'dominio' ? '🌟 Plan Dominio' : (location?.business_plan === 'turbo' ? '⭐ Plan Turbo' : 'Plan Gratis')}</p>
+          <div className="biz-header-copy">
+            <div className="biz-page-kicker">/ local activo</div>
+            <h1>{location ? location.name : 'Configurando local...'}</h1>
+            <p>{getBusinessPlanLabel(location?.business_plan)} · Panel comercial</p>
           </div>
           <button className="biz-exit-btn" onClick={() => navigate('/profile')}>
             <span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>logout</span>

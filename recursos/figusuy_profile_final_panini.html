@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FigusUY — Perfil Definitivo</title>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,400;0,700;0,800;0,900;1,700;1,900&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root{
+      --bg:#0b0b0b;
+      --panel:#121212;
+      --panel2:#181818;
+      --panel3:#202020;
+      --line:rgba(255,255,255,.08);
+      --line2:rgba(255,255,255,.14);
+      --text:#f5f5f5;
+      --muted:rgba(245,245,245,.54);
+      --muted2:rgba(245,245,245,.34);
+      --orange:#ff5a00;
+      --orange2:#cc4800;
+      --green:#22c55e;
+      --red:#ef4444;
+      --gold:#facc15;
+    }
+
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:Barlow,sans-serif;background:var(--bg);color:var(--text)}
+    button,input{font-family:inherit}
+
+    .profile-page{min-height:100vh;background:var(--bg)}
+
+    .topbar{
+      min-height:82px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:18px;
+      padding:14px 22px;
+      border-bottom:1px solid var(--line);
+      background:#0b0b0b;
+      position:sticky;
+      top:0;
+      z-index:20;
+    }
+    .top-kicker{font:900 .72rem 'Barlow Condensed';letter-spacing:.16em;text-transform:uppercase;color:var(--orange)}
+    .top-title{font:italic 900 2.45rem 'Barlow Condensed';text-transform:uppercase;line-height:.9;margin-top:3px}
+    .top-actions{display:flex;gap:10px;align-items:center}
+    .btn{border:1px solid var(--line2);background:transparent;color:#fff;padding:.85rem 1.15rem;font:900 .88rem 'Barlow Condensed';letter-spacing:.08em;text-transform:uppercase;cursor:pointer}
+    .btn:hover{border-color:var(--orange);color:var(--orange)}
+    .btn.orange{background:var(--orange);border-color:var(--orange);color:#fff}
+    .btn.orange:hover{background:var(--orange2);border-color:var(--orange2)}
+    .btn.block{width:100%}
+
+    .wrap{max-width:1480px;margin:0 auto;padding:28px 22px 72px}
+
+    .profile-grid{display:grid;grid-template-columns:380px 1fr;gap:22px;align-items:start}
+
+    .card{background:var(--panel);border:1px solid var(--line);position:relative;overflow:hidden}
+    .card-head{padding:22px 24px;border-bottom:1px solid var(--line);background:var(--panel2)}
+    .kicker{font:900 .7rem 'Barlow Condensed';letter-spacing:.16em;text-transform:uppercase;color:var(--orange)}
+    h2{font:italic 900 2.35rem 'Barlow Condensed';text-transform:uppercase;line-height:.9;margin-top:5px}
+    .muted{color:var(--muted);font-size:.95rem;line-height:1.55}
+
+    .identity-card{padding:24px}
+    .avatar-box{width:108px;height:108px;background:var(--orange);display:grid;place-items:center;font:900 3rem 'Barlow Condensed';margin-bottom:22px;position:relative;overflow:hidden}
+    .avatar-box img{width:100%;height:100%;object-fit:cover;display:block}
+    .avatar-edit{position:absolute;right:0;bottom:0;background:#0b0b0b;color:#fff;border:1px solid var(--line2);width:34px;height:34px;display:grid;place-items:center;font-size:15px;cursor:pointer}
+    .profile-name{font:italic 900 2.6rem 'Barlow Condensed';text-transform:uppercase;line-height:.9;margin-bottom:8px}
+    .profile-meta{color:var(--muted);font-size:1rem;margin-bottom:16px}
+    .badges{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:22px}
+    .badge{border:1px solid var(--line2);padding:6px 9px;font:900 .72rem 'Barlow Condensed';letter-spacing:.08em;text-transform:uppercase;color:#fff;background:#0d0d0d}
+    .badge.green{border-color:rgba(34,197,94,.35);color:var(--green);background:rgba(34,197,94,.07)}
+    .badge.orange{border-color:rgba(255,90,0,.4);color:var(--orange);background:rgba(255,90,0,.09)}
+
+    .main-stack{display:grid;gap:22px}
+    .progress-card{display:grid;grid-template-columns:1fr 260px;gap:0}
+    .progress-main{padding:28px;border-right:1px solid var(--line)}
+    .progress-row{display:flex;justify-content:space-between;gap:18px;align-items:flex-start;margin-bottom:24px}
+    .level-title{font:italic 900 3.2rem 'Barlow Condensed';line-height:.88;text-transform:uppercase}
+    .level-desc{color:var(--muted);margin-top:8px;font-size:1rem}
+    .big-percent{font:italic 900 2.8rem 'Barlow Condensed';color:var(--orange);line-height:1}
+    .bar{height:22px;background:#090909;border:1px solid var(--line2);position:relative;overflow:hidden}
+    .bar-fill{height:100%;background:var(--orange);width:78%}
+    .bar:before,.bar:after{content:"";position:absolute;top:0;bottom:0;width:1px;background:rgba(255,255,255,.42)}
+    .bar:before{left:50%}.bar:after{left:75%}
+    .profile-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);margin-top:26px}
+    .pstat{background:var(--panel);padding:22px}
+    .pstat b{display:block;font:italic 900 2.7rem 'Barlow Condensed';line-height:.9}.pstat span{font:900 .78rem 'Barlow Condensed';letter-spacing:.08em;text-transform:uppercase;color:var(--muted2)}.pstat.green b{color:var(--green)}
+    .plan-block{background:var(--orange);display:flex;flex-direction:column;justify-content:center;padding:28px;color:#fff}
+    .plan-block b{font:italic 900 3.25rem 'Barlow Condensed';line-height:.85;text-transform:uppercase}.plan-block span{font:900 .85rem 'Barlow Condensed';letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.62);margin-top:8px}
+
+    .album-section .card-head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px}
+    .album-row{display:grid;grid-template-columns:150px 1fr auto;gap:24px;align-items:center;padding:28px 28px;background:#0f0f0f;border-bottom:1px solid var(--line)}
+    .album-cover{aspect-ratio:3/4;background:linear-gradient(135deg,#222,#111);border:1px solid var(--line2);display:grid;place-items:center;text-align:center;min-height:190px}.album-cover b{font:italic 900 2.7rem 'Barlow Condensed';color:var(--orange)}.album-cover span{font:900 .56rem 'Barlow Condensed';letter-spacing:.12em;text-transform:uppercase;color:var(--muted2)}
+    .album-title{font:900 2.35rem 'Barlow Condensed';line-height:.95;text-transform:uppercase}.album-sub{color:var(--muted);font-size:1rem;margin-top:5px}.album-progress-meta{display:flex;justify-content:space-between;font:900 .78rem 'Barlow Condensed';letter-spacing:.08em;text-transform:uppercase;color:var(--muted2);margin:20px 0 8px}.album-progress-meta b{color:var(--orange)}
+    .album-actions{display:grid;gap:9px;min-width:170px}
+
+    .content-grid{display:grid;grid-template-columns:1fr 330px;gap:22px;margin-top:22px}
+    .side-stack{display:grid;gap:22px}
+    .side-card{padding:22px;background:var(--panel);border:1px solid var(--line)}
+    .side-title{font:italic 900 1.75rem 'Barlow Condensed';text-transform:uppercase;line-height:.9;margin-bottom:12px}
+    .premium-card{background:var(--orange);border-color:var(--orange2);color:#fff}.premium-card .muted{color:rgba(255,255,255,.78)}.premium-card .btn{background:#fff;color:var(--orange);border-color:#fff;margin-top:18px}.premium-card .btn:hover{background:#0b0b0b;color:#fff;border-color:#0b0b0b}
+    .trust-row,.settings-row,.quick-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--line);gap:12px}.trust-row:last-child,.quick-row:last-child{border-bottom:0}.trust-row span,.settings-row span,.quick-row span{color:var(--muted);font-size:.9rem}.trust-row b,.quick-row b{font:900 1rem 'Barlow Condensed';letter-spacing:.04em}
+    .business-box{border:1px solid rgba(255,90,0,.25);background:rgba(255,90,0,.07);padding:15px;margin-top:12px}
+    .input{width:100%;height:42px;border:1px solid var(--line2);background:#0b0b0b;color:#fff;padding:0 12px;font-weight:700;outline:none;margin-top:8px}.input:focus{border-color:var(--orange)}
+    .switch{width:48px;height:24px;background:var(--orange);position:relative;cursor:pointer}.switch:after{content:"";position:absolute;right:4px;top:4px;width:16px;height:16px;background:#fff}
+    .danger{color:#f87171!important}.admin{color:var(--orange)!important}.business{color:var(--green)!important}
+
+    .favorites-gamification{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:22px}
+    .mini-card{padding:22px;background:var(--panel);border:1px solid var(--line)}
+    .mini-card h3{font:italic 900 1.75rem 'Barlow Condensed';text-transform:uppercase;line-height:.9}.mini-card p{color:var(--muted);margin-top:8px;font-size:.92rem}
+
+    @media(max-width:1100px){.profile-grid,.content-grid{grid-template-columns:1fr}.progress-card{grid-template-columns:1fr}.plan-block{min-height:150px}.progress-main{border-right:0;border-bottom:1px solid var(--line)}.album-row{grid-template-columns:110px 1fr}.album-actions{grid-column:1/-1;grid-template-columns:1fr 1fr}.top-actions{display:none}}
+    @media(max-width:700px){.wrap{padding:16px 12px 64px}.topbar{align-items:flex-start}.top-title{font-size:2rem}.profile-grid{gap:14px}.profile-stats{grid-template-columns:1fr}.album-row{grid-template-columns:1fr}.album-cover{width:130px;min-height:auto}.favorites-gamification{grid-template-columns:1fr}.progress-row{display:block}.big-percent{margin-top:14px}.album-actions{grid-template-columns:1fr}.btn{width:100%}}
+  </style>
+</head>
+<body>
+<div class="profile-page">
+  <header class="topbar">
+    <div><div class="top-kicker">Usuario</div><div class="top-title">Mi perfil</div></div>
+    <div class="top-actions"><button class="btn">Cambiar álbum</button><button class="btn orange">Ver cruces</button></div>
+  </header>
+
+  <main class="wrap">
+    <section class="profile-grid">
+      <aside class="identity-card card">
+        <div class="avatar-box">J<label class="avatar-edit">📷</label></div>
+        <div class="profile-name">Juan Castillo</div>
+        <div class="profile-meta">Coleccionista · Montevideo · Activo hoy</div>
+        <div class="badges"><span class="badge orange">Premium</span><span class="badge green">Confiable</span><span class="badge">Mundial 2026</span></div>
+        <button class="btn orange block">Cambiar foto</button>
+      </aside>
+
+      <section class="progress-card card">
+        <div class="progress-main">
+          <div class="progress-row">
+            <div><div class="kicker">Progreso</div><div class="level-title">Intercambiador</div><div class="level-desc">Te faltan 2 cruces para llegar a Referente.</div></div>
+            <div class="big-percent">78%</div>
+          </div>
+          <div class="bar"><div class="bar-fill"></div></div>
+          <div class="profile-stats"><div class="pstat"><b>12</b><span>Cruces</span></div><div class="pstat"><b>3</b><span>Álbumes</span></div><div class="pstat green"><b>8</b><span>Logros</span></div></div>
+        </div>
+        <div class="plan-block"><b>Plus</b><span>Plan activo</span></div>
+      </section>
+    </section>
+
+    <section class="content-grid">
+      <div>
+        <section class="album-section card">
+          <div class="card-head"><div><div class="kicker">Colecciones activas</div><h2>Mis álbumes</h2><p class="muted">Tus álbumes, progreso y próximos cruces.</p></div><button class="btn">Gestionar</button></div>
+          <article class="album-row">
+            <div class="album-cover"><div><b>26</b><span>World Cup</span></div></div>
+            <div>
+              <div class="album-title">FIFA World Cup 2026</div>
+              <div class="album-sub">Official Sticker Collection · 99% completo</div>
+              <div class="album-progress-meta"><span>968 / 980 figuritas</span><b>99%</b></div>
+              <div class="bar"><div class="bar-fill" style="width:99%"></div></div>
+            </div>
+            <div class="album-actions"><button class="btn orange">Abrir álbum</button><button class="btn">Ver faltantes</button></div>
+          </article>
+          <article class="album-row">
+            <div class="album-cover"><div><b>+</b><span>Nuevo</span></div></div>
+            <div><div class="album-title">Agregar álbum</div><div class="album-sub">Sumá otra colección para seguir intercambiando.</div></div>
+            <div class="album-actions"><button class="btn">Agregar</button></div>
+          </article>
+        </section>
+
+        <div class="favorites-gamification">
+          <div class="mini-card"><h3>Favoritos</h3><p>Favoritos guardados: 8</p><button class="btn" style="margin-top:16px">Ver favoritos</button></div>
+          <div class="mini-card"><h3>Logros</h3><p>8 hitos desbloqueados. Próximo reward: 1 día Plus.</p><button class="btn" style="margin-top:16px">Ver progreso</button></div>
+        </div>
+      </div>
+
+      <aside class="side-stack">
+        <section class="side-card premium-card"><div class="side-title">Premium</div><p class="muted">Disfrutás de todos los beneficios de Plus.</p><button class="btn block">Gestionar suscripción</button></section>
+
+        <section class="side-card"><div class="side-title">Reputación</div><div class="trust-row"><span>Calificación</span><b>⭐ 5.0</b></div><div class="trust-row"><span>Intercambios</span><b>12 exitosos</b></div><div class="trust-row"><span>Miembro desde</span><b>abr. 2026</b></div></section>
+
+        <section class="side-card"><div class="side-title">Negocios</div><p class="muted">¿Tenés un local, kiosco o espacio y querés aparecer en FigusUY?</p><div class="business-box"><button class="btn orange block">Registrar mi local</button></div></section>
+
+        <section class="side-card"><div class="side-title">Configuración</div><label class="kicker">Nombre</label><input class="input" value="Juan Castillo" /><div class="settings-row"><span>Notificaciones</span><div class="switch"></div></div><div class="quick-row"><span>Ubicación</span><b>Montevideo</b></div><button class="btn orange block" style="margin-top:14px">Guardar perfil</button></section>
+
+        <section class="side-card"><div class="quick-row"><span class="admin">🔐 Panel de Administración</span></div><div class="quick-row"><span class="business">🏪 FigusUY Negocios</span></div><div class="quick-row"><span>🧪 Ver aviso Alpha</span></div><div class="quick-row"><span class="danger">↩ Cerrar sesión</span></div></section>
+      </aside>
+    </section>
+  </main>
+</div>
+</body>
+</html>

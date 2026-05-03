@@ -95,7 +95,7 @@ export default function HomePage() {
           <StatCard
             label="Progreso"
             value={`${selectedAlbum.total_stickers > 0 ? Math.round(((selectedAlbum.total_stickers - missingStickers.length) / selectedAlbum.total_stickers) * 100) : 0}%`}
-            color="#ea580c"
+            color="var(--color-primary)"
             icon="📊"
           />
         </div>

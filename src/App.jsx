@@ -1,7 +1,10 @@
 import React, { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from './stores/authStore'
+import { useFeatureFlagStore } from './stores/featureFlagStore'
+import { useBrandingStore } from './stores/brandingStore'
 import BottomNav from './components/BottomNav'
+import GlobalFooter from './components/GlobalFooter'
 import { useAnalytics } from './hooks/useAnalytics'
 
 // Public
@@ -18,6 +21,7 @@ import Premium from './pages/Premium'
 import Stores from './pages/Stores'
 import Favorites from './pages/Favorites'
 import PartnerPlans from './pages/PartnerPlans'
+import Achievements from './pages/Achievements'
 
 // Business Dashboard
 import BusinessLayout from './business/BusinessLayout'
@@ -27,6 +31,7 @@ import BusinessPhotos from './business/BusinessPhotos'
 import BusinessPromo from './business/BusinessPromo'
 import BusinessMetrics from './business/BusinessMetrics'
 import BusinessBilling from './business/BusinessBilling'
+import BusinessPartnerStoreValidations from './business/BusinessPartnerStoreValidations'
 import BusinessHelp from './business/BusinessHelp'
 import BusinessAccessGuard from './components/BusinessAccessGuard'
 import BusinessApply from './pages/BusinessApply'
@@ -62,6 +67,26 @@ import AdminSubscriptions from './admin/AdminSubscriptions'
 import AdminBusinessPlans from './admin/AdminBusinessPlans'
 import AdminSponsored from './admin/AdminSponsored'
 import AdminFeatureFlags from './admin/AdminFeatureFlags'
+import AdminGamification from './admin/AdminGamification'
+import AdminAffiliates from './admin/AdminAffiliates'
+import AdminAffiliateCampaigns from './admin/AdminAffiliateCampaigns'
+import AdminAffiliateBenefits from './admin/AdminAffiliateBenefits'
+import AdminAffiliateCommissions from './admin/AdminAffiliateCommissions'
+import AdminAffiliatePayments from './admin/AdminAffiliatePayments'
+import AdminBranding from './admin/AdminBranding'
+import AdminStaticPages from './admin/AdminStaticPages'
+import AffiliateJoin from './pages/AffiliateJoin'
+import StaticPage from './pages/StaticPage'
+
+// Growth Engine Admin
+import AdminSmartNotifications from './admin/AdminSmartNotifications'
+import AdminOnboarding from './admin/AdminOnboarding'
+import AdminReferrals from './admin/AdminReferrals'
+import AdminGrowthAchievements from './admin/AdminGrowthAchievements'
+import AdminRewardsEngine from './admin/AdminRewardsEngine'
+
+// Referral
+import ReferralLanding from './pages/ReferralLanding'
 
 function LoadingScreen() {
   return (
@@ -79,10 +104,25 @@ function ProtectedRoute({ children }) {
   return children
 }
 
+function AuthRedirector() {
+  const { profile } = useAuthStore()
+  const adminRoles = ['god_admin', 'admin', 'moderator', 'support', 'comercial', 'analista']
+  
+  if (adminRoles.includes(profile?.role)) {
+    return <Navigate to="/admin" replace />
+  }
+  if (profile?.account_type === 'business') {
+    return <Navigate to="/business" replace />
+  }
+  return <Navigate to="/profile" replace />
+}
+
 function PublicRoute({ children }) {
   const { user, loading } = useAuthStore()
   if (loading) return <LoadingScreen />
-  if (user) return <Navigate to="/profile" replace />
+  if (user) {
+    return <AuthRedirector />
+  }
   return children
 }
 
@@ -95,6 +135,22 @@ function PageTransitionWrapper({ children }) {
   )
 }
 
+function FeatureGuard({ featureKey, children }) {
+  const isEnabled = useFeatureFlagStore(state => state.isFeatureEnabled(featureKey))
+  
+  if (!isEnabled) {
+    return (
+      <div className="flex-center flex-col gap-lg" style={{ minHeight: '100vh', padding: '2rem', textAlign: 'center' }}>
+        <span className="material-symbols-outlined" style={{ fontSize: '4rem', color: 'var(--color-text-muted)' }}>construction</span>
+        <h2 style={{ fontSize: '1.5rem', fontWeight: 900, color: 'var(--color-surface)' }}>Función Desactivada</h2>
+        <p style={{ color: 'var(--color-text-muted)', maxWidth: '400px' }}>Esta sección se encuentra temporalmente desactivada o en mantenimiento.</p>
+        <Navigate to="/profile" replace />
+      </div>
+    )
+  }
+  return children
+}
+
 function GlobalHooks() {
   useAnalytics()
   return null
@@ -102,6 +158,11 @@ function GlobalHooks() {
 
 import Sidebar from './components/Sidebar'
 import AlphaWelcomeModal from './components/AlphaWelcomeModal'
+import GamificationToast from './components/GamificationToast'
+import OnboardingGuide from './components/OnboardingGuide'
+import ShareModal from './components/ShareModal'
+import SmartNotifications from './components/SmartNotifications'
+import { useGrowthStore } from './stores/growthStore'
 
 function AppLayout({ children }) {
   return (
@@ -111,7 +172,7 @@ function AppLayout({ children }) {
           height: 100vh;
           display: flex;
           overflow: hidden;
-          background-color: #020617; /* Matches body bg */
+          background-color: var(--color-bg); /* Matches body bg */
         }
 
         .app-sidebar-wrapper {
@@ -141,8 +202,9 @@ function AppLayout({ children }) {
       <div className="app-sidebar-wrapper">
         <Sidebar />
       </div>
-      <main className="app-main">
+      <main className="app-main" style={{ display: 'flex', flexDirection: 'column' }}>
         <PageTransitionWrapper>{children}</PageTransitionWrapper>
+        <GlobalFooter />
       </main>
       <BottomNav />
     </div>
@@ -150,15 +212,36 @@ function AppLayout({ children }) {
 }
 
 export default function App() {
-  const { initialize } = useAuthStore()
+  const { initialize, user, profile } = useAuthStore()
+  const { initializeFlags } = useFeatureFlagStore()
+  const { fetchSettings, settings } = useBrandingStore()
+  const initGrowth = useGrowthStore(s => s.initialize)
+  
   useEffect(() => {
     initialize()
+    fetchSettings()
     if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
       document.documentElement.classList.add('dark')
     } else {
       document.documentElement.classList.remove('dark')
     }
   }, [])
+
+  useEffect(() => {
+    initializeFlags(user?.id)
+  }, [user?.id])
+
+  useEffect(() => {
+    if (user?.id && profile) {
+      initGrowth(user.id, profile, {})
+    }
+  }, [user?.id, profile?.id])
+
+  useEffect(() => {
+    if (settings.header_primary_color) {
+      document.documentElement.style.setProperty('--color-primary', settings.header_primary_color)
+    }
+  }, [settings])
 
   return (
     <BrowserRouter>
@@ -167,17 +250,25 @@ export default function App() {
         {/* Public */}
         <Route path="/" element={<PublicRoute><Landing /></PublicRoute>} />
         <Route path="/login" element={<PublicRoute><PageTransitionWrapper><Login /></PageTransitionWrapper></PublicRoute>} />
+        <Route path="/r/:code" element={<ReferralLanding />} />
+        <Route path="/affiliate-join/:code" element={<AffiliateJoin />} />
+        <Route path="/p/:slug" element={<StaticPage />} />
 
         {/* App */}
-        <Route path="/home" element={<Navigate to="/profile" replace />} />
-        <Route path="/album" element={<ProtectedRoute><AppLayout><Album /></AppLayout></ProtectedRoute>} />
+        <Route path="/home" element={
+          <ProtectedRoute>
+            <AuthRedirector />
+          </ProtectedRoute>
+        } />
+        <Route path="/album" element={<ProtectedRoute><FeatureGuard featureKey="album"><AppLayout><Album /></AppLayout></FeatureGuard></ProtectedRoute>} />
         <Route path="/matches" element={<ProtectedRoute><AppLayout><Matches /></AppLayout></ProtectedRoute>} />
-        <Route path="/chats" element={<ProtectedRoute><AppLayout><ChatsList /></AppLayout></ProtectedRoute>} />
-        <Route path="/chat/:chatId" element={<ProtectedRoute><AppLayout><Chat /></AppLayout></ProtectedRoute>} />
+        <Route path="/chats" element={<ProtectedRoute><FeatureGuard featureKey="chats"><AppLayout><ChatsList /></AppLayout></FeatureGuard></ProtectedRoute>} />
+        <Route path="/chat/:chatId" element={<ProtectedRoute><FeatureGuard featureKey="chats"><AppLayout><Chat /></AppLayout></FeatureGuard></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute><AppLayout><Profile /></AppLayout></ProtectedRoute>} />
         <Route path="/premium" element={<ProtectedRoute><AppLayout><Premium /></AppLayout></ProtectedRoute>} />
         <Route path="/stores" element={<ProtectedRoute><AppLayout><Stores /></AppLayout></ProtectedRoute>} />
         <Route path="/favorites" element={<ProtectedRoute><AppLayout><Favorites /></AppLayout></ProtectedRoute>} />
+        <Route path="/achievements" element={<ProtectedRoute><AppLayout><Achievements /></AppLayout></ProtectedRoute>} />
         <Route path="/partners" element={<AppLayout><PartnerPlans /></AppLayout>} />
 
         {/* Business Dashboard */}
@@ -190,6 +281,7 @@ export default function App() {
           <Route path="promo" element={<BusinessPromo />} />
           <Route path="metrics" element={<BusinessMetrics />} />
           <Route path="billing" element={<BusinessBilling />} />
+          <Route path="legend" element={<BusinessPartnerStoreValidations />} />
           <Route path="help" element={<BusinessHelp />} />
         </Route>
 
@@ -216,6 +308,8 @@ export default function App() {
           <Route path="payments" element={<AdminPayments />} />
           <Route path="metrics" element={<AdminAnalytics />} />
           <Route path="cms" element={<AdminCMS />} />
+          <Route path="branding" element={<AdminBranding />} />
+          <Route path="pages" element={<AdminStaticPages />} />
           <Route path="notifications" element={<AdminNotifications />} />
           <Route path="seo" element={<AdminSEO />} />
           <Route path="roles" element={<AdminRoles />} />
@@ -223,11 +317,26 @@ export default function App() {
           <Route path="config" element={<AdminConfig />} />
           <Route path="sponsored" element={<AdminSponsored />} />
           <Route path="feature-flags" element={<AdminFeatureFlags />} />
+          <Route path="gamification" element={<AdminGamification />} />
+          <Route path="affiliates" element={<AdminAffiliates />} />
+          <Route path="affiliate-campaigns" element={<AdminAffiliateCampaigns />} />
+          <Route path="affiliate-benefits" element={<AdminAffiliateBenefits />} />
+          <Route path="affiliate-commissions" element={<AdminAffiliateCommissions />} />
+          <Route path="affiliate-payments" element={<AdminAffiliatePayments />} />
+          <Route path="smart-notifications" element={<AdminSmartNotifications />} />
+          <Route path="onboarding" element={<AdminOnboarding />} />
+          <Route path="referrals" element={<AdminReferrals />} />
+          <Route path="growth-achievements" element={<AdminGrowthAchievements />} />
+          <Route path="rewards-engine" element={<AdminRewardsEngine />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <AlphaWelcomeModal />
+      <GamificationToast />
+      <OnboardingGuide />
+      <ShareModal />
+      <SmartNotifications />
     </BrowserRouter>
   )
 }
