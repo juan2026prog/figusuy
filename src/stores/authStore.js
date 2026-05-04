@@ -1,6 +1,85 @@
 import { create } from 'zustand'
 import { supabase } from '../lib/supabase'
 import { useFeatureFlagStore } from './featureFlagStore'
+import { useExchangeStore } from './exchangeStore'
+import { useGrowthStore } from './growthStore'
+
+const VALID_USER_PLAN_NAMES = new Set(['gratis', 'plus', 'pro'])
+
+const normalizeProfilePlanName = (planName, isPremium = false) => {
+  const value = String(planName || '').trim().toLowerCase()
+
+  if (VALID_USER_PLAN_NAMES.has(value)) return value
+  if (value === 'free') return 'gratis'
+  if (value === 'premium') return 'pro'
+
+  return isPremium ? 'pro' : 'gratis'
+}
+
+const buildPlanNameCandidates = (planName, isPremium = false) => {
+  const value = String(planName || '').trim().toLowerCase()
+  const fallback = normalizeProfilePlanName(planName, isPremium)
+  const candidates = [
+    value,
+    fallback,
+    isPremium ? 'pro' : 'gratis',
+    isPremium ? 'premium' : 'free',
+    isPremium ? 'plus' : '',
+  ].filter(Boolean)
+
+  return [...new Set(candidates)]
+}
+
+const isRecoverableSchemaError = (error) => {
+  const message = String(error?.message || '').toLowerCase()
+  return (
+    error?.status === 400 ||
+    error?.code === '23514' ||
+    message.includes('column') ||
+    message.includes('schema cache') ||
+    message.includes('could not find') ||
+    message.includes('check constraint') ||
+    message.includes('plan_name_check')
+  )
+}
+
+const isPlanConstraintError = (error) => {
+  const message = String(error?.message || '').toLowerCase()
+  return error?.code === '23514' || message.includes('plan_name_check')
+}
+
+const clearSupabaseStorage = () => {
+  if (typeof window === 'undefined') return
+
+  const clearMatchingKeys = (storage) => {
+    if (!storage) return
+
+    const keysToRemove = []
+    for (let index = 0; index < storage.length; index += 1) {
+      const key = storage.key(index)
+      if (key && key.includes('supabase.auth.token')) {
+        keysToRemove.push(key)
+      }
+    }
+
+    keysToRemove.forEach((key) => storage.removeItem(key))
+  }
+
+  clearMatchingKeys(window.localStorage)
+  clearMatchingKeys(window.sessionStorage)
+}
+
+const resetDependentStores = async () => {
+  useFeatureFlagStore.setState({ flags: [], lastFetch: 0, loading: false })
+  useExchangeStore.getState().reset()
+  useGrowthStore.getState().reset()
+  try {
+    const { useGamificationStore } = await import('./gamificationStore')
+    useGamificationStore.getState().reset()
+  } catch (error) {
+    console.error('Gamification reset error:', error)
+  }
+}
 
 export const useAuthStore = create((set, get) => ({
   user: null,
@@ -28,16 +107,13 @@ export const useAuthStore = create((set, get) => ({
 
         set({ user: session.user, session, profile, planRules, loading: false })
 
-        // Initialize feature flags for this user
-        useFeatureFlagStore.getState().initializeFlags(session.user.id)
-
         // Initialize gamification system
         import('../stores/gamificationStore').then(({ useGamificationStore }) => {
           useGamificationStore.getState().initialize(session.user.id)
         })
 
-        // Auto-update last_active
-        supabase.from('profiles').update({ last_active: new Date().toISOString() }).eq('id', session.user.id).then(() => {})
+        // Auto-update last_active when the current database schema supports it.
+        get().touchLastActive(session.user.id)
 
         // Auto-request geolocation removed per requirements. Requested only on-demand.
       } else {
@@ -104,28 +180,126 @@ export const useAuthStore = create((set, get) => ({
 
   signOut: async () => {
     try {
-      await supabase.auth.signOut()
+      const { error } = await supabase.auth.signOut({ scope: 'local' })
+      if (error) throw error
     } catch (error) {
       console.error('Error signing out:', error)
     } finally {
+      clearSupabaseStorage()
+      await resetDependentStores()
       set({ user: null, session: null, profile: null, planRules: null })
     }
   },
 
   updateProfile: async (updates) => {
-    const { user } = get()
+    const { user, profile } = get()
     if (!user) return
+    const planNameCandidates = buildPlanNameCandidates(profile?.plan_name, profile?.is_premium)
+    const payload = {
+      ...updates,
+      ...(planNameCandidates[0] ? { plan_name: planNameCandidates[0] } : {}),
+      last_active: new Date().toISOString(),
+    }
 
-    const { data, error } = await supabase
+    let query = supabase
       .from('profiles')
-      .update({ ...updates, last_active: new Date().toISOString() })
+      .update(payload)
       .eq('id', user.id)
       .select()
       .single()
 
+    let { data, error } = await query
+    if (error && isPlanConstraintError(error)) {
+      for (const candidate of planNameCandidates.slice(1)) {
+        ;({ data, error } = await supabase
+          .from('profiles')
+          .update({
+            ...updates,
+            plan_name: candidate,
+            last_active: new Date().toISOString(),
+          })
+          .eq('id', user.id)
+          .select()
+          .single())
+
+        if (!error) break
+      }
+    }
+
+    if (error && isRecoverableSchemaError(error)) {
+      const retryPayload = {
+        ...updates,
+        ...(planNameCandidates[0] ? { plan_name: planNameCandidates[0] } : {}),
+      }
+      ;({ data, error } = await supabase
+        .from('profiles')
+        .update(retryPayload)
+        .eq('id', user.id)
+        .select()
+        .single())
+
+      if (error && isPlanConstraintError(error)) {
+        for (const candidate of planNameCandidates.slice(1)) {
+          ;({ data, error } = await supabase
+            .from('profiles')
+            .update({
+              ...updates,
+              plan_name: candidate,
+            })
+            .eq('id', user.id)
+            .select()
+            .single())
+
+          if (!error) break
+        }
+      }
+    }
+
     if (error) throw error
     set({ profile: data })
     return data
+  },
+
+  touchLastActive: async (userId) => {
+    const { profile } = get()
+    if (!userId) return
+    const planNameCandidates = buildPlanNameCandidates(profile?.plan_name, profile?.is_premium)
+
+    let { data, error } = await supabase
+      .from('profiles')
+      .update({
+        last_active: new Date().toISOString(),
+        ...(planNameCandidates[0] ? { plan_name: planNameCandidates[0] } : {}),
+      })
+      .eq('id', userId)
+      .select()
+      .single()
+
+    if (error && isPlanConstraintError(error)) {
+      for (const candidate of planNameCandidates.slice(1)) {
+        ;({ data, error } = await supabase
+          .from('profiles')
+          .update({
+            last_active: new Date().toISOString(),
+            plan_name: candidate,
+          })
+          .eq('id', userId)
+          .select()
+          .single())
+
+        if (!error) break
+      }
+    }
+
+    if (!error && data) {
+      set((state) => ({
+        profile: state.profile ? { ...state.profile, plan_name: data.plan_name, last_active: data.last_active } : state.profile
+      }))
+    }
+
+    if (error && !isRecoverableSchemaError(error)) {
+      console.error('Error updating last_active:', error)
+    }
   },
 
   updateLocation: async (lat, lng) => {
