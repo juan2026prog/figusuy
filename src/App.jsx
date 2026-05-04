@@ -10,6 +10,7 @@ import { useAnalytics } from './hooks/useAnalytics'
 import { useGrowthStore } from './stores/growthStore'
 
 import BusinessAccessGuard from './components/BusinessAccessGuard'
+import AffiliateAccessGuard from './components/AffiliateAccessGuard'
 
 const Landing = lazy(() => import('./pages/Landing'))
 const Login = lazy(() => import('./pages/Login'))
@@ -39,6 +40,11 @@ const BusinessPartnerStoreValidations = lazy(() => import('./business/BusinessPa
 const BusinessHelp = lazy(() => import('./business/BusinessHelp'))
 const BusinessApply = lazy(() => import('./pages/BusinessApply'))
 const BusinessPending = lazy(() => import('./pages/BusinessPending'))
+const AffiliateLayout = lazy(() => import('./affiliate/AffiliateLayout'))
+const AffiliateDashboardHome = lazy(() => import('./affiliate/AffiliateDashboardHome'))
+const AffiliateAssets = lazy(() => import('./affiliate/AffiliateAssets'))
+const AffiliatePerformance = lazy(() => import('./affiliate/AffiliatePerformance'))
+const AffiliatePayouts = lazy(() => import('./affiliate/AffiliatePayouts'))
 
 const AdminLayout = lazy(() => import('./admin/AdminLayout'))
 const AdminDashboard = lazy(() => import('./admin/Dashboard'))
@@ -81,12 +87,14 @@ const AdminOnboarding = lazy(() => import('./admin/AdminOnboarding'))
 const AdminReferrals = lazy(() => import('./admin/AdminReferrals'))
 const AdminGrowthAchievements = lazy(() => import('./admin/AdminGrowthAchievements'))
 const AdminRewardsEngine = lazy(() => import('./admin/AdminRewardsEngine'))
+const AdminExchangeCompletion = lazy(() => import('./admin/AdminExchangeCompletion'))
 
 const AlphaWelcomeModal = lazy(() => import('./components/AlphaWelcomeModal'))
 const GamificationToast = lazy(() => import('./components/GamificationToast'))
 const OnboardingGuide = lazy(() => import('./components/OnboardingGuide'))
 const ShareModal = lazy(() => import('./components/ShareModal'))
 const SmartNotifications = lazy(() => import('./components/SmartNotifications'))
+const GlobalLogoutDialog = lazy(() => import('./components/GlobalLogoutDialog'))
 
 function LoadingScreen() {
   return (
@@ -110,6 +118,9 @@ function AuthRedirector() {
   
   if (adminRoles.includes(profile?.role)) {
     return <Navigate to="/admin" replace />
+  }
+  if (profile?.role === 'influencer') {
+    return <Navigate to="/affiliate/dashboard" replace />
   }
   if (profile?.account_type === 'business') {
     return <Navigate to="/business" replace />
@@ -156,14 +167,36 @@ function GlobalHooks() {
   return null
 }
 
+function AppChrome() {
+  const location = useLocation()
+  const isLandingRoute = location.pathname === '/'
+
+  if (isLandingRoute) return null
+
+  return (
+    <>
+      <GlobalHooks />
+      <AlphaWelcomeModal />
+      <GamificationToast />
+      <OnboardingGuide />
+      <ShareModal />
+      <SmartNotifications />
+      <GlobalLogoutDialog />
+    </>
+  )
+}
+
 function AppLayout({ children }) {
   return (
     <div className="app-layout">
       <style>{`
         .app-layout {
-          height: 100vh;
+          min-height: 100vh;
           display: flex;
-          overflow: hidden;
+          width: 100%;
+          max-width: 100%;
+          min-width: 0;
+          overflow-x: clip;
           background-color: var(--color-bg); /* Matches body bg */
         }
 
@@ -176,9 +209,17 @@ function AppLayout({ children }) {
           flex: 1;
           position: relative;
           min-width: 0;
+          width: 100%;
+          max-width: 100%;
           overflow-y: auto;
           overflow-x: hidden;
-          height: 100vh;
+          min-height: 100vh;
+        }
+
+        .app-main > * {
+          width: 100%;
+          min-width: 0;
+          max-width: 100%;
         }
 
         @media (min-width: 768px) {
@@ -237,11 +278,10 @@ export default function App() {
 
   return (
     <BrowserRouter>
-      <GlobalHooks />
       <Suspense fallback={<LoadingScreen />}>
         <Routes>
         {/* Public */}
-        <Route path="/" element={<PublicRoute><Landing /></PublicRoute>} />
+        <Route path="/" element={<Landing />} />
         <Route path="/login" element={<PublicRoute><PageTransitionWrapper><Login /></PageTransitionWrapper></PublicRoute>} />
         <Route path="/r/:code" element={<ReferralLanding />} />
         <Route path="/affiliate-join/:code" element={<AffiliateJoin />} />
@@ -278,6 +318,14 @@ export default function App() {
           <Route path="help" element={<BusinessHelp />} />
         </Route>
 
+        <Route path="/affiliate" element={<ProtectedRoute><AffiliateAccessGuard><AppLayout><AffiliateLayout /></AppLayout></AffiliateAccessGuard></ProtectedRoute>}>
+          <Route index element={<Navigate to="/affiliate/dashboard" replace />} />
+          <Route path="dashboard" element={<AffiliateDashboardHome />} />
+          <Route path="assets" element={<AffiliateAssets />} />
+          <Route path="performance" element={<AffiliatePerformance />} />
+          <Route path="payouts" element={<AffiliatePayouts />} />
+        </Route>
+
         {/* Admin Panel */}
         <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
           <Route index element={<AdminDashboard />} />
@@ -289,6 +337,7 @@ export default function App() {
           <Route path="plans" element={<AdminPlans />} />
           <Route path="audit" element={<AdminAudit />} />
           <Route path="matches" element={<AdminPage section="matches" />} />
+          <Route path="exchange-completion" element={<AdminExchangeCompletion />} />
           <Route path="chats" element={<AdminChats />} />
           <Route path="favorites" element={<AdminFavorites />} />
           <Route path="locations" element={<AdminLocations />} />
@@ -325,11 +374,7 @@ export default function App() {
 
         <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-        <AlphaWelcomeModal />
-        <GamificationToast />
-        <OnboardingGuide />
-        <ShareModal />
-        <SmartNotifications />
+        <AppChrome />
       </Suspense>
     </BrowserRouter>
   )
