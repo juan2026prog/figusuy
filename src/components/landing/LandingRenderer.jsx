@@ -91,6 +91,7 @@ function BlockRenderer({ block, preview, onCta }) {
 
 function NavbarBlock({ block, content, preview, onCta }) {
   const [open, setOpen] = useState(false)
+  const links = toItems(content.links)
   return (
     <header
       className="fy-navbar-shell"
@@ -103,7 +104,7 @@ function NavbarBlock({ block, content, preview, onCta }) {
           <strong>{content.logoAccent || 'UY'}</strong>
         </a>
         <nav className="fy-navbar-links">
-          {(content.links || []).map((link) => (
+          {links.map((link) => (
             <a key={`${block.slug}-${link.label}`} href={resolveUrl(link.url)}>{link.label}</a>
           ))}
         </nav>
@@ -116,7 +117,7 @@ function NavbarBlock({ block, content, preview, onCta }) {
       </div>
       {open ? (
         <div className="fy-mobile-drawer">
-          {(content.links || []).map((link) => (
+          {links.map((link) => (
             <a key={`mobile-${link.label}`} href={resolveUrl(link.url)} onClick={() => setOpen(false)}>
               {link.label}
             </a>
@@ -128,6 +129,10 @@ function NavbarBlock({ block, content, preview, onCta }) {
 }
 
 function HeroBlock({ block, content, onCta }) {
+  const stats = toItems(content.stats)
+  const chips = toItems(content.chips)
+  const feedItems = toItems(content.feedItems)
+  const wallItems = toItems(content.wallItems)
   const title = String(content.title || '')
   const highlight = String(content.highlightWord || '').trim()
   const highlightedTitle = highlight
@@ -152,7 +157,7 @@ function HeroBlock({ block, content, onCta }) {
           <CtaButton block={block} cta={content.secondaryCta} onCta={onCta} />
         </div>
         <div className="fy-stat-row">
-          {(content.stats || []).map((item) => (
+          {stats.map((item) => (
             <article key={`${block.slug}-${item.label}`} className="fy-stat-card">
               <strong>{item.value}</strong>
               <span>{item.label}</span>
@@ -167,12 +172,12 @@ function HeroBlock({ block, content, onCta }) {
           <h3>{content.feedTitle}</h3>
           <p>{content.feedSubtitle}</p>
           <div className="fy-chip-row">
-            {(content.chips || []).map((chip, index) => (
+            {chips.map((chip, index) => (
               <Chip key={`${chip.label}-${index}`} chip={chip} />
             ))}
           </div>
           <div className="fy-feed">
-            {(content.feedItems || []).map((item, index) => (
+            {feedItems.map((item, index) => (
               <div key={`${item.title}-${index}`} className={`fy-feed-item tone-${item.tone || 'neutral'}`}>
                 <div>
                   <b>{item.title}</b>
@@ -184,7 +189,7 @@ function HeroBlock({ block, content, onCta }) {
           </div>
         </div>
         <div className="fy-wall">
-          {(content.wallItems || []).map((item, index) => (
+          {wallItems.map((item, index) => (
             <article key={`${item.number}-${index}`} className={`fy-wall-card tone-${item.tone || 'neutral'}`}>
               <strong>{item.number}</strong>
               <span>{item.label}</span>
@@ -197,18 +202,22 @@ function HeroBlock({ block, content, onCta }) {
 }
 
 function NowBlock({ block, content, onCta }) {
+  const chips = toItems(content.chips)
+  const liveItems = toItems(content.liveItems)
+  const cards = toItems(content.cards)
+  const activityItems = toItems(content.activityItems)
   return (
     <div className="fy-shell fy-section">
       <SectionHeading content={content} />
       <div className="fy-chip-row">
-        {(content.chips || []).map((chip, index) => (
+        {chips.map((chip, index) => (
           <Chip key={`${chip.label}-${index}`} chip={chip} />
         ))}
       </div>
       <div className="fy-now-grid">
         <div className="fy-panel fy-panel-glow">
           <div className="fy-feed">
-            {(content.liveItems || []).map((item, index) => (
+            {liveItems.map((item, index) => (
               <div key={`${item.title}-${index}`} className={`fy-feed-item tone-${item.tone || 'neutral'}`}>
                 <div>
                   <b>{item.title}</b>
@@ -220,7 +229,7 @@ function NowBlock({ block, content, onCta }) {
           </div>
         </div>
         <div className="fy-stack">
-          {(content.cards || []).map((card, index) => (
+          {cards.map((card, index) => (
             <article key={`${card.title}-${index}`} className="fy-panel fy-mini-card">
               <div className="fy-mini-top">
                 <Chip chip={{ label: card.badge, tone: card.tone }} />
@@ -232,7 +241,7 @@ function NowBlock({ block, content, onCta }) {
         </div>
       </div>
       <div className="fy-activity-strip">
-        {(content.activityItems || []).map((item, index) => (
+        {activityItems.map((item, index) => (
           <div key={`${item.title}-${index}`} className={`fy-activity-item tone-${item.tone || 'neutral'}`}>
             <strong>{item.title}</strong>
             <p>{item.detail}</p>
@@ -248,7 +257,7 @@ function NowBlock({ block, content, onCta }) {
 }
 
 function AlbumsBlock({ content }) {
-  const items = content.items || []
+  const items = toItems(content.items)
   const [active, setActive] = useState(0)
 
   useEffect(() => {
@@ -295,6 +304,7 @@ function AlbumsBlock({ content }) {
 }
 
 function PromoBlock({ block, content, onCta }) {
+  const chips = toItems(content.chips)
   return (
     <div className="fy-shell fy-section">
       <div className="fy-promo" style={{ '--promo-bg': content.background || '#111111' }}>
@@ -303,7 +313,7 @@ function PromoBlock({ block, content, onCta }) {
           <h2>{content.title}</h2>
           <p>{content.description}</p>
           <div className="fy-chip-row">
-            {(content.chips || []).map((chip, index) => (
+            {chips.map((chip, index) => (
               <Chip key={`${chip.label}-${index}`} chip={chip} />
             ))}
           </div>
@@ -318,11 +328,12 @@ function PromoBlock({ block, content, onCta }) {
 }
 
 function HowItWorksBlock({ content }) {
+  const steps = toItems(content.steps)
   return (
     <div className="fy-shell fy-section">
       <SectionHeading content={content} />
       <div className="fy-card-grid fy-steps-grid">
-        {(content.steps || []).map((step, index) => (
+        {steps.map((step, index) => (
           <article key={`${step.title}-${index}`} className="fy-editorial-card">
             <div className="fy-editorial-media" style={{ backgroundImage: `url(${step.image || ''})` }} />
             <div className="fy-editorial-copy">
@@ -339,6 +350,8 @@ function HowItWorksBlock({ content }) {
 }
 
 function InfluencersBlock({ block, content, onCta }) {
+  const chips = toItems(content.chips)
+  const benefits = toItems(content.benefits)
   return (
     <div className="fy-shell fy-section">
       <div className="fy-split">
@@ -348,12 +361,12 @@ function InfluencersBlock({ block, content, onCta }) {
           <h2>{content.title}</h2>
           <p>{content.description}</p>
           <div className="fy-chip-row">
-            {(content.chips || []).map((chip, index) => (
+            {chips.map((chip, index) => (
               <Chip key={`${chip.label}-${index}`} chip={chip} />
             ))}
           </div>
           <div className="fy-benefits">
-            {(content.benefits || []).map((item) => (
+            {benefits.map((item) => (
               <div key={item} className="fy-benefit-line">
                 <span className="material-symbols-outlined">check_circle</span>
                 {item}
@@ -371,11 +384,12 @@ function InfluencersBlock({ block, content, onCta }) {
 }
 
 function GamificationBlock({ content }) {
+  const cards = toItems(content.cards)
   return (
     <div className="fy-shell fy-section">
       <SectionHeading content={content} />
       <div className="fy-card-grid fy-quad-grid">
-        {(content.cards || []).map((card, index) => (
+        {cards.map((card, index) => (
           <article key={`${card.title}-${index}`} className="fy-gamify-card">
             <div className="fy-editorial-media" style={{ backgroundImage: `url(${card.image || ''})` }} />
             <div className="fy-gamify-copy">
@@ -394,17 +408,18 @@ function GamificationBlock({ content }) {
 }
 
 function PlansBlock({ block, content, onCta }) {
+  const plans = toItems(content.plans)
   return (
     <div className="fy-shell fy-section">
       <SectionHeading content={content} />
       <div className="fy-card-grid fy-plan-grid">
-        {(content.plans || []).map((plan, index) => (
+        {plans.map((plan, index) => (
           <article key={`${plan.name}-${index}`} className={`fy-plan-card ${plan.highlight ? 'is-highlight' : ''}`}>
             <Chip chip={{ label: plan.badge, tone: plan.highlight ? 'orange' : 'neutral' }} />
             <h3>{plan.name}</h3>
             <div className="fy-price">{plan.price}</div>
             <div className="fy-benefits">
-              {(plan.benefits || []).map((benefit) => (
+              {toItems(plan.benefits).map((benefit) => (
                 <div key={benefit} className="fy-benefit-line">
                   <span className="material-symbols-outlined">arrow_forward</span>
                   {benefit}
@@ -437,6 +452,8 @@ function FinalCtaBlock({ block, content, onCta }) {
 }
 
 function FooterBlock({ block, content, onCta }) {
+  const links = toItems(content.links)
+  const social = toItems(content.social)
   return (
     <footer className="fy-shell fy-footer">
       <div className="fy-footer-brand">
@@ -444,12 +461,12 @@ function FooterBlock({ block, content, onCta }) {
         <strong>{content.logoAccent || 'UY'}</strong>
       </div>
       <div className="fy-footer-links">
-        {(content.links || []).map((link) => (
+        {links.map((link) => (
           <a key={link.label} href={resolveUrl(link.url)}>{link.label}</a>
         ))}
       </div>
       <div className="fy-footer-social">
-        {(content.social || []).map((social) => (
+        {social.map((social) => (
           <a key={social.label} href={resolveUrl(social.url)} target="_blank" rel="noreferrer">{social.label}</a>
         ))}
       </div>
@@ -489,6 +506,10 @@ function CtaButton({ block, cta, onCta, ctaId }) {
 
 function Chip({ chip }) {
   return <span className={`fy-chip tone-${chip?.tone || 'neutral'}`}>{chip?.label}</span>
+}
+
+function toItems(value) {
+  return Array.isArray(value) ? value : []
 }
 
 const landingStyles = `

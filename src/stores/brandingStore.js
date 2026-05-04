@@ -39,13 +39,14 @@ export const useBrandingStore = create((set, get) => ({
       data.forEach(item => {
         if (settingsMap[item.key] !== undefined) {
           try {
+            const rawValue = typeof item.value === 'string' ? item.value : ''
             // Attempt to parse JSON if it looks like an array or boolean
-            if (item.value === 'true') settingsMap[item.key] = true
-            else if (item.value === 'false') settingsMap[item.key] = false
-            else if (item.value.startsWith('[') || item.value.startsWith('{')) {
-              settingsMap[item.key] = JSON.parse(item.value)
+            if (rawValue === 'true') settingsMap[item.key] = true
+            else if (rawValue === 'false') settingsMap[item.key] = false
+            else if (rawValue.startsWith('[') || rawValue.startsWith('{')) {
+              settingsMap[item.key] = JSON.parse(rawValue)
             } else {
-              settingsMap[item.key] = item.value
+              settingsMap[item.key] = rawValue
             }
           } catch (e) {
             settingsMap[item.key] = item.value

@@ -7,6 +7,7 @@ import LandingRenderer from '../components/landing/LandingRenderer'
 import BusinessApplyModal from '../components/BusinessApplyModal'
 import BusinessInfoModal from '../components/BusinessInfoModal'
 import AuthModal from '../components/AuthModal'
+import { ErrorBoundary } from '../components/ErrorBoundary'
 
 const fallbackBlocks = normalizeLandingBlocks(
   LANDING_DEFAULT_BLOCKS.map((block) => ({ ...block, content: block.published_content })),
@@ -99,13 +100,15 @@ export default function Landing() {
 
   return (
     <div style={{ minHeight: '100vh', background: '#060606' }}>
-      {!loading || renderedBlocks.length ? (
-        <LandingRenderer
-          blocks={renderedBlocks}
-          onCta={handleCta}
-          onBlockVisible={handleVisible}
-        />
-      ) : null}
+      <ErrorBoundary>
+        {!loading || renderedBlocks.length ? (
+          <LandingRenderer
+            blocks={renderedBlocks}
+            onCta={handleCta}
+            onBlockVisible={handleVisible}
+          />
+        ) : null}
+      </ErrorBoundary>
 
       <BusinessApplyModal isOpen={showApplyModal} onClose={() => setShowApplyModal(false)} />
       <BusinessInfoModal isOpen={showInfoModal} onClose={() => setShowInfoModal(false)} />
