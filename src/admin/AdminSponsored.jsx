@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import { useToast } from '../components/Toast';
 
 export default function AdminSponsored() {
+  const toast = useToast();
   const [placements, setPlacements] = useState([]);
   const [albums, setAlbums] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -67,7 +69,7 @@ export default function AdminSponsored() {
       setImages([{ url: '', is_main: true }]);
       fetchData();
     } else {
-      alert('Error creando promo');
+      toast.error('Error creando promo');
     }
   };
 

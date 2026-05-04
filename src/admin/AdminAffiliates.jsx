@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useAffiliateStore } from '../stores/affiliateStore'
+import { useToast } from '../components/Toast'
 
 const card = { background: "var(--admin-panel)", borderRadius: "0.5rem", padding: "1.25rem", border: "1px solid var(--admin-line)" }
 const btn = (bg, color) => ({ padding: '0.375rem 0.75rem', borderRadius: '0.5rem', background: bg, color, border: 'none', fontSize: '0.8125rem', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.375rem', transition: 'all 0.15s' })
@@ -27,6 +28,7 @@ const statusColors = {
 
 export default function AdminAffiliates() {
   const { affiliates, fetchAffiliates, createAffiliate, updateAffiliate, loading } = useAffiliateStore()
+  const toast = useToast()
   const [showModal, setShowModal] = useState(false)
   const [editing, setEditing] = useState(null)
   const [filter, setFilter] = useState('all')
@@ -181,7 +183,7 @@ export default function AdminAffiliates() {
                             onClick={() => {
                               const link = `${window.location.origin}/affiliate-join/${a.invitation_code}`
                               navigator.clipboard.writeText(link)
-                              alert('Link de invitación copiado!')
+                              toast.success('Link de invitación copiado!')
                             }}
                             style={{ background: 'none', border: 'none', color: 'var(--color-primary)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
                             title="Copiar link de invitación"

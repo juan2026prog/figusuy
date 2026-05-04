@@ -39,7 +39,7 @@ export default function BusinessLayout() {
     { path: '/business/promo', label: 'Promo activa', icon: 'campaign' },
     { path: '/business/metrics', label: 'Metricas', icon: 'insights' },
     { path: '/business/billing', label: 'Plan y facturacion', icon: 'payments' },
-    ...(location?.business_plan === 'legend' ? [{ path: '/business/legend', label: 'Validaciones PartnerStore', icon: 'workspace_premium' }] : []),
+    ...(location?.business_plan === 'legend' ? [{ path: '/business/legend', label: 'Validaciones Legend', icon: 'workspace_premium' }] : []),
     { path: '/business/help', label: 'Ayuda', icon: 'help' }
   ]
 

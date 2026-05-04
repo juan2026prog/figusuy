@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react'
 import { useAdminStore } from '../stores/adminStore'
 import { useAuthStore } from '../stores/authStore'
 import { supabase } from '../lib/supabase'
+import { useToast } from '../components/Toast'
+import ConfirmDialog from '../components/ConfirmDialog'
 
 const card = { background: "var(--admin-panel)", borderRadius: "0.5rem", padding: "1.25rem", border: "1px solid var(--admin-line)" }
 
@@ -12,6 +14,8 @@ export default function AdminChats() {
   const [messages, setMessages] = useState([])
   const [loadingMessages, setLoadingMessages] = useState(false)
   const [noteText, setNoteText] = useState('')
+  const toast = useToast()
+  const [confirmConfig, setConfirmConfig] = useState({ isOpen: false, title: '', message: '', onConfirm: null })
 
   useEffect(() => {
     fetchReportedChats()
@@ -34,22 +38,41 @@ export default function AdminChats() {
   }
 
   const handleClose = (reportId) => {
-    if (window.confirm('¿Cerrar este reporte como resuelto?')) {
-      closeChatReport(reportId, user.id)
-      setSelectedChat(null)
-    }
+    setConfirmConfig({
+      isOpen: true,
+      title: 'Cerrar Reporte',
+      message: '¿Cerrar este reporte como resuelto?',
+      onConfirm: () => {
+        closeChatReport(reportId, user.id)
+        setSelectedChat(null)
+        toast.success('Reporte cerrado')
+      }
+    })
   }
 
   const handleEscalate = (reportId) => {
-    if (window.confirm('¿Escalar este reporte a nivel superior?')) {
-      escalateChatReport(reportId, user.id)
-    }
+    setConfirmConfig({
+      isOpen: true,
+      title: 'Escalar Reporte',
+      message: '¿Escalar este reporte a nivel superior?',
+      onConfirm: () => {
+        escalateChatReport(reportId, user.id)
+        toast.success('Reporte escalado')
+      }
+    })
   }
 
   const handleBlockUser = (userId) => {
-    if (window.confirm('¿Bloquear este usuario? Se registrará en el historial de bloqueos.')) {
-      blockUser(userId, 'Bloqueado desde moderación de chats', 'permanent', user.id)
-    }
+    setConfirmConfig({
+      isOpen: true,
+      title: 'Bloquear Usuario',
+      message: '¿Bloquear este usuario? Se registrará en el historial de bloqueos.',
+      variant: 'danger',
+      onConfirm: () => {
+        blockUser(userId, 'Bloqueado desde moderación de chats', 'permanent', user.id)
+        toast.success('Usuario bloqueado')
+      }
+    })
   }
 
   const handleAddNote = async () => {
@@ -62,7 +85,7 @@ export default function AdminChats() {
     })
     logAction(user.id, 'ADD_NOTE_CHAT_REPORT', 'report', selectedChat.id, { note: noteText })
     setNoteText('')
-    alert('Nota interna agregada')
+    toast.success('Nota interna agregada')
   }
 
   return (
@@ -162,6 +185,18 @@ export default function AdminChats() {
           </div>
         )}
       </div>
+
+      <ConfirmDialog
+        isOpen={confirmConfig.isOpen}
+        title={confirmConfig.title}
+        message={confirmConfig.message}
+        variant={confirmConfig.variant || 'primary'}
+        onConfirm={() => {
+          if (confirmConfig.onConfirm) confirmConfig.onConfirm()
+          setConfirmConfig({ isOpen: false, title: '', message: '', onConfirm: null })
+        }}
+        onCancel={() => setConfirmConfig({ isOpen: false, title: '', message: '', onConfirm: null })}
+      />
     </div>
   )
 }

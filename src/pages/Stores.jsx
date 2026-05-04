@@ -7,9 +7,11 @@ import { useAuthStore } from '../stores/authStore'
 import { getBusinessBadges } from '../lib/ranking'
 import BusinessApplyModal from '../components/BusinessApplyModal'
 import PromoDetailModal, { getPromoStatus, PROMO_STATUS_CONFIG } from '../components/PromoDetailModal'
+import { useToast } from '../components/Toast'
 
 export default function Stores() {
   const navigate = useNavigate()
+  const toast = useToast()
   const [tab, setTab] = useState('all')
   const [search, setSearch] = useState('')
   const [locations, setLocations] = useState([])
@@ -121,7 +123,7 @@ export default function Stores() {
     const isExchange = permitsExchange(loc)
     if (tab === 'exchange') return isExchange
     if (tab === 'store') return !isExchange
-    if (tab === 'featured') return loc.business_plan === 'turbo' || loc.business_plan === 'dominio'
+    if (tab === 'featured') return loc.business_plan === 'turbo' || loc.business_plan === 'dominio' || loc.business_plan === 'legend'
     return true
   }).filter(loc => {
     if (!search) return true
@@ -222,7 +224,7 @@ export default function Stores() {
 
     const isTurbo = loc.business_plan === 'turbo';
     const isDominio = loc.business_plan === 'dominio';
-    const premiumBadge = isDominio ? 'Patrocinador de la Zona' : (isTurbo ? 'Destacado' : null);
+    const premiumBadge = isDominio ? 'Destaque en tu zona' : (isTurbo ? 'Destacado' : null);
 
     return { badge, typeStr, locationStr, description, premiumBadge, isTurbo, isDominio }
   }
@@ -236,7 +238,7 @@ export default function Stores() {
       const coords = await getUserLocation(10000);
       setUserCoords(coords);
     } catch (err) {
-      alert(err);
+      toast.error(err?.message || 'No pudimos obtener tu ubicacion.')
     }
   }
 

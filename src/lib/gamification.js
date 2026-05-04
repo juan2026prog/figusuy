@@ -122,7 +122,7 @@ export const ACHIEVEMENTS = {
   friend_active: { name: 'No Vine Solo', description: 'Tu amigo se activó', category: 'comunidad', icon: '🎉', target: 1 },
   share_match: { name: 'Buen Ojo', description: 'Compartiste un match', category: 'comunidad', icon: '👁️', target: 1 },
   share_album_complete: { name: 'Álbum Terminado', description: 'Compartiste tu álbum completado', category: 'comunidad', icon: '🏆', target: 1 },
-  share_partner_verified: { name: 'Verificado en PartnerStore', description: 'Compartiste validación PartnerStore', category: 'comunidad', icon: '✅', target: 1 },
+  share_partner_verified: { name: 'PartnerStore Verified', description: 'Compartiste una Validaci\u00f3n PartnerStore', category: 'comunidad', icon: 'OK', target: 1 },
 }
 
 export const ACHIEVEMENT_CATEGORIES = [

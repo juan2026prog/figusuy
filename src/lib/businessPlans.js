@@ -4,7 +4,7 @@ export const BUSINESS_PLAN_LABELS = {
   gratis: 'Plan Gratis',
   turbo: 'Plan Turbo',
   dominio: 'Plan Dominio',
-  legend: 'PartnerStore'
+  legend: 'Plan Legend'
 }
 
 export const LOCAL_BUSINESS_PLAN_RULES = {

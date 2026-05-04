@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { LEVELS, LEVEL_ORDER, ACHIEVEMENTS, BADGES, REWARD_TYPES } from '../lib/gamification'
+import { useToast } from '../components/Toast'
+import ConfirmDialog from '../components/ConfirmDialog'
 
 export default function AdminGamification() {
   const [stats, setStats] = useState(null)
@@ -10,6 +12,8 @@ export default function AdminGamification() {
   const [selectedUser, setSelectedUser] = useState(null)
   const [userDetail, setUserDetail] = useState(null)
   const [detailLoading, setDetailLoading] = useState(false)
+  const toast = useToast()
+  const [confirmConfig, setConfirmConfig] = useState({ isOpen: false, title: '', message: '', onConfirm: null })
 
   useEffect(() => { loadData() }, [filterLevel])
 
@@ -43,22 +47,36 @@ export default function AdminGamification() {
   }
 
   const overrideLevel = async (userId, newLevel) => {
-    if (!confirm(`¿Cambiar nivel a ${newLevel}?`)) return
-    await supabase.from('user_progress').update({ level: newLevel, updated_at: new Date().toISOString() }).eq('user_id', userId)
-    loadData()
-    if (selectedUser === userId) loadUserDetail(userId)
+    setConfirmConfig({
+      isOpen: true,
+      title: 'Cambiar Nivel',
+      message: `¿Cambiar nivel a ${newLevel}?`,
+      onConfirm: async () => {
+        await supabase.from('user_progress').update({ level: newLevel, updated_at: new Date().toISOString() }).eq('user_id', userId)
+        loadData()
+        if (selectedUser === userId) loadUserDetail(userId)
+        toast.success('Nivel actualizado')
+      }
+    })
   }
 
   const grantManualReward = async (userId, type, value, hours) => {
-    if (!confirm(`¿Otorgar ${type} (${value}) a este usuario?`)) return
-    await supabase.rpc('grant_gamification_reward', {
-      p_user_id: userId,
-      p_reward_type: type,
-      p_reward_value: value,
-      p_source: 'admin_manual',
-      p_duration_hours: hours || 24,
+    setConfirmConfig({
+      isOpen: true,
+      title: 'Otorgar Reward',
+      message: `¿Otorgar ${type} (${value}) a este usuario?`,
+      onConfirm: async () => {
+        await supabase.rpc('grant_gamification_reward', {
+          p_user_id: userId,
+          p_reward_type: type,
+          p_reward_value: value,
+          p_source: 'admin_manual',
+          p_duration_hours: hours || 24,
+        })
+        loadUserDetail(userId)
+        toast.success('Reward otorgado')
+      }
     })
-    loadUserDetail(userId)
   }
 
   const s = (styles) => styles
@@ -292,6 +310,17 @@ export default function AdminGamification() {
           )}
         </>
       )}
+
+      <ConfirmDialog
+        isOpen={confirmConfig.isOpen}
+        title={confirmConfig.title}
+        message={confirmConfig.message}
+        onConfirm={() => {
+          if (confirmConfig.onConfirm) confirmConfig.onConfirm()
+          setConfirmConfig({ isOpen: false, title: '', message: '', onConfirm: null })
+        }}
+        onCancel={() => setConfirmConfig({ isOpen: false, title: '', message: '', onConfirm: null })}
+      />
     </div>
   )
 }

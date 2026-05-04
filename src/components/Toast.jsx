@@ -14,23 +14,15 @@ export function ToastProvider({ children }) {
 
   const addToast = useCallback((message, type = 'info', duration = 3500) => {
     const id = ++idRef.current
-    setToasts(prev => [...prev, { id, message, type, exiting: false }])
+    setToasts((prev) => [...prev, { id, message, type, exiting: false }])
     setTimeout(() => {
-      setToasts(prev => prev.map(t => t.id === id ? { ...t, exiting: true } : t))
+      setToasts((prev) => prev.map((t) => (t.id === id ? { ...t, exiting: true } : t)))
       setTimeout(() => {
-        setToasts(prev => prev.filter(t => t.id !== id))
+        setToasts((prev) => prev.filter((t) => t.id !== id))
       }, 300)
     }, duration)
   }, [])
 
-  const toast = useCallback({
-    success: (msg, dur) => addToast(msg, 'success', dur),
-    error: (msg, dur) => addToast(msg, 'error', dur),
-    info: (msg, dur) => addToast(msg, 'info', dur),
-    warning: (msg, dur) => addToast(msg, 'warning', dur),
-  }, [addToast])
-
-  // Fix: useCallback returns a function, not an object. Use useMemo or just pass object.
   const value = {
     success: (msg, dur) => addToast(msg, 'success', dur),
     error: (msg, dur) => addToast(msg, 'error', dur),
@@ -42,7 +34,7 @@ export function ToastProvider({ children }) {
     <ToastContext.Provider value={value}>
       {children}
       <div className="toast-container">
-        {toasts.map(t => (
+        {toasts.map((t) => (
           <ToastItem key={t.id} toast={t} />
         ))}
       </div>
@@ -51,10 +43,10 @@ export function ToastProvider({ children }) {
 }
 
 const icons = {
-  success: '✓',
-  error: '✕',
-  warning: '⚠',
-  info: 'ℹ',
+  success: 'OK',
+  error: 'ERR',
+  warning: 'WARN',
+  info: 'INFO',
 }
 
 function ToastItem({ toast }) {
@@ -73,9 +65,13 @@ export default function Toast({ message, type, onClose }) {
       return () => clearTimeout(t)
     }
   }, [onClose])
-  
+
   return (
-    <div className={`toast toast-${type} toast-enter`} style={{position: 'fixed', bottom: 20, left: '50%', transform: 'translateX(-50%)', zIndex: 9999, cursor: 'pointer'}} onClick={onClose}>
+    <div
+      className={`toast toast-${type} toast-enter`}
+      style={{ position: 'fixed', bottom: 20, left: '50%', transform: 'translateX(-50%)', zIndex: 9999, cursor: 'pointer' }}
+      onClick={onClose}
+    >
       <span className={`toast-icon toast-icon-${type}`}>{icons[type] || icons.info}</span>
       <span className="toast-message">{message}</span>
     </div>

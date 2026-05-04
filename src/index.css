@@ -296,6 +296,12 @@ h1, h2, h3, h4, h5, h6 {
   white-space: nowrap;
 }
 
+@media (max-width: 768px) {
+  .btn {
+    padding: 0.875rem 1.25rem; /* Min 44px touch target */
+  }
+}
+
 .btn:active {
   transform: scale(0.97);
 }

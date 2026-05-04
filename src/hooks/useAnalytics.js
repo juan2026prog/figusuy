@@ -7,31 +7,31 @@ export function useAnalytics() {
   const { user } = useAuthStore()
   const location = useLocation()
 
-  // Track page views automatically when the location changes
-  useEffect(() => {
-    trackEvent('page_view', { path: location.pathname, search: location.search })
-  }, [location.pathname, location.search, user?.id])
+  const getSessionId = () => {
+    const existing = localStorage.getItem('session_id')
+    if (existing) return existing
+    const next = crypto.randomUUID()
+    localStorage.setItem('session_id', next)
+    return next
+  }
 
   const trackEvent = async (eventName, properties = {}) => {
     try {
-      if (!user) return // Don't track if not logged in (or you can use a session ID)
-      
-      const session_id = localStorage.getItem('session_id') || crypto.randomUUID()
-      if (!localStorage.getItem('session_id')) {
-        localStorage.setItem('session_id', session_id)
-      }
-
       await supabase.from('user_events').insert({
-        user_id: user.id,
-        session_id: session_id,
+        user_id: user?.id || null,
+        session_id: getSessionId(),
         event: eventName,
         page: location.pathname,
-        properties: properties
+        properties
       })
     } catch (err) {
       console.warn('Analytics error:', err)
     }
   }
+
+  useEffect(() => {
+    trackEvent('page_view', { path: location.pathname, search: location.search })
+  }, [location.pathname, location.search, user?.id])
 
   return { trackEvent }
 }

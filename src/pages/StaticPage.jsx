@@ -3,9 +3,25 @@ import { useParams } from 'react-router-dom'
 import { supabase } from "../lib/supabase"
 import GlobalFooter from '../components/GlobalFooter'
 
+const escapeHtml = (text) =>
+  text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+
+const sanitizeUrl = (url) => {
+  const trimmed = String(url || '').trim()
+  if (!trimmed) return '#'
+  if (trimmed.startsWith('/')) return trimmed
+  if (/^(https?:|mailto:)/i.test(trimmed)) return trimmed
+  return '#'
+}
+
 const parseMarkdown = (text) => {
   if (!text) return { __html: '' }
-  let html = text
+  let html = escapeHtml(text)
     // Headers
     .replace(/^### (.*$)/gim, '<h3>$1</h3>')
     .replace(/^## (.*$)/gim, '<h2>$1</h2>')
@@ -15,7 +31,7 @@ const parseMarkdown = (text) => {
     // Italic
     .replace(/\*(.*?)\*/gim, '<em>$1</em>')
     // Links
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/gim, '<a href="$2" target="_blank" rel="noreferrer" style="color: var(--color-primary)">$1</a>')
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/gim, (_, label, url) => `<a href="${sanitizeUrl(url)}" target="_blank" rel="noreferrer" style="color: var(--color-primary)">${label}</a>`)
     // Lists
     .replace(/^\s*\n\*/gm, '<ul>\n*')
     .replace(/^(\*.+)\s*\n([^\*])/gm, '$1\n</ul>\n$2')

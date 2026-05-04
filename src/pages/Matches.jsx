@@ -18,7 +18,7 @@ const TABS = [
 export default function MatchesPage() {
   const navigate   = useNavigate()
   const { profile, planRules } = useAuthStore()
-  const { matches, matchesLoading, findMatches, selectedAlbum, missingStickers, duplicateStickers } = useAppStore()
+  const { matches, matchesLoading, findMatches, selectedAlbum, missingStickers, duplicateStickers, createOrGetChat } = useAppStore()
   const { favoriteIds } = useFavoritesStore()
   const [tab, setTab] = useState('all')
 
@@ -77,6 +77,16 @@ export default function MatchesPage() {
 
   const handleGeoUpdate = () => {
     // handled by LocationSelector now
+  }
+
+  const handleOpenChat = async (otherUserId) => {
+    if (!profile?.id || !selectedAlbum?.id || !otherUserId) return
+    try {
+      const chat = await createOrGetChat(profile.id, otherUserId, selectedAlbum.id)
+      if (chat?.id) navigate(`/chat/${chat.id}`)
+    } catch (error) {
+      console.error('Error opening chat:', error)
+    }
   }
 
   const topMatch = tab === 'all' && filteredMatches.length > 0 ? filteredMatches[0] : null;
@@ -353,7 +363,7 @@ export default function MatchesPage() {
                 </div>
               </div>
               <div className="top-actions-grid">
-                <button className="btn orange" onClick={() => navigate(`/chat/new/${topMatch.userId || topMatch.profile?.id}`)}>Abrir chat</button>
+                <button className="btn orange" onClick={() => handleOpenChat(topMatch.userId || topMatch.profile?.id)}>Abrir chat</button>
                 <button className="btn" disabled style={{ opacity: 0.5 }}>Ver perfil</button>
               </div>
             </aside>

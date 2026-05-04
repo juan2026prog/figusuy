@@ -44,17 +44,6 @@ export const useAdminStore = create((set, get) => ({
     
     let role = data?.role || 'user'
     
-    // 2. Fallback check by email to prevent lockout
-    if (role === 'user') {
-      const { data: prof } = await supabase.from('profiles').select('email').eq('id', userId).single()
-      if (prof?.email === 'juanmacastillo2008@gmail.com' || prof?.email === 'admin@figusuy.com') {
-        role = 'god_admin'
-        
-        // Auto-fix the missing role in the DB
-        await supabase.from('user_roles').upsert({ user_id: userId, role: 'god_admin' }, { onConflict: 'user_id' })
-      }
-    }
-    
     const allowedRoles = ['god_admin', 'admin', 'moderator', 'support', 'comercial', 'analista']
     const isAdmin = allowedRoles.includes(role)
     
@@ -452,7 +441,7 @@ export const useAdminStore = create((set, get) => ({
               template: 'business_approved',
               data: {
                 name: request.applicant_name || request.profile?.name || 'Comerciante',
-                plan: request.business_plan === 'legend' ? 'PartnerStore' :
+                plan: request.business_plan === 'legend' ? 'Plan Legend' :
                       request.business_plan === 'dominio' ? 'Plan Dominio' : 
                       request.business_plan === 'turbo' ? 'Plan Turbo' : 'Plan Gratuito',
                 link: 'https://figusuy.vercel.app/login?type=business'

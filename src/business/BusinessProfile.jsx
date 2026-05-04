@@ -2,11 +2,13 @@ import React, { useEffect, useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import UniversalAddressAutocomplete from '../components/UniversalAddressAutocomplete'
+import { useToast } from '../components/Toast'
 
 export default function BusinessProfile() {
   const { location, fetchLocation } = useOutletContext()
   const [saving, setSaving] = useState(false)
   const [previewImages, setPreviewImages] = useState([])
+  const toast = useToast()
 
   if (!location) return null
 
@@ -83,7 +85,7 @@ export default function BusinessProfile() {
     }
 
     if (location.business_plan === 'legend' && (!formData.partner_benefit_title.trim() || !formData.partner_benefit_desc.trim())) {
-      alert('Las tiendas PartnerStore deben configurar un beneficio obligatorio.')
+      toast.error('Las Tiendas PartnerStore deben configurar un beneficio obligatorio.')
       setSaving(false)
       return
     }
@@ -94,9 +96,9 @@ export default function BusinessProfile() {
       .eq('id', location.id)
 
     if (error) {
-      alert('Error guardando perfil: ' + error.message)
+      toast.error('Error guardando perfil: ' + error.message)
     } else {
-      alert('Perfil guardado exitosamente')
+      toast.success('Perfil guardado exitosamente')
       fetchLocation()
     }
     setSaving(false)

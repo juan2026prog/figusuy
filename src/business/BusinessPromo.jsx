@@ -3,6 +3,8 @@ import { useOutletContext } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { getLocalBusinessPlanRules } from '../lib/businessPlans'
 import PromoDetailModal, { getPromoStatus, PROMO_STATUS_CONFIG } from '../components/PromoDetailModal'
+import ConfirmDialog from '../components/ConfirmDialog'
+import { useToast } from '../components/Toast'
 
 export default function BusinessPromo() {
   const { location } = useOutletContext()
@@ -13,6 +15,8 @@ export default function BusinessPromo() {
   const [editForm, setEditForm] = useState({})
   const [saving, setSaving] = useState(false)
   const [previewPromo, setPreviewPromo] = useState(null)
+  const [deletePromo, setDeletePromo] = useState(null)
+  const toast = useToast()
 
   useEffect(() => {
     if (location) {
@@ -42,13 +46,13 @@ export default function BusinessPromo() {
 
   const handleCreate = async () => {
     if (!planRules || planRules.max_active_promos === 0) {
-      alert('Tu plan Gratis no permite promos activas. Mejora a Turbo.')
+      toast.warning('Tu plan Gratis no permite promos activas. Mejora a Turbo.')
       return
     }
 
     const activeCount = promos.filter(p => p.is_active).length
     if (planRules.max_active_promos !== null && activeCount >= planRules.max_active_promos) {
-      alert(`Tu plan permite ${planRules.max_active_promos} promo activa. Pausa la actual para crear otra.`)
+      toast.warning(`Tu plan permite ${planRules.max_active_promos} promo activa. Pausa la actual para crear otra.`)
       return
     }
 
@@ -65,6 +69,7 @@ export default function BusinessPromo() {
     }).select()
 
     if (!error) {
+      toast.success('Promo creada')
       fetchPromos()
     }
   }
@@ -75,7 +80,7 @@ export default function BusinessPromo() {
     if (newStatus && planRules && planRules.max_active_promos !== null) {
       const activeCount = promos.filter(p => p.id !== promo.id && p.is_active).length
       if (activeCount >= planRules.max_active_promos) {
-        alert('Limite alcanzado. Pausa otra promo primero.')
+        toast.warning('Limite alcanzado. Pausa otra promo primero.')
         return
       }
     }
@@ -103,7 +108,7 @@ export default function BusinessPromo() {
 
   const saveEdit = async () => {
     if (!editForm.title.trim()) {
-      alert('El título es obligatorio.')
+      toast.error('El titulo es obligatorio.')
       return
     }
     setSaving(true)
@@ -120,18 +125,21 @@ export default function BusinessPromo() {
       .update(payload)
       .eq('id', editingId)
     if (error) {
-      alert('Error al guardar: ' + error.message)
+      toast.error('Error al guardar: ' + error.message)
     } else {
       setEditingId(null)
       setEditForm({})
+      toast.success('Promo actualizada')
       fetchPromos()
     }
     setSaving(false)
   }
 
-  const handleDelete = async (promo) => {
-    if (!confirm('¿Seguro que querés eliminar esta promo?')) return
-    await supabase.from('sponsored_placements').delete().eq('id', promo.id)
+  const handleDelete = async () => {
+    if (!deletePromo?.id) return
+    await supabase.from('sponsored_placements').delete().eq('id', deletePromo.id)
+    setDeletePromo(null)
+    toast.success('Promo eliminada')
     fetchPromos()
   }
 
@@ -564,7 +572,7 @@ export default function BusinessPromo() {
                     <span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>visibility</span>
                     Ver promo
                   </button>
-                  <button className="biz-btn-danger" onClick={() => handleDelete(promo)}>
+                  <button className="biz-btn-danger" onClick={() => setDeletePromo(promo)}>
                     <span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>delete</span>
                     Eliminar
                   </button>
@@ -584,6 +592,15 @@ export default function BusinessPromo() {
           onViewLocal={() => setPreviewPromo(null)}
         />
       )}
+      <ConfirmDialog
+        isOpen={!!deletePromo}
+        title="Eliminar promo"
+        message="Esta promo se quitara del panel y dejara de mostrarse al publico."
+        confirmText="Eliminar"
+        cancelText="Cancelar"
+        onConfirm={handleDelete}
+        onCancel={() => setDeletePromo(null)}
+      />
     </div>
   )
 }

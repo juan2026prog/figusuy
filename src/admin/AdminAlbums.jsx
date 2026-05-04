@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react'
 import { useAdminStore } from '../stores/adminStore'
 import { supabase } from '../lib/supabase'
+import { useToast } from '../components/Toast'
+import ConfirmDialog from '../components/ConfirmDialog'
 
 const card = { background: "var(--admin-panel)", borderRadius: "0.5rem", padding: "1.25rem", border: "1px solid var(--admin-line)" }
 const input = { width: "100%", padding: "0.625rem 0.875rem", borderRadius: "0.5rem", border: "1px solid var(--admin-line)", fontSize: "0.875rem", outline: "none", background: "#0d0d0d", color: "#fff" }
@@ -13,6 +15,8 @@ const statusColors = { active: '#10b981', new: '#3b82f6', popular: 'var(--color-
 
 export default function AdminAlbums() {
   const { allAlbums, fetchAllAlbums, createAlbum, updateAlbum, deleteAlbum, loading, albumStickers, fetchAlbumStickers, upsertAlbumStickers, deleteAlbumSticker } = useAdminStore()
+  const toast = useToast()
+  const [confirmConfig, setConfirmConfig] = useState(null)
   const [showForm, setShowForm] = useState(false)
   const [manageStickersAlbum, setManageStickersAlbum] = useState(null)
   const [stickerForm, setStickerForm] = useState({ sticker_number: '', name: '', team: '', category: '', image_url: '' })
@@ -202,7 +206,7 @@ export default function AdminAlbums() {
       setEditingSticker(null)
       fetchAlbumStickers(manageStickersAlbum.id)
     } else {
-      alert('Error: ' + err.message)
+      toast.error('Error: ' + err.message)
     }
   }
 
@@ -251,7 +255,7 @@ export default function AdminAlbums() {
     reader.onload = async (event) => {
       const text = event.target.result
       const lines = text.split(/\\r?\\n/).filter(l => l.trim() !== '')
-      if (lines.length < 2) return alert('CSV vacío o sin formato correcto')
+      if (lines.length < 2) { toast.error('CSV vacío o sin formato correcto'); return }
       
       const headers = parseCSVLine(lines[0]).map(h => h.toLowerCase())
       
@@ -312,11 +316,11 @@ export default function AdminAlbums() {
     const err = await upsertAlbumStickers(csvPreviewData)
     if (!err) {
       fetchAlbumStickers(manageStickersAlbum.id)
-      alert(`¡${csvPreviewData.length} figuritas procesadas con éxito!`)
+      toast.success(`¡${csvPreviewData.length} figuritas procesadas con éxito!`)
       setCsvPreviewData(null)
       setCsvErrors([])
     } else {
-      alert('Error al importar CSV: ' + err.message)
+      toast.error('Error al importar CSV: ' + err.message)
     }
   }
 
@@ -643,7 +647,7 @@ export default function AdminAlbums() {
                       <button onClick={() => handleDuplicate(album)} style={{ ...btn("var(--admin-panel2)", '#d97706', '1px solid var(--color-text-secondary)'), padding: '0.375rem', title: 'Duplicar' }}>
                         <span className="material-symbols-outlined" style={{ fontSize: '1.125rem' }}>content_copy</span>
                       </button>
-                      <button onClick={() => { if (confirm(`¿Estás seguro de eliminar el álbum "${album.name}"? Esta acción no se puede deshacer.`)) deleteAlbum(album.id) }} style={{ ...btn('#fef2f2', '#ef4444', '1px solid #fca5a5'), padding: '0.375rem', title: 'Eliminar' }}>
+                      <button onClick={() => setConfirmConfig({ title: 'Eliminar Álbum', message: `¿Estás seguro de eliminar el álbum "${album.name}"? Esta acción no se puede deshacer.`, variant: 'danger', onConfirm: () => { deleteAlbum(album.id); toast.success('Álbum eliminado'); setConfirmConfig(null) } })} style={{ ...btn('#fef2f2', '#ef4444', '1px solid #fca5a5'), padding: '0.375rem', title: 'Eliminar' }}>
                         <span className="material-symbols-outlined" style={{ fontSize: '1.125rem' }}>delete</span>
                       </button>
                     </div>
@@ -775,7 +779,7 @@ export default function AdminAlbums() {
                         <td style={{ padding: '0.75rem', textAlign: 'right' }}>
                           <div style={{ display: 'flex', gap: '0.25rem', justifyContent: 'flex-end' }}>
                             <button onClick={() => { setEditingSticker(s); setStickerForm({ sticker_number: s.sticker_number, name: s.name || '', team: s.team || '', category: s.category || '', image_url: s.image_url || '' }) }} style={{ background: 'none', border: 'none', color: '#2563eb', cursor: 'pointer' }}><span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>edit</span></button>
-                            <button onClick={async () => { if(confirm('¿Eliminar figurita?')) { await deleteAlbumSticker(s.id); fetchAlbumStickers(manageStickersAlbum.id) } }} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer' }}><span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>delete</span></button>
+                            <button onClick={() => setConfirmConfig({ title: 'Eliminar Figurita', message: `¿Eliminar figurita #${s.sticker_number}?`, variant: 'danger', onConfirm: async () => { await deleteAlbumSticker(s.id); fetchAlbumStickers(manageStickersAlbum.id); toast.success('Figurita eliminada'); setConfirmConfig(null) } })} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer' }}><span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>delete</span></button>
                           </div>
                         </td>
                       </tr>
@@ -789,6 +793,15 @@ export default function AdminAlbums() {
             </div>
           </div>
         </div>
+      )}
+      {confirmConfig && (
+        <ConfirmDialog
+          title={confirmConfig.title}
+          message={confirmConfig.message}
+          variant={confirmConfig.variant}
+          onConfirm={confirmConfig.onConfirm}
+          onCancel={() => setConfirmConfig(null)}
+        />
       )}
     </div>
   )

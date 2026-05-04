@@ -2,11 +2,13 @@ import React from 'react'
 import { useFavoritesStore } from '../stores/favoritesStore'
 import { useAuthStore } from '../stores/authStore'
 import { useThemeStore } from '../stores/themeStore'
+import { useToast } from './Toast'
 
 export default function FavoriteButton({ targetUserId, size = 'default', showLabel = false, className = '' }) {
   const { profile, planRules } = useAuthStore()
   const { favoriteIds, toggleFavorite } = useFavoritesStore()
   const { isDark } = useThemeStore()
+  const toast = useToast()
 
   if (!profile || profile.id === targetUserId) return null
 
@@ -17,25 +19,20 @@ export default function FavoriteButton({ targetUserId, size = 'default', showLab
     e.stopPropagation()
 
     if (!isFav && planRules?.favorite_limit && favoriteIds.size >= planRules.favorite_limit) {
-      const goPremium = window.confirm('Llegaste al límite de favoritos de tu plan.\n\n¿Querés ampliar con Plus?')
-      if (goPremium) {
-        window.location.href = '/premium'
-      }
+      toast.warning('Llegaste al limite de favoritos de tu plan. Mejora a Plus para guardar mas perfiles.')
       return
     }
 
     toggleFavorite(profile.id, targetUserId)
   }
 
-  // Size styles
-  const btnSize = size === 'sm' ? '28px' : size === 'lg' ? '40px' : '32px'
   const iconSize = size === 'sm' ? '1rem' : size === 'lg' ? '1.5rem' : '1.25rem'
 
   return (
     <button
       onClick={handleToggle}
       className={`fav-btn ${className}`}
-      title={isFav ? "Quitar de favoritos" : "Agregar a favoritos"}
+      title={isFav ? 'Quitar de favoritos' : 'Agregar a favoritos'}
       style={{
         display: 'flex',
         alignItems: 'center',
@@ -50,9 +47,9 @@ export default function FavoriteButton({ targetUserId, size = 'default', showLab
         transition: 'all 0.2s ease',
       }}
     >
-      <span 
-        className="material-symbols-outlined" 
-        style={{ 
+      <span
+        className="material-symbols-outlined"
+        style={{
           fontSize: iconSize,
           fontVariationSettings: isFav ? "'FILL' 1" : "'FILL' 0",
           transition: 'all 0.2s ease',

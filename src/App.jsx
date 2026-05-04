@@ -1,92 +1,92 @@
-import React, { useEffect } from 'react'
+import React, { Suspense, lazy, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from './stores/authStore'
 import { useFeatureFlagStore } from './stores/featureFlagStore'
 import { useBrandingStore } from './stores/brandingStore'
 import BottomNav from './components/BottomNav'
 import GlobalFooter from './components/GlobalFooter'
+import Sidebar from './components/Sidebar'
 import { useAnalytics } from './hooks/useAnalytics'
+import { useGrowthStore } from './stores/growthStore'
 
-// Public
-import Landing from './pages/Landing'
-import Login from './pages/Login'
-
-// App pages
-import Album from './pages/Album'
-import Matches from './pages/Matches'
-import ChatsList from './pages/ChatsList'
-import Chat from './pages/Chat'
-import Profile from './pages/Profile'
-import Premium from './pages/Premium'
-import Stores from './pages/Stores'
-import Favorites from './pages/Favorites'
-import PartnerPlans from './pages/PartnerPlans'
-import Achievements from './pages/Achievements'
-
-// Business Dashboard
-import BusinessLayout from './business/BusinessLayout'
-import BusinessDashboard from './business/BusinessDashboard'
-import BusinessProfile from './business/BusinessProfile'
-import BusinessPhotos from './business/BusinessPhotos'
-import BusinessPromo from './business/BusinessPromo'
-import BusinessMetrics from './business/BusinessMetrics'
-import BusinessBilling from './business/BusinessBilling'
-import BusinessPartnerStoreValidations from './business/BusinessPartnerStoreValidations'
-import BusinessHelp from './business/BusinessHelp'
 import BusinessAccessGuard from './components/BusinessAccessGuard'
-import BusinessApply from './pages/BusinessApply'
-import BusinessPending from './pages/BusinessPending'
 
-// Admin
-import AdminLayout from './admin/AdminLayout'
-import AdminDashboard from './admin/Dashboard'
-import AdminAlbums from './admin/AdminAlbums'
-import AdminUsers from './admin/AdminUsers'
-import AdminReports from './admin/AdminReports'
-import AdminSettings from './admin/AdminSettings'
-import AdminAlgorithm from './admin/AdminAlgorithm'
-import AdminPlans from './admin/AdminPlans'
-import AdminAudit from './admin/AdminAudit'
-import AdminPage from './admin/AdminPage'
-import AdminLocations from './admin/AdminLocations'
-import AdminLocationRequests from './admin/AdminLocationRequests'
-import AdminPromos from './admin/AdminPromos'
-import AdminChats from './admin/AdminChats'
-import AdminFavorites from './admin/AdminFavorites'
-import AdminCMS from './admin/AdminCMS'
-import AdminNotifications from './admin/AdminNotifications'
-import AdminSEO from './admin/AdminSEO'
-import AdminRoles from './admin/AdminRoles'
-import AdminLogs from './admin/AdminLogs'
-import AdminConfig from './admin/AdminConfig'
-import AdminPayments from './admin/AdminPayments'
-import AdminAnalytics from './admin/AdminAnalytics'
-import AdminBlocks from './admin/AdminBlocks'
-import AdminSecurity from './admin/AdminSecurity'
-import AdminSubscriptions from './admin/AdminSubscriptions'
-import AdminBusinessPlans from './admin/AdminBusinessPlans'
-import AdminSponsored from './admin/AdminSponsored'
-import AdminFeatureFlags from './admin/AdminFeatureFlags'
-import AdminGamification from './admin/AdminGamification'
-import AdminAffiliates from './admin/AdminAffiliates'
-import AdminAffiliateCampaigns from './admin/AdminAffiliateCampaigns'
-import AdminAffiliateBenefits from './admin/AdminAffiliateBenefits'
-import AdminAffiliateCommissions from './admin/AdminAffiliateCommissions'
-import AdminAffiliatePayments from './admin/AdminAffiliatePayments'
-import AdminBranding from './admin/AdminBranding'
-import AdminStaticPages from './admin/AdminStaticPages'
-import AffiliateJoin from './pages/AffiliateJoin'
-import StaticPage from './pages/StaticPage'
+const Landing = lazy(() => import('./pages/Landing'))
+const Login = lazy(() => import('./pages/Login'))
+const ReferralLanding = lazy(() => import('./pages/ReferralLanding'))
+const AffiliateJoin = lazy(() => import('./pages/AffiliateJoin'))
+const StaticPage = lazy(() => import('./pages/StaticPage'))
 
-// Growth Engine Admin
-import AdminSmartNotifications from './admin/AdminSmartNotifications'
-import AdminOnboarding from './admin/AdminOnboarding'
-import AdminReferrals from './admin/AdminReferrals'
-import AdminGrowthAchievements from './admin/AdminGrowthAchievements'
-import AdminRewardsEngine from './admin/AdminRewardsEngine'
+const Album = lazy(() => import('./pages/Album'))
+const Matches = lazy(() => import('./pages/Matches'))
+const ChatsList = lazy(() => import('./pages/ChatsList'))
+const Chat = lazy(() => import('./pages/Chat'))
+const Profile = lazy(() => import('./pages/Profile'))
+const Premium = lazy(() => import('./pages/Premium'))
+const Stores = lazy(() => import('./pages/Stores'))
+const Favorites = lazy(() => import('./pages/Favorites'))
+const PartnerPlans = lazy(() => import('./pages/PartnerPlans'))
+const Achievements = lazy(() => import('./pages/Achievements'))
 
-// Referral
-import ReferralLanding from './pages/ReferralLanding'
+const BusinessLayout = lazy(() => import('./business/BusinessLayout'))
+const BusinessDashboard = lazy(() => import('./business/BusinessDashboard'))
+const BusinessProfile = lazy(() => import('./business/BusinessProfile'))
+const BusinessPhotos = lazy(() => import('./business/BusinessPhotos'))
+const BusinessPromo = lazy(() => import('./business/BusinessPromo'))
+const BusinessMetrics = lazy(() => import('./business/BusinessMetrics'))
+const BusinessBilling = lazy(() => import('./business/BusinessBilling'))
+const BusinessPartnerStoreValidations = lazy(() => import('./business/BusinessPartnerStoreValidations'))
+const BusinessHelp = lazy(() => import('./business/BusinessHelp'))
+const BusinessApply = lazy(() => import('./pages/BusinessApply'))
+const BusinessPending = lazy(() => import('./pages/BusinessPending'))
+
+const AdminLayout = lazy(() => import('./admin/AdminLayout'))
+const AdminDashboard = lazy(() => import('./admin/Dashboard'))
+const AdminAlbums = lazy(() => import('./admin/AdminAlbums'))
+const AdminUsers = lazy(() => import('./admin/AdminUsers'))
+const AdminReports = lazy(() => import('./admin/AdminReports'))
+const AdminSettings = lazy(() => import('./admin/AdminSettings'))
+const AdminAlgorithm = lazy(() => import('./admin/AdminAlgorithm'))
+const AdminPlans = lazy(() => import('./admin/AdminPlans'))
+const AdminAudit = lazy(() => import('./admin/AdminAudit'))
+const AdminPage = lazy(() => import('./admin/AdminPage'))
+const AdminLocations = lazy(() => import('./admin/AdminLocations'))
+const AdminLocationRequests = lazy(() => import('./admin/AdminLocationRequests'))
+const AdminChats = lazy(() => import('./admin/AdminChats'))
+const AdminFavorites = lazy(() => import('./admin/AdminFavorites'))
+const AdminCMS = lazy(() => import('./admin/AdminCMS'))
+const AdminNotifications = lazy(() => import('./admin/AdminNotifications'))
+const AdminSEO = lazy(() => import('./admin/AdminSEO'))
+const AdminRoles = lazy(() => import('./admin/AdminRoles'))
+const AdminLogs = lazy(() => import('./admin/AdminLogs'))
+const AdminConfig = lazy(() => import('./admin/AdminConfig'))
+const AdminPayments = lazy(() => import('./admin/AdminPayments'))
+const AdminAnalytics = lazy(() => import('./admin/AdminAnalytics'))
+const AdminBlocks = lazy(() => import('./admin/AdminBlocks'))
+const AdminSecurity = lazy(() => import('./admin/AdminSecurity'))
+const AdminSubscriptions = lazy(() => import('./admin/AdminSubscriptions'))
+const AdminBusinessPlans = lazy(() => import('./admin/AdminBusinessPlans'))
+const AdminSponsored = lazy(() => import('./admin/AdminSponsored'))
+const AdminFeatureFlags = lazy(() => import('./admin/AdminFeatureFlags'))
+const AdminGamification = lazy(() => import('./admin/AdminGamification'))
+const AdminAffiliates = lazy(() => import('./admin/AdminAffiliates'))
+const AdminAffiliateCampaigns = lazy(() => import('./admin/AdminAffiliateCampaigns'))
+const AdminAffiliateBenefits = lazy(() => import('./admin/AdminAffiliateBenefits'))
+const AdminAffiliateCommissions = lazy(() => import('./admin/AdminAffiliateCommissions'))
+const AdminAffiliatePayments = lazy(() => import('./admin/AdminAffiliatePayments'))
+const AdminBranding = lazy(() => import('./admin/AdminBranding'))
+const AdminStaticPages = lazy(() => import('./admin/AdminStaticPages'))
+const AdminSmartNotifications = lazy(() => import('./admin/AdminSmartNotifications'))
+const AdminOnboarding = lazy(() => import('./admin/AdminOnboarding'))
+const AdminReferrals = lazy(() => import('./admin/AdminReferrals'))
+const AdminGrowthAchievements = lazy(() => import('./admin/AdminGrowthAchievements'))
+const AdminRewardsEngine = lazy(() => import('./admin/AdminRewardsEngine'))
+
+const AlphaWelcomeModal = lazy(() => import('./components/AlphaWelcomeModal'))
+const GamificationToast = lazy(() => import('./components/GamificationToast'))
+const OnboardingGuide = lazy(() => import('./components/OnboardingGuide'))
+const ShareModal = lazy(() => import('./components/ShareModal'))
+const SmartNotifications = lazy(() => import('./components/SmartNotifications'))
 
 function LoadingScreen() {
   return (
@@ -155,14 +155,6 @@ function GlobalHooks() {
   useAnalytics()
   return null
 }
-
-import Sidebar from './components/Sidebar'
-import AlphaWelcomeModal from './components/AlphaWelcomeModal'
-import GamificationToast from './components/GamificationToast'
-import OnboardingGuide from './components/OnboardingGuide'
-import ShareModal from './components/ShareModal'
-import SmartNotifications from './components/SmartNotifications'
-import { useGrowthStore } from './stores/growthStore'
 
 function AppLayout({ children }) {
   return (
@@ -246,7 +238,8 @@ export default function App() {
   return (
     <BrowserRouter>
       <GlobalHooks />
-      <Routes>
+      <Suspense fallback={<LoadingScreen />}>
+        <Routes>
         {/* Public */}
         <Route path="/" element={<PublicRoute><Landing /></PublicRoute>} />
         <Route path="/login" element={<PublicRoute><PageTransitionWrapper><Login /></PageTransitionWrapper></PublicRoute>} />
@@ -331,12 +324,13 @@ export default function App() {
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-      <AlphaWelcomeModal />
-      <GamificationToast />
-      <OnboardingGuide />
-      <ShareModal />
-      <SmartNotifications />
+        </Routes>
+        <AlphaWelcomeModal />
+        <GamificationToast />
+        <OnboardingGuide />
+        <ShareModal />
+        <SmartNotifications />
+      </Suspense>
     </BrowserRouter>
   )
 }

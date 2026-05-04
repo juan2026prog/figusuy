@@ -28,23 +28,10 @@ export default function PlansModal({ isOpen, onClose }) {
     const plan = plans.find(p => p.id === planId)
     if (!plan) return
 
-    const links = {
-      'premium plus': 'https://www.mercadopago.com.uy/subscriptions/checkout?preapproval_plan_id=b390ad1648d241e384c11f7627eaacab',
-      'premium pro': 'https://www.mercadopago.com.uy/subscriptions/checkout?preapproval_plan_id=a08011dedf1f4331a24330f94c906153'
-    }
-
-    const directLink = links[plan.name.toLowerCase()]
-
-    if (directLink) {
-      trackEvent('InitiateCheckout', { value: plan.price, currency: plan.currency || 'UYU' })
-      window.location.href = directLink
-      return
-    }
-
     setLoading(true)
     try {
       const { data: { session } } = await supabase.auth.getSession()
-      if (!session) return
+      if (!session) throw new Error('Sesion expirada')
 
       const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/mercadopago-checkout`, {
         method: 'POST',
@@ -57,11 +44,12 @@ export default function PlansModal({ isOpen, onClose }) {
       })
 
       const data = await response.json()
-      if (data.checkout_url) {
-        window.location.href = data.checkout_url
-      } else {
+      if (!response.ok || !data.checkout_url) {
         throw new Error(data.error || 'No se pudo generar el link de pago')
       }
+
+      trackEvent('InitiateCheckout', { value: plan.price, currency: plan.currency || 'UYU' })
+      window.location.href = data.checkout_url
     } catch (error) {
       console.error(error)
       toast.error('Error: ' + error.message)

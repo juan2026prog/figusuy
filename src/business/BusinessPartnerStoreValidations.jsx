@@ -1,24 +1,33 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
-import { useAuthStore } from '../stores/authStore'
-import { getPartnerStoreValidations, subscribePartnerStoreStorage, verifyAlbumAsPartnerStore } from '../lib/partnerStore'
+import { getPartnerStoreValidations, verifyAlbumAsPartnerStore } from '../lib/partnerStore'
 
 export default function BusinessPartnerStoreValidations() {
   const { location } = useOutletContext()
-  const profile = useAuthStore(state => state.profile)
   const [items, setItems] = useState([])
   const [notesByKey, setNotesByKey] = useState({})
+  const [reloadTick, setReloadTick] = useState(0)
 
   useEffect(() => {
-    const sync = () => setItems(getPartnerStoreValidations())
-    sync()
-    return subscribePartnerStoreStorage(sync)
-  }, [])
+    let cancelled = false
+
+    const load = async () => {
+      if (!location?.id) return
+      const data = await getPartnerStoreValidations(location.id)
+      if (!cancelled) setItems(data)
+    }
+
+    load()
+    return () => {
+      cancelled = true
+    }
+  }, [location?.id, reloadTick])
 
   const pendingItems = useMemo(
     () => items.filter(item => item.status === 'pending'),
     [items]
   )
+
   const verifiedItems = useMemo(
     () => items.filter(item => item.status === 'verified').slice(0, 8),
     [items]
@@ -26,26 +35,27 @@ export default function BusinessPartnerStoreValidations() {
 
   if (!location) return null
 
-  const isPartnerStore = location.business_plan === 'legend'
+  const isLegendPoint = location.business_plan === 'legend'
 
-  const handleApprove = (item) => {
-    verifyAlbumAsPartnerStore({
-      userId: item.userId,
-      albumId: item.albumId,
-      locationId: location.id,
-      locationName: location.name,
-      validatedByUserId: profile?.id,
-      validatedByName: profile?.name || location.name,
-      notes: notesByKey[item.userAlbumKey] || ''
-    })
+  const handleApprove = async (item) => {
+    try {
+      await verifyAlbumAsPartnerStore({
+        validationId: item.validation_id,
+        locationId: location.id,
+        notes: notesByKey[item.validation_id] || ''
+      })
+      setReloadTick(prev => prev + 1)
+    } catch (error) {
+      console.error('Error approving legend validation:', error)
+    }
   }
 
-  if (!isPartnerStore) {
+  if (!isLegendPoint) {
     return (
       <div className="biz-page">
         <div className="biz-empty-state">
           <h2>Validaciones PartnerStore</h2>
-          <p>Este modulo solo se activa para tiendas con plan PartnerStore. PartnerStore convierte tu local en referencia para validar albumes completos y verificar colecciones.</p>
+          <p>Este módulo solo se activa para puntos con plan Legend. Una Tienda PartnerStore convierte tu local en referencia para validar álbumes completos y verificar colecciones.</p>
         </div>
       </div>
     )
@@ -185,6 +195,7 @@ export default function BusinessPartnerStoreValidations() {
           .legend-hero {
             grid-template-columns: 1fr;
           }
+
           .legend-body {
             grid-template-columns: 1fr;
           }
@@ -194,19 +205,19 @@ export default function BusinessPartnerStoreValidations() {
       <section className="legend-hero">
         <div className="legend-lead">
           <div className="biz-page-kicker">/ tienda partnerstore</div>
-          <h2>Autoridad, validacion y prestigio real dentro de FigusUY.</h2>
-          <p>Desde este modulo puedes revisar albumes completados y emitir Validación PartnerStore de forma manual. Eso convierte a tu local en referencia, genera confianza y atrae trafico fisico.</p>
+          <h2>Autoridad, validación y prestigio real dentro de FigusUY.</h2>
+          <p>Desde este módulo puedes revisar álbumes completados y emitir Validación PartnerStore de forma manual. Eso convierte a tu local en referencia, genera confianza y atrae tráfico físico.</p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '.55rem', marginTop: '1rem' }}>
             <span className="biz-chip orange">Pendientes: {pendingItems.length}</span>
             <span className="biz-chip green">Validados: {verifiedItems.length}</span>
-            <span className="biz-chip blue">Tienda PartnerStore</span>
+            <span className="biz-chip blue">PartnerStore</span>
           </div>
         </div>
 
         <aside className="legend-side">
-          <div className="biz-page-kicker">/ que valida partnerstore</div>
-          <h3>No solo destacas. Te convertis en referencia.</h3>
-          <p>Una Tienda PartnerStore puede validar albumes completos, verificar colecciones terminadas y emitir Validación PartnerStore como sello de confianza.</p>
+          <div className="biz-page-kicker">/ qué valida partnerstore</div>
+          <h3>No solo destacás. Te convertís en referencia.</h3>
+          <p>Una Tienda PartnerStore puede validar álbumes completos, verificar colecciones terminadas y emitir Validación PartnerStore como sello de confianza.</p>
         </aside>
       </section>
 
@@ -215,43 +226,43 @@ export default function BusinessPartnerStoreValidations() {
           <div>
             <div className="biz-page-kicker">/ pendientes</div>
             <h2>Albumes listos para revisar</h2>
-            <p>La validacion sigue siendo manual. Revisa coleccion, confirma que este completa y aprueba cuando corresponda.</p>
+            <p>La validación sigue siendo manual. Revisá la colección, confirmá que esté completa y aprobá cuando corresponda.</p>
           </div>
         </div>
 
         {pendingItems.length === 0 ? (
           <div className="biz-card">
-            <p className="biz-text-muted">No hay albumes pendientes de Validación PartnerStore en este navegador.</p>
+            <p className="biz-text-muted">No hay álbumes pendientes de Validación PartnerStore en este momento.</p>
           </div>
         ) : (
           <div className="legend-grid">
             {pendingItems.map(item => (
-              <article key={item.userAlbumKey} className="legend-card">
+              <article key={item.validation_id} className="legend-card">
                 <div className="legend-card-head">
                   <div>
-                    <h3 className="legend-card-title">{item.albumName}</h3>
-                    <div className="legend-meta">Coleccionista: {item.userName || 'Usuario FigusUY'}</div>
+                    <h3 className="legend-card-title">{item.album_name}</h3>
+                    <div className="legend-meta">Coleccionista: {item.user_name || 'Usuario FigusUY'}</div>
                   </div>
                   <span className="legend-chip">Pendiente</span>
                 </div>
 
                 <div className="legend-body">
-                  {item.albumCover ? (
-                    <img src={item.albumCover} alt={item.albumName} />
+                  {item.album_cover ? (
+                    <img src={item.album_cover} alt={item.album_name} />
                   ) : (
                     <div style={{ width: '72px', height: '96px', border: '1px solid var(--line)', background: '#0d0d0d', display: 'grid', placeItems: 'center', color: 'var(--muted2)' }}>Album</div>
                   )}
                   <div>
                     <div className="legend-meta-row">
                       <span className="legend-pill">Estado: Completado (sin verificar)</span>
-                      <span className="legend-pill">Completado: {new Date(item.completedAt).toLocaleDateString('es-UY')}</span>
-                      {item.albumYear && <span className="legend-pill">Edicion: {item.albumYear}</span>}
+                      <span className="legend-pill">Completado: {item.completed_at ? new Date(item.completed_at).toLocaleDateString('es-UY') : '-'}</span>
+                      {item.album_year && <span className="legend-pill">Edicion: {item.album_year}</span>}
                     </div>
                     <textarea
                       className="legend-textarea"
-                      placeholder="Notas de validacion PartnerStore (opcional)"
-                      value={notesByKey[item.userAlbumKey] || ''}
-                      onChange={(event) => setNotesByKey(prev => ({ ...prev, [item.userAlbumKey]: event.target.value }))}
+                      placeholder="Notas de validación PartnerStore (opcional)"
+                      value={notesByKey[item.validation_id] || ''}
+                      onChange={(event) => setNotesByKey(prev => ({ ...prev, [item.validation_id]: event.target.value }))}
                     />
                     <div className="legend-actions">
                       <button className="biz-btn-primary" onClick={() => handleApprove(item)}>
@@ -278,21 +289,21 @@ export default function BusinessPartnerStoreValidations() {
 
         {verifiedItems.length === 0 ? (
           <div className="biz-card">
-            <p className="biz-text-muted">Todavia no emitiste ninguna Validación PartnerStore en este navegador.</p>
+            <p className="biz-text-muted">Todavía no emitiste ninguna Validación PartnerStore desde este punto.</p>
           </div>
         ) : (
           <div className="legend-grid">
             {verifiedItems.map(item => (
-              <article key={item.userAlbumKey} className="legend-card">
+              <article key={item.validation_id} className="legend-card">
                 <div className="legend-card-head">
                   <div>
-                    <h3 className="legend-card-title">{item.albumName}</h3>
-                    <div className="legend-meta">{item.userName} · Partner Verified</div>
+                    <h3 className="legend-card-title">{item.album_name}</h3>
+                    <div className="legend-meta">{item.user_name} · PartnerStore Verified</div>
                   </div>
                   <span className="legend-chip" style={{ color: 'var(--green)', borderColor: 'rgba(34,197,94,.3)', background: 'rgba(34,197,94,.08)' }}>Validado</span>
                 </div>
                 <p className="legend-note" style={{ marginTop: '.8rem' }}>
-                  Validado en {item.locationName || location.name} el {item.verifiedAt ? new Date(item.verifiedAt).toLocaleDateString('es-UY') : 'hoy'}.
+                  Validado en {item.location_name || location.name} el {item.verified_at ? new Date(item.verified_at).toLocaleDateString('es-UY') : 'hoy'}.
                 </p>
               </article>
             ))}

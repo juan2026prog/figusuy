@@ -285,8 +285,8 @@ export default function Favorites() {
         <header className="favorites-header">
           <div className="header-copy">
             <div className="page-kicker">/ favoritos</div>
-            <h1 className="favorites-title">Volve mas rapido a tus mejores cruces</h1>
-            <p className="page-subtitle">Usuarios guardados para retomar intercambios con menos friccion, mas contexto y una lectura mas clara de tus contactos importantes.</p>
+            <h1 className="favorites-title">Volvé más rápido a tus mejores cruces</h1>
+            <p className="page-subtitle">Usuarios guardados para retomar intercambios con menos fricción, más contexto y una lectura más clara de tus contactos importantes.</p>
             <div className="header-meta">
               <span className="meta-chip green">Guardados: {favorites.length}</span>
               <span className="meta-chip orange">{tab === 'recent' ? 'Orden: recientes' : 'Vista completa'}</span>
@@ -323,7 +323,7 @@ export default function Favorites() {
               <div className="page-kicker">/ lista</div>
               <h2 className="favorites-list-title">Tus usuarios guardados</h2>
             </div>
-            <div className="favorites-list-note">Mantene a mano a quienes ya te sirvieron o pueden cerrar futuros intercambios sin volver a buscarlos desde cero.</div>
+            <div className="favorites-list-note">Mantené a mano a quienes ya te sirvieron o pueden cerrar futuros intercambios sin volver a buscarlos desde cero.</div>
           </div>
 
           <div className="favorites-grid">

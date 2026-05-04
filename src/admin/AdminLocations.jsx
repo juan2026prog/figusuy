@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react'
 import { useAdminStore } from '../stores/adminStore'
 import { useAuthStore } from '../stores/authStore'
 import { formatScore, getScoreColor, buildScoreBreakdown } from '../lib/ranking'
+import { useToast } from '../components/Toast'
+import ConfirmDialog from '../components/ConfirmDialog'
 
 const card = { background: "var(--admin-panel)", borderRadius: "0.5rem", padding: "1.25rem", border: "1px solid var(--admin-line)" }
 const btn = (bg, color) => ({ padding: '0.375rem 0.75rem', borderRadius: '0.5rem', background: bg, color, border: 'none', fontSize: '0.8125rem', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.375rem', transition: 'all 0.15s' })
@@ -12,6 +14,8 @@ export default function AdminLocations() {
   const [filterType, setFilterType] = useState('all')
   const [bizScores, setBizScores] = useState({})
   const [scoringBiz, setScoringBiz] = useState(null)
+  const toast = useToast()
+  const [confirmConfig, setConfirmConfig] = useState({ isOpen: false, title: '', message: '', onConfirm: null })
 
   const loadBizScore = async (id) => {
     const data = await getBusinessRanking(id)
@@ -44,9 +48,15 @@ export default function AdminLocations() {
   }
 
   const handleDelete = (id) => {
-    if(window.confirm('¿Estás seguro de eliminar este local/punto? Esta acción no se puede deshacer.')) {
-      deleteLocation(id)
-    }
+    setConfirmConfig({
+      isOpen: true,
+      title: 'Eliminar Local',
+      message: '¿Estás seguro de eliminar este local/punto? Esta acción no se puede deshacer.',
+      onConfirm: async () => {
+        await deleteLocation(id)
+        toast.success('Local eliminado')
+      }
+    })
   }
 
   return (
@@ -209,6 +219,17 @@ export default function AdminLocations() {
           </div>
         )}
       </div>
+
+      <ConfirmDialog
+        isOpen={confirmConfig.isOpen}
+        title={confirmConfig.title}
+        message={confirmConfig.message}
+        onConfirm={() => {
+          if (confirmConfig.onConfirm) confirmConfig.onConfirm()
+          setConfirmConfig({ isOpen: false, title: '', message: '', onConfirm: null })
+        }}
+        onCancel={() => setConfirmConfig({ isOpen: false, title: '', message: '', onConfirm: null })}
+      />
     </div>
   )
 }

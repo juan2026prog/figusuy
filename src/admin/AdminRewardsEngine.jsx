@@ -2,12 +2,16 @@ import React, { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { GROWTH_ACHIEVEMENTS } from '../lib/growthEngine'
 import { REWARD_TYPES, ACHIEVEMENT_REWARDS } from '../lib/gamification'
+import { useToast } from '../components/Toast'
+import ConfirmDialog from '../components/ConfirmDialog'
 
 export default function AdminRewardsEngine() {
   const [rewards, setRewards] = useState([])
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState('active')
+  const toast = useToast()
+  const [confirmConfig, setConfirmConfig] = useState({ isOpen: false, title: '', message: '', onConfirm: null })
 
   useEffect(() => { loadData() }, [])
 
@@ -36,9 +40,16 @@ export default function AdminRewardsEngine() {
   }
 
   const revokeReward = async (rewardId) => {
-    if (!confirm('¿Revocar este reward?')) return
-    await supabase.from('user_rewards').update({ consumed_at: new Date().toISOString(), resolved_as: 'revoked' }).eq('id', rewardId)
-    loadData()
+    setConfirmConfig({
+      isOpen: true,
+      title: 'Revocar Reward',
+      message: '¿Revocar este reward?',
+      onConfirm: async () => {
+        await supabase.from('user_rewards').update({ consumed_at: new Date().toISOString(), resolved_as: 'revoked' }).eq('id', rewardId)
+        loadData()
+        toast.success('Reward revocado')
+      }
+    })
   }
 
   const now = new Date()
@@ -203,6 +214,17 @@ export default function AdminRewardsEngine() {
           })}
         </div>
       </div>
+
+      <ConfirmDialog
+        isOpen={confirmConfig.isOpen}
+        title={confirmConfig.title}
+        message={confirmConfig.message}
+        onConfirm={() => {
+          if (confirmConfig.onConfirm) confirmConfig.onConfirm()
+          setConfirmConfig({ isOpen: false, title: '', message: '', onConfirm: null })
+        }}
+        onCancel={() => setConfirmConfig({ isOpen: false, title: '', message: '', onConfirm: null })}
+      />
     </div>
   )
 }

@@ -6,6 +6,8 @@ import { supabase } from '../lib/supabase'
 import FavoriteButton from '../components/FavoriteButton'
 import ReputationStars from '../components/ReputationStars'
 import { useFavoritesStore } from '../stores/favoritesStore'
+import ConfirmDialog from '../components/ConfirmDialog'
+import { useToast } from '../components/Toast'
 
 export default function ChatPage() {
   const { chatId } = useParams()
@@ -16,7 +18,12 @@ export default function ChatPage() {
   const [otherUser, setOtherUser] = useState(null)
   const [otherStars, setOtherStars] = useState(1)
   const [exchangeData, setExchangeData] = useState({ theyCanGiveMe: [], iCanGiveThem: [], loading: true, albumName: '' })
+  const [showBlockConfirm, setShowBlockConfirm] = useState(false)
+  const [showReportModal, setShowReportModal] = useState(false)
+  const [reportReason, setReportReason] = useState('')
+  const [reporting, setReporting] = useState(false)
   const bottomRef = useRef(null)
+  const toast = useToast()
 
   useEffect(() => {
     if (chatId && profile?.id) {
@@ -75,8 +82,6 @@ export default function ChatPage() {
 
   const handleBlock = async () => {
     if (!otherUser) return
-    const confirm = window.confirm(`Estas seguro de que queres bloquear a ${otherUser.name}? Ya no podras interactuar con este usuario.`)
-    if (!confirm) return
 
     await supabase.from('user_blocks').insert({
       blocker_id: profile.id,
@@ -85,25 +90,31 @@ export default function ChatPage() {
     })
 
     await removeFavorite(profile.id, otherUser.id)
-
-    alert('Usuario bloqueado')
+    setShowBlockConfirm(false)
+    toast.success('Usuario bloqueado')
     navigate('/chats')
   }
 
   const handleReport = async () => {
     if (!otherUser) return
-    const reason = window.prompt(`Por que estas reportando a ${otherUser.name}?`)
-    if (!reason) return
+    if (!reportReason.trim()) {
+      toast.error('Escribe un motivo para enviar el reporte')
+      return
+    }
 
+    setReporting(true)
     await supabase.from('reports').insert({
       reporter_id: profile.id,
       reported_user_id: otherUser.id,
       reported_chat_id: chatId,
       type: 'chat_report',
-      reason: reason,
+      reason: reportReason.trim(),
       status: 'pending'
     })
-    alert('Reporte enviado. Un administrador lo revisara a la brevedad.')
+    setReporting(false)
+    setReportReason('')
+    setShowReportModal(false)
+    toast.success('Reporte enviado. Un administrador lo revisara a la brevedad.')
   }
 
   const formatMessageTime = (isoString) => {
@@ -173,7 +184,7 @@ export default function ChatPage() {
         .chip.green { color:var(--green); border-color:rgba(34,197,94,.34); background:rgba(34,197,94,.07); }
         .chip.orange { color:var(--orange); border-color:rgba(255,90,0,.34); background:rgba(255,90,0,.08); }
         .safety-strip { padding:10px 18px; border-bottom:1px solid rgba(250,204,21,.2); background:rgba(250,204,21,.06); color:#fde68a; font-size:.78rem; font-weight:700; }
-        .chat-messages { flex:1; overflow:auto; padding:22px 18px 24px; display:flex; flex-direction:column; gap:14px; }
+        .chat-messages { flex:1; overflow:auto; padding:22px 18px 24px; display:flex; flex-direction:column; gap:14px; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; }
         .empty-chat { padding:48px 20px; text-align:center; color:var(--muted2); }
         .empty-chat b { display:block; margin-bottom:8px; font:italic 900 2rem 'Barlow Condensed'; text-transform:uppercase; color:#fff; }
         .empty-chat span { font-size:.9rem; }
@@ -225,6 +236,15 @@ export default function ChatPage() {
           .bubble { max-width:88%; }
           .hero-title { font-size:2.2rem; }
         }
+        
+        .report-overlay { position: fixed; inset: 0; z-index: 1000; background: rgba(11,11,11,0.85); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; padding: 16px; }
+        .report-card { background: #181818; border: 1px solid rgba(255,255,255,0.08); width: 100%; max-width: 480px; padding: 24px; position: relative; animation: cd-scale-in 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
+        .report-card:before { content:''; position:absolute; inset:auto 0 0 0; height:3px; background: #ef4444; }
+        .report-actions { display: flex; gap: 12px; margin-top: 16px; }
+        @media (max-width: 480px) {
+          .report-actions { flex-direction: column-reverse; gap: 8px; }
+          .report-actions button { width: 100%; padding: 14px; }
+        }
       `}</style>
 
       <div className="chat-layout">
@@ -251,8 +271,8 @@ export default function ChatPage() {
               </div>
             </div>
             <div className="header-actions">
-              <button className="ghost-btn" onClick={handleBlock}>Bloquear</button>
-              <button className="danger-btn" onClick={handleReport}>Reportar</button>
+              <button className="ghost-btn" onClick={() => setShowBlockConfirm(true)}>Bloquear</button>
+              <button className="danger-btn" onClick={() => setShowReportModal(true)}>Reportar</button>
             </div>
           </header>
 
@@ -395,6 +415,51 @@ export default function ChatPage() {
           </section>
         </aside>
       </div>
+      <ConfirmDialog
+        isOpen={showBlockConfirm}
+        title="Bloquear usuario"
+        message={`Ya no podras interactuar con ${otherUser?.name || 'este usuario'} ni verlo en tus favoritos.`}
+        confirmText="Bloquear"
+        cancelText="Cancelar"
+        onConfirm={handleBlock}
+        onCancel={() => setShowBlockConfirm(false)}
+      />
+      {showReportModal && (
+        <div className="report-overlay" onClick={() => setShowReportModal(false)}>
+          <div className="report-card" onClick={(e) => e.stopPropagation()}>
+            <div className="header-kicker" style={{ marginBottom: '0.75rem' }}>Reporte</div>
+            <h3 style={{ margin: 0, font: "italic 900 2rem 'Barlow Condensed'", textTransform: 'uppercase', lineHeight: '.9' }}>
+              Reportar a {otherUser?.name || 'usuario'}
+            </h3>
+            <p style={{ color: 'var(--muted)', lineHeight: 1.6, marginTop: '0.85rem' }}>
+              Explica brevemente por que estas reportando esta conversacion. El equipo lo revisara manualmente.
+            </p>
+            <textarea
+              value={reportReason}
+              onChange={(event) => setReportReason(event.target.value)}
+              placeholder="Describe el motivo del reporte"
+              style={{
+                width: '100%',
+                minHeight: '110px',
+                marginTop: '1rem',
+                padding: '0.9rem',
+                border: '1px solid var(--line2)',
+                background: 'var(--panel)',
+                color: '#fff',
+                resize: 'vertical'
+              }}
+            />
+            <div className="report-actions">
+              <button className="ghost-btn" onClick={() => setShowReportModal(false)} style={{ flex: 1 }}>
+                Cancelar
+              </button>
+              <button className="danger-btn" onClick={handleReport} disabled={reporting} style={{ flex: 1 }}>
+                {reporting ? 'Enviando...' : 'Enviar reporte'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

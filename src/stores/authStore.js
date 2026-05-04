@@ -22,11 +22,6 @@ export const useAuthStore = create((set, get) => ({
         if (profile) {
           const { data: roleData } = await supabase.from('user_roles').select('role').eq('user_id', session.user.id).single()
           profile.role = roleData?.role || 'user'
-          
-          // Fallback check by email
-          if (profile.role === 'user' && (profile.email === 'juanmacastillo2008@gmail.com' || profile.email === 'admin@figusuy.com')) {
-            profile.role = 'god_admin'
-          }
         }
 
         const { data: planRules } = await supabase.rpc('get_user_plan_rules', { user_id: session.user.id })
@@ -65,11 +60,6 @@ export const useAuthStore = create((set, get) => ({
         if (profile) {
           const { data: roleData } = await supabase.from('user_roles').select('role').eq('user_id', session.user.id).single()
           profile.role = roleData?.role || 'user'
-          
-          // Fallback check by email
-          if (profile.role === 'user' && (profile.email === 'juanmacastillo2008@gmail.com' || profile.email === 'admin@figusuy.com')) {
-            profile.role = 'god_admin'
-          }
         }
 
         const { data: planRules } = await supabase.rpc('get_user_plan_rules', { user_id: session.user.id })
@@ -144,18 +134,15 @@ export const useAuthStore = create((set, get) => ({
   },
 
   uploadProfileAvatar: async (file) => {
-    console.log('1. Starting uploadProfileAvatar for file:', file.name, file.type, file.size)
     const { user } = get()
     if (!user) throw new Error('Debes estar logueado')
 
     if (!file.type.startsWith('image/')) throw new Error('El archivo debe ser una imagen')
-    if (file.size > 2 * 1024 * 1024) throw new Error('La imagen no puede pesar más de 2MB')
+    if (file.size > 2 * 1024 * 1024) throw new Error('La imagen no puede pesar mas de 2MB')
 
     const fileExt = file.name.split('.').pop()
     const filePath = `${user.id}/profile.${fileExt}`
-    console.log('2. File path determined:', filePath)
 
-    console.log('3. Initiating upload to Supabase bucket "avatars"...')
     const { error: uploadError } = await supabase.storage
       .from('avatars')
       .upload(filePath, file, { upsert: true })
@@ -164,17 +151,13 @@ export const useAuthStore = create((set, get) => ({
       console.error('Upload Error:', uploadError)
       throw uploadError
     }
-    console.log('4. Upload successful.')
 
     const { data: { publicUrl } } = supabase.storage
       .from('avatars')
       .getPublicUrl(filePath)
-    console.log('5. Public URL generated:', publicUrl)
 
     const finalUrl = `${publicUrl}?t=${Date.now()}`
-    console.log('6. Updating profile in DB...')
-    const updatedProfile = await get().updateProfile({ avatar_url: finalUrl })
-    console.log('7. Profile updated successfully.')
+    await get().updateProfile({ avatar_url: finalUrl })
     
     return finalUrl
   },

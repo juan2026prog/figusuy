@@ -37,12 +37,12 @@ export default function BusinessBilling() {
     },
     {
       id: 'legend',
-      name: 'PartnerStore',
+      name: 'Legend',
       price: 'UYU 1.900',
       stage: 'Referente',
-      subtitle: 'La capa más alta de validación, tráfico y autoridad comercial dentro de FigusUY.',
+      subtitle: 'La capa m\u00e1s alta de autoridad, validaci\u00f3n y prestigio dentro de FigusUY.',
       contact: { icon: 'workspace_premium', label: 'Tienda PartnerStore', class: 'legend' },
-      features: ['Todo Dominio', 'Badge PartnerStore', 'Tienda PartnerStore', 'Validación de álbumes completos', 'Verificación de colecciones', 'Beneficio PartnerStore obligatorio', 'Mayor autoridad y confianza', 'Tráfico físico por validación', 'Máxima prioridad visual']
+      features: ['Todo Dominio', 'Badge Legend', 'Tienda PartnerStore', 'Validación de álbumes completos', 'Verificación de colecciones', 'Validación PartnerStore manual', 'Mayor autoridad y confianza', 'Tráfico físico por validación', 'Máxima prioridad visual']
     }
   ]
 
@@ -338,7 +338,7 @@ export default function BusinessBilling() {
         <div>
           <div className="biz-page-kicker">/ planes</div>
           <h2 style={{ font: 'italic 900 3rem "Barlow Condensed"', textTransform: 'uppercase', lineHeight: '.9', marginTop: '4px' }}>Existi, converti, domina y valida</h2>
-          <p style={{ color: 'var(--muted)', fontSize: '.95rem', marginTop: '7px' }}>La progresión comercial va de presencia básica a autoridad real. Gratis te hace existir, Turbo te ayuda a vender, Dominio te posiciona y PartnerStore te convierte en una tienda asociada de referencia.</p>
+          <p style={{ color: 'var(--muted)', fontSize: '.95rem', marginTop: '7px' }}>La progresion comercial va de presencia basica a autoridad real. Gratis te hace existir, Turbo te ayuda a vender, Dominio te posiciona y Legend te convierte en punto de referencia dentro del ecosistema.</p>
         </div>
       </div>
 
@@ -390,7 +390,7 @@ export default function BusinessBilling() {
               {p.id === 'turbo' && !isActive && <div className="plan-ribbon">Mas popular</div>}
               {p.id === 'legend' && !isActive && (
                 <div className="plan-ribbon" style={{ background: 'linear-gradient(90deg, var(--yellow), var(--orange))', color: '#111' }}>
-                  Tienda PartnerStore
+                  PartnerStore
                 </div>
               )}
 

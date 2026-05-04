@@ -34,7 +34,7 @@ export const NOTIFICATION_TRIGGERS = {
   partner_store_nearby: {
     key: 'partner_store_nearby', type: 'opportunity', icon: 'storefront',
     title: 'PartnerStore cerca',
-    template: 'Una PartnerStore está validando cerca tuyo',
+    template: 'Hay una Tienda PartnerStore validando cerca tuyo',
     priority: 'medium', cooldown_hours: 72, active: true, category: 'partner',
   },
   closing_chance: {
@@ -146,9 +146,9 @@ export const SHARE_TYPES = {
     achievement_key: 'share_album_complete',
   },
   partner_verified: {
-    key: 'partner_verified', label: 'Verificado PartnerStore', icon: 'verified', color: '#22c55e',
-    title_tpl: '¡Validé mi álbum en PartnerStore! ✅',
-    desc_tpl: 'Verificado oficialmente en {store_name}.',
+    key: 'partner_verified', label: 'PartnerStore Verified', icon: 'verified', color: '#22c55e',
+    title_tpl: 'Validé mi álbum en una Tienda PartnerStore',
+    desc_tpl: 'PartnerStore Verified en {store_name}.',
     achievement_key: 'share_partner_verified',
   },
 }
@@ -171,7 +171,7 @@ export const GROWTH_ACHIEVEMENTS = {
   friend_active: { name: 'No Vine Solo', description: 'Tu amigo se activó', category: 'comunidad', icon: '🎉', target: 1, reward: { type: 'pro_days', value: '1 día', hours: 24 } },
   share_match: { name: 'Buen Ojo', description: 'Compartiste un match', category: 'comunidad', icon: '👁️', target: 1 },
   share_album_complete: { name: 'Álbum Terminado', description: 'Compartiste álbum completado', category: 'comunidad', icon: '🏆', target: 1, reward: { type: 'boost_visibility', value: '48h', hours: 48 } },
-  share_partner_verified: { name: 'Verificado en PartnerStore', description: 'Compartiste validación PartnerStore', category: 'comunidad', icon: '✅', target: 1 },
+  share_partner_verified: { name: 'PartnerStore Verified', description: 'Compartiste una Validación PartnerStore', category: 'comunidad', icon: 'OK', target: 1 },
 }
 
 export const GROWTH_ACHIEVEMENT_CATEGORY = { key: 'comunidad', label: 'Comunidad', icon: '🌐', color: '#ea580c' }

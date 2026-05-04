@@ -2,10 +2,12 @@ import React, { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../stores/authStore'
 import { useAffiliateStore } from '../stores/affiliateStore'
+import { useToast } from './Toast'
 
 export default function AuthPanel({ initialType = null, mode = 'page', onClose = null }) {
   const { signInWithGoogle, signInWithEmail, signUpWithEmail } = useAuthStore()
   const { checkAndProcessReferral } = useAffiliateStore()
+  const toast = useToast()
 
   const [isSignUp, setIsSignUp] = useState(false)
   const [email, setEmail] = useState('')
@@ -77,7 +79,7 @@ export default function AuthPanel({ initialType = null, mode = 'page', onClose =
         },
       })
       if (error) throw error
-      alert('Magic Link enviado. Revisa tu correo y la carpeta de spam.')
+      toast.success('Magic Link enviado. Revisa tu correo y la carpeta de spam.')
     } catch (err) {
       setError(err.message || 'Error al enviar Magic Link')
     }

@@ -3,9 +3,10 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
 import { useAppStore } from '../stores/appStore'
+import ConfirmDialog from '../components/ConfirmDialog'
 import { useToast } from '../components/Toast'
 import { supabase } from '../lib/supabase'
-import { ALBUM_PROGRESS_STATES, getPartnerStoreAlbumState, markAlbumCompleted, subscribePartnerStoreStorage } from '../lib/partnerStore'
+import { ALBUM_PROGRESS_STATES, getPartnerStoreAlbumState, markAlbumCompleted } from '../lib/partnerStore'
 import { getUserLocation } from '../utils/location'
 
 export default function AlbumPage() {
@@ -54,13 +55,12 @@ export default function AlbumPage() {
   const [showCompletionCelebration, setShowCompletionCelebration] = useState(false)
   const [completionPromptDismissed, setCompletionPromptDismissed] = useState(false)
   const [showPartnerStoreSelector, setShowPartnerStoreSelector] = useState(false)
+  const [showUpgradePrompt, setShowUpgradePrompt] = useState(false)
   const [partnerStores, setPartnerStores] = useState([])
   const [loadingPartnerStores, setLoadingPartnerStores] = useState(false)
   const [userCoords, setUserCoords] = useState(null)
-  
+  const [legendState, setLegendState] = useState({ status: ALBUM_PROGRESS_STATES.IN_PROGRESS })
   const [partnerStoreStateTick, setPartnerStoreStateTick] = useState(0)
-
-  useEffect(() => subscribePartnerStoreStorage(() => setPartnerStoreStateTick(prev => prev + 1)), [])
 
   useEffect(() => {
     fetchAlbums()
@@ -182,10 +182,28 @@ export default function AlbumPage() {
     () => userAlbums.find(item => item.album_id === selectedAlbum?.id) || null,
     [userAlbums, selectedAlbum?.id]
   )
-  const legendState = useMemo(
-    () => getPartnerStoreAlbumState(profile?.id, selectedAlbum?.id),
-    [profile?.id, selectedAlbum?.id, partnerStoreStateTick]
-  )
+  useEffect(() => {
+    let cancelled = false
+
+    const loadLegendState = async () => {
+      if (!profile?.id || !selectedAlbum?.id) {
+        if (!cancelled) setLegendState({ status: ALBUM_PROGRESS_STATES.IN_PROGRESS })
+        return
+      }
+
+      const state = await getPartnerStoreAlbumState(profile.id, selectedAlbum.id)
+      if (!cancelled) {
+        setLegendState(state || { status: ALBUM_PROGRESS_STATES.IN_PROGRESS })
+      }
+    }
+
+    loadLegendState()
+
+    return () => {
+      cancelled = true
+    }
+  }, [profile?.id, selectedAlbum?.id, partnerStoreStateTick])
+
   const albumProgressState = legendState.status || ALBUM_PROGRESS_STATES.IN_PROGRESS
   const isAlbumLocked = albumProgressState !== ALBUM_PROGRESS_STATES.IN_PROGRESS
   const isAlbumCompleted = albumProgressState === ALBUM_PROGRESS_STATES.COMPLETED
@@ -249,7 +267,7 @@ export default function AlbumPage() {
   const handleToggle = async (num) => {
     if (!profile?.id || !selectedAlbum?.id) return
     if (isAlbumLocked) {
-      toast.error('Este album ya esta cerrado. Solo puedes revisarlo o validarlo en una Tienda PartnerStore.')
+      toast.error('Este álbum ya está cerrado. Solo puedes revisarlo o validarlo en una Tienda PartnerStore.')
       return
     }
 
@@ -324,19 +342,25 @@ export default function AlbumPage() {
     }
   }
 
-  const handleConfirmAlbumCompletion = () => {
-    markAlbumCompleted({
-      userId: profile.id,
-      userName: profile.name || 'Coleccionista FigusUY',
-      albumId: selectedAlbum.id,
-      albumName: selectedAlbum.name,
-      albumCover: selectedAlbum.cover_url || selectedAlbum.images?.[0] || null,
-      albumYear: selectedAlbum.year || null
-    })
-    setCompletionPromptDismissed(false)
-    setPartnerStoreStateTick(prev => prev + 1)
-    setShowCompletionConfirm(false)
-    setShowCompletionCelebration(true)
+  const handleConfirmAlbumCompletion = async () => {
+    try {
+      const nextState = await markAlbumCompleted({
+        userId: profile.id,
+        userName: profile.name || 'Coleccionista FigusUY',
+        albumId: selectedAlbum.id,
+        albumName: selectedAlbum.name,
+        albumCover: selectedAlbum.cover_url || selectedAlbum.images?.[0] || null,
+        albumYear: selectedAlbum.year || null
+      })
+      setLegendState(nextState || { status: ALBUM_PROGRESS_STATES.COMPLETED })
+      setCompletionPromptDismissed(false)
+      setPartnerStoreStateTick(prev => prev + 1)
+      setShowCompletionConfirm(false)
+      setShowCompletionCelebration(true)
+    } catch (error) {
+      toast.error(error.message || 'No se pudo completar el album')
+      setShowCompletionConfirm(false)
+    }
   }
 
   const calculateDistance = (lat1, lon1, lat2, lon2) => {
@@ -367,7 +391,6 @@ export default function AlbumPage() {
          coords = await getUserLocation(5000)
          setUserCoords(coords)
        } catch (err) {
-         console.log('Location not available', err)
        }
     }
 
@@ -467,11 +490,8 @@ export default function AlbumPage() {
                   onClick={async () => {
                     const res = await selectAlbum(album, profile?.id)
                     if (res?.error) {
-                      if (res.error.message.includes('límite de álbumes activos')) {
-                        const upgrade = window.confirm('Tu plan permite un número limitado de álbumes activos.\n\n¿Querés mejorar tu plan?')
-                        if (upgrade) {
-                          navigate('/premium')
-                        }
+                      if (res.error.message.toLowerCase().includes('albumes activos')) {
+                        setShowUpgradePrompt(true)
                       } else {
                         toast.error(res.error.message)
                       }
@@ -939,7 +959,7 @@ export default function AlbumPage() {
               {albumProgressState === ALBUM_PROGRESS_STATES.IN_PROGRESS
                 ? 'In progress'
                 : albumProgressState === ALBUM_PROGRESS_STATES.PARTNER_VERIFIED
-                  ? 'Partner Verified'
+                  ? 'Legend Verified'
                   : 'Completed (sin verificar)'}
             </span>
             {isAlbumLocked && <span className="biz-chip">Edicion bloqueada</span>}
@@ -1082,7 +1102,7 @@ export default function AlbumPage() {
             <h3>Te faltan {missingCount}</h3>
             <p>Marcá tus repetidas y desbloqueá los mejores cruces cerca tuyo.</p>
             {isAlbumCompleted ? (
-              <button className="btn-orange" style={{ width: '100%', marginTop: 14 }} onClick={handleOpenPartnerStoreSelector}>Validar en Tienda PartnerStore</button>
+              <button className="btn-orange" style={{ width: '100%', marginTop: 14 }} onClick={handleOpenPartnerStoreSelector}>Validar en PartnerStore</button>
             ) : isAlbumPartnerVerified ? (
               <button className="btn-orange" style={{ width: '100%', marginTop: 14 }} onClick={() => navigate('/achievements')}>Ver logro</button>
             ) : (
@@ -1102,18 +1122,18 @@ export default function AlbumPage() {
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.82)', zIndex: 1200, display: 'grid', placeItems: 'center', padding: '1rem' }}>
           <div style={{ width: '100%', maxWidth: '34rem', border: '1px solid var(--color-border)', background: 'var(--color-surface)', padding: '1.5rem' }}>
             <div className="album-kicker">Confirmar cierre</div>
-            <h2 style={{ margin: '.55rem 0 0', font: "italic 900 2.2rem 'Barlow Condensed'", textTransform: 'uppercase', lineHeight: '.9' }}>Seguro que completaste este album?</h2>
+            <h2 style={{ margin: '.55rem 0 0', font: "italic 900 2.2rem 'Barlow Condensed'", textTransform: 'uppercase', lineHeight: '.9' }}>¿Seguro que completaste este álbum?</h2>
             <p style={{ color: 'var(--color-text-secondary)', lineHeight: 1.6, marginTop: '.8rem' }}>
-              Estas por marcar este album como completado. Una vez confirmado, el album se cerrara, no podras modificarlo y luego podras validarlo en una Tienda PartnerStore.
+              Estás por marcar este álbum como completado. Una vez confirmado, el álbum se cerrará, no podrás modificarlo y luego podrás validarlo en una Tienda PartnerStore.
             </p>
             <div style={{ display: 'grid', gap: '.55rem', marginTop: '1rem', color: 'var(--color-text-secondary)', fontSize: '.88rem' }}>
-              <span>- El album se cerrara</span>
+              <span>- El álbum se cerrará</span>
               <span>- No vas a poder modificarlo</span>
-              <span>- Quedara marcado como completado</span>
-              <span>- Luego podras validarlo en una Tienda PartnerStore</span>
+              <span>- Quedará marcado como completado</span>
+              <span>- Luego podrás validarlo en una Tienda PartnerStore</span>
             </div>
             <div style={{ display: 'flex', gap: '.7rem', marginTop: '1.25rem' }}>
-              <button className="btn-orange" onClick={handleConfirmAlbumCompletion}>Confirmar album</button>
+              <button className="btn-orange" onClick={handleConfirmAlbumCompletion}>Confirmar álbum</button>
               <button className="btn-ghost" onClick={() => { setCompletionPromptDismissed(true); setShowCompletionConfirm(false) }}>Volver</button>
             </div>
           </div>
@@ -1125,12 +1145,12 @@ export default function AlbumPage() {
           <div style={{ width: '100%', maxWidth: '38rem', border: '1px solid rgba(255,90,0,.35)', background: 'linear-gradient(135deg, rgba(255,90,0,.14), rgba(250,204,21,.08)), var(--color-surface)', padding: '1.6rem', textAlign: 'center' }}>
             <div style={{ fontSize: '3rem' }}>🎉</div>
             <div className="album-kicker" style={{ marginTop: '.4rem' }}>Completion moment</div>
-            <h2 style={{ margin: '.55rem 0 0', font: "italic 900 2.6rem 'Barlow Condensed'", textTransform: 'uppercase', lineHeight: '.9' }}>Album completado</h2>
+            <h2 style={{ margin: '.55rem 0 0', font: "italic 900 2.6rem 'Barlow Condensed'", textTransform: 'uppercase', lineHeight: '.9' }}>Álbum completado</h2>
             <p style={{ color: 'var(--color-text-secondary)', lineHeight: 1.6, marginTop: '.9rem' }}>
-              El album quedo cerrado y ahora figura como <strong>Completed (sin verificar)</strong>. Validalo en una Tienda PartnerStore para desbloquear tu badge, rewards y un beneficio exclusivo.
+              El álbum quedó cerrado y ahora figura como <strong>Completado (sin verificar)</strong>. Validalo en una Tienda PartnerStore para desbloquear tu badge, rewards y un beneficio exclusivo.
             </p>
             <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '.7rem', marginTop: '1.2rem' }}>
-              <button className="btn-orange" onClick={handleOpenPartnerStoreSelector}>Validar en Tienda PartnerStore</button>
+              <button className="btn-orange" onClick={handleOpenPartnerStoreSelector}>Validar en PartnerStore</button>
               <button className="btn-ghost" onClick={() => setShowCompletionCelebration(false)}>Cerrar</button>
             </div>
           </div>
@@ -1149,9 +1169,9 @@ export default function AlbumPage() {
             </div>
             <div style={{ padding: '1.5rem', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               {loadingPartnerStores ? (
-                <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--color-text-secondary)' }}>Buscando tiendas cercanas...</div>
+                <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--color-text-secondary)' }}>Buscando puntos cercanos...</div>
               ) : partnerStores.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--color-text-secondary)' }}>No hay tiendas PartnerStore disponibles.</div>
+                <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--color-text-secondary)' }}>No hay Tiendas PartnerStore disponibles.</div>
               ) : (
                 partnerStores.map(store => {
                   const meta = store.metadata || {}
@@ -1211,6 +1231,19 @@ export default function AlbumPage() {
           </div>
         </div>
       )}
+      <ConfirmDialog
+        isOpen={showUpgradePrompt}
+        title="Llegaste al límite de álbumes activos"
+        message="Tu plan actual tiene un límite de álbumes activos. Si querés seguir cargando colecciones, podés revisar los planes premium."
+        confirmText="Ver planes"
+        cancelText="Ahora no"
+        variant="info"
+        onConfirm={() => {
+          setShowUpgradePrompt(false)
+          navigate('/premium')
+        }}
+        onCancel={() => setShowUpgradePrompt(false)}
+      />
     </div>
   )
 }

@@ -12,4 +12,8 @@ export default defineConfig({
       '@': '/src',
     },
   },
+  test: {
+    globals: true,
+    exclude: ['tests/e2e/**', 'node_modules/**', 'dist/**']
+  }
 })

@@ -66,22 +66,17 @@ export default function ProfilePage() {
   const handleAvatarUpload = async (e) => {
     const file = e.target.files[0]
     if (!file) return
-    console.log('UI: Selected file:', file.name)
     setUploadingAvatar(true)
     
     try {
-      console.log('UI: Calling upload function...')
       const uploadPromise = useAuthStore.getState().uploadProfileAvatar(file)
       const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('La subida tardó demasiado tiempo (timeout)')), 15000))
       
       await Promise.race([uploadPromise, timeoutPromise])
-      console.log('UI: Upload finished.')
       toast.success('Foto de perfil actualizada')
     } catch (err) {
-      console.error('UI: Error caught:', err)
       toast.error('Error al subir: ' + err.message)
     } finally {
-      console.log('UI: Resetting state.')
       setUploadingAvatar(false)
       e.target.value = null
     }
@@ -396,6 +391,7 @@ export default function ProfilePage() {
               <div className="mini-card">
                 <h3>Favoritos</h3>
                 <p>Favoritos guardados: {favorites.length}</p>
+                {favorites.length === 0 && <p style={{ fontSize: '0.85rem', color: 'var(--orange)', marginTop: '4px' }}>Guardá los perfiles que te sirvan.</p>}
                 <button className="btn" style={{ marginTop: '16px' }} onClick={() => navigate('/favorites')}>Ver favoritos</button>
               </div>
               <div className="mini-card" style={{ padding: '22px' }}>

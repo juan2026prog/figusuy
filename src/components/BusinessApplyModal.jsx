@@ -302,7 +302,7 @@ export default function BusinessApplyModal({ isOpen, onClose, initialType = 'sto
                   <option value="gratis">Gratis ($0)</option>
                   <option value="turbo">Turbo (UYU 690/mes)</option>
                   <option value="dominio">Dominio (UYU 1.490/mes)</option>
-                  <option value="legend">PartnerStore (UYU 1.900/mes)</option>
+                  <option value="legend">Legend (UYU 1.900/mes)</option>
                 </select>
               </div>
 

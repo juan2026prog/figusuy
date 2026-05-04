@@ -4,12 +4,15 @@ import { useAuthStore } from '../stores/authStore'
 import { supabase } from '../lib/supabase'
 import PlansModal from '../components/PlansModal'
 import { usePremiumAccess } from '../hooks/usePremiumAccess'
+import { useToast } from '../components/Toast'
 
 export default function PremiumPage() {
   const navigate = useNavigate()
   const { profile } = useAuthStore()
   const [showPlans, setShowPlans] = useState(false)
   const [plans, setPlans] = useState([])
+  const [subscribingPlan, setSubscribingPlan] = useState(null)
+  const toast = useToast()
 
   const { isPremium, planName: currentTier } = usePremiumAccess()
 
@@ -21,14 +24,39 @@ export default function PremiumPage() {
     load()
   }, [])
 
-  const handleSubscribe = (planName) => {
+  const handleSubscribe = async (planName) => {
     const plan = plans.find(p => p.name.includes(planName))
-    if (plan && plan.mp_payment_link) {
-      const url = new URL(plan.mp_payment_link)
-      if (profile?.id) url.searchParams.append('external_reference', profile.id)
-      window.location.href = url.toString()
-    } else {
+    if (!plan?.id) {
       setShowPlans(true)
+      return
+    }
+
+    setSubscribingPlan(plan.id)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) throw new Error('Sesion expirada')
+
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/mercadopago-checkout`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY
+        },
+        body: JSON.stringify({ planId: plan.id })
+      })
+
+      const data = await response.json()
+      if (!response.ok || !data.checkout_url) {
+        throw new Error(data.error || 'No se pudo generar el checkout')
+      }
+
+      window.location.href = data.checkout_url
+    } catch (error) {
+      console.error('Premium checkout error:', error)
+      toast.error(error.message || 'No se pudo iniciar la suscripcion')
+    } finally {
+      setSubscribingPlan(null)
     }
   }
 
@@ -356,8 +384,8 @@ export default function PremiumPage() {
                 <div className="feature"><span className="check">✓</span><span>Saber <strong>quién vio tu perfil</strong></span></div>
                 <div className="feature"><span className="check">✓</span><span>Badge Plus destacado</span></div>
               </div>
-              <button className={`btn ${cta.tone === 'upgrade' ? 'orange' : cta.tone === 'change' ? 'secondary' : ''} block ${cta.tone === 'current' ? 'is-current' : ''}`} onClick={() => handleSubscribe('Plus')} disabled={cta.disabled}>
-                {cta.label}
+              <button className={`btn ${cta.tone === 'upgrade' ? 'orange' : cta.tone === 'change' ? 'secondary' : ''} block ${cta.tone === 'current' ? 'is-current' : ''}`} onClick={() => handleSubscribe('Plus')} disabled={cta.disabled || subscribingPlan === plusPlan?.id}>
+                {subscribingPlan === plusPlan?.id ? 'Procesando...' : cta.label}
               </button>
               <p className="plan-cta-note">{cta.note}</p>
               <p className="plan-note">Si tenés decenas de matches y querés filtrar solo a los más cercanos y activos.</p>
@@ -385,8 +413,8 @@ export default function PremiumPage() {
                 <div className="feature"><span className="check">✓</span><span>Múltiples álbumes con analíticas</span></div>
                 <div className="feature"><span className="check">✓</span><span>Soporte prioritario y Badge Coleccionista</span></div>
               </div>
-              <button className={`btn ${cta.tone === 'upgrade' ? 'orange' : cta.tone === 'change' ? 'secondary' : ''} block ${cta.tone === 'current' ? 'is-current' : ''}`} onClick={() => handleSubscribe('Pro')} disabled={cta.disabled}>
-                {cta.label}
+              <button className={`btn ${cta.tone === 'upgrade' ? 'orange' : cta.tone === 'change' ? 'secondary' : ''} block ${cta.tone === 'current' ? 'is-current' : ''}`} onClick={() => handleSubscribe('Pro')} disabled={cta.disabled || subscribingPlan === proPlan?.id}>
+                {subscribingPlan === proPlan?.id ? 'Procesando...' : cta.label}
               </button>
               <p className="plan-cta-note">{cta.note}</p>
               <p className="plan-note">Cuando estás buscando las doradas o las últimas para cerrar el álbum.</p>

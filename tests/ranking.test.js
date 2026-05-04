@@ -1,3 +1,4 @@
+import { describe, it, expect } from 'vitest'
 import { validateBoostLimit, MAX_PREMIUM_BOOST, MAX_SPONSOR_BOOST, validateAlgorithmConfigValue } from '../src/lib/ranking'
 
 describe('Ranking System Integrity', () => {

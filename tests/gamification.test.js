@@ -52,14 +52,22 @@ describe('Level Definitions', () => {
 // ACHIEVEMENTS
 // ============================================
 describe('Achievement Definitions', () => {
-  it('should have exactly 20 achievements', () => {
-    expect(Object.keys(ACHIEVEMENTS)).toHaveLength(20)
+  it('should have exactly 28 achievements', () => {
+    expect(Object.keys(ACHIEVEMENTS)).toHaveLength(28)
   })
 
-  it('should have 5 per category', () => {
+  it('should have the expected amount per category', () => {
+    const expectedCounts = {
+      actividad: 5,
+      intercambio: 5,
+      coleccion: 5,
+      reputacion: 5,
+      comunidad: 8,
+    }
+
     for (const cat of ACHIEVEMENT_CATEGORIES) {
       const count = Object.values(ACHIEVEMENTS).filter(a => a.category === cat.key).length
-      expect(count).toBe(5)
+      expect(count).toBe(expectedCounts[cat.key])
     }
   })
 

@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { getLocalBusinessPlanRules } from '../lib/businessPlans'
+import ConfirmDialog from '../components/ConfirmDialog'
+import { useToast } from '../components/Toast'
 
 export default function BusinessPhotos() {
   const { location } = useOutletContext()
@@ -9,6 +11,8 @@ export default function BusinessPhotos() {
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
   const [planRules, setPlanRules] = useState(null)
+  const [deleteId, setDeleteId] = useState(null)
+  const toast = useToast()
 
   useEffect(() => {
     if (location) {
@@ -39,16 +43,18 @@ export default function BusinessPhotos() {
     setLoading(false)
   }
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Eliminar esta foto?')) return
-    await supabase.from('location_images').delete().eq('id', id)
+  const handleDelete = async () => {
+    if (!deleteId) return
+    await supabase.from('location_images').delete().eq('id', deleteId)
+    setDeleteId(null)
+    toast.success('Foto eliminada')
     fetchImages()
   }
 
   const handleUploadFake = async () => {
     if (!planRules) return
     if (images.length >= planRules.max_photos) {
-      alert(`Tu plan ${planRules.plan_name} permite hasta ${planRules.max_photos} foto(s). Mejora tu plan para subir mas.`)
+      toast.warning(`Tu plan ${planRules.plan_name} permite hasta ${planRules.max_photos} foto(s). Mejora tu plan para subir mas.`)
       return
     }
 
@@ -228,7 +234,7 @@ export default function BusinessPhotos() {
                 <button className="btn-icon" title="Marcar como principal">
                   <span className="material-symbols-outlined">star</span>
                 </button>
-                <button className="btn-icon danger" onClick={() => handleDelete(img.id)} title="Eliminar">
+                <button className="btn-icon danger" onClick={() => setDeleteId(img.id)} title="Eliminar">
                   <span className="material-symbols-outlined">delete</span>
                 </button>
               </div>
@@ -246,6 +252,15 @@ export default function BusinessPhotos() {
           )}
         </div>
       )}
+      <ConfirmDialog
+        isOpen={!!deleteId}
+        title="Eliminar foto"
+        message="Esta foto se quitara del perfil publico del local."
+        confirmText="Eliminar"
+        cancelText="Cancelar"
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteId(null)}
+      />
     </div>
   )
 }
