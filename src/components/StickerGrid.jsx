@@ -1,4 +1,4 @@
-﻿import React from 'react'
+import React from 'react'
 import { useThemeStore } from '../stores/themeStore'
 
 export default function StickerGrid({ totalStickers, missingStickers, duplicateStickers, onToggle, mode, searchFilter }) {
@@ -16,9 +16,9 @@ export default function StickerGrid({ totalStickers, missingStickers, duplicateS
     transition: 'all 0.15s ease', border: 'none', fontFamily: 'inherit',
   }
 
-  const getStyle = (n) => {
-    if (missingSet.has(n)) return { ...btnBase, background: '#ef4444', color: 'white' }
-    if (duplicateSet.has(n)) return { ...btnBase, background: '#10b981', color: 'white' }
+  const getStyle = (stickerNum) => {
+    if (missingSet.has(stickerNum)) return { ...btnBase, background: '#ef4444', color: 'white' }
+    if (duplicateSet.has(stickerNum)) return { ...btnBase, background: '#10b981', color: 'white' }
     // "owned" = not missing and not duplicate — shown as dark/inverted
     return {
       ...btnBase,
@@ -34,14 +34,14 @@ export default function StickerGrid({ totalStickers, missingStickers, duplicateS
       gridTemplateColumns: 'repeat(auto-fill, minmax(2.75rem, 1fr))',
       gap: '0.375rem',
     }}>
-      {numbers.map(n => (
+      {numbers.map(stickerNum => (
         <button
-          key={n}
-          style={getStyle(n)}
-          onClick={() => onToggle(n, missingSet.has(n), duplicateSet.has(n))}
-          title={`#${n}${missingSet.has(n) ? ' (Faltante)' : duplicateSet.has(n) ? ' (Repetida)' : ''}`}
+          key={stickerNum}
+          style={getStyle(stickerNum)}
+          onClick={() => onToggle(stickerNum, missingSet.has(stickerNum), duplicateSet.has(stickerNum))}
+          title={`#${stickerNum}${missingSet.has(stickerNum) ? ' (Faltante)' : duplicateSet.has(stickerNum) ? ' (Repetida)' : ''}`}
         >
-          {n}
+          {stickerNum}
         </button>
       ))}
     </div>
