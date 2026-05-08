@@ -1,4 +1,4 @@
-﻿import { create } from 'zustand'
+import { create } from 'zustand'
 import { supabase } from '../lib/supabase'
 import { findMatches } from '../lib/matching'
 
@@ -79,6 +79,34 @@ export const useAppStore = create((set, get) => ({
     await get().fetchStickers(userId, album.id)
     set({ loading: false })
     return { error: null }
+  },
+
+  executeShare: async (userId, shareType, data = {}) => {
+    if (typeof window === 'undefined') {
+      console.warn('executeShare called on server');
+      return false;
+    }
+    const { title, description } = buildShareText(shareType, data)
+    const shareUrl = `${window.location.origin}/?ref=${userId}&type=${shareType}`
+    if (navigator.share) {
+      try {
+        await navigator.share({ title, text: description, url: shareUrl })
+        await get().trackShare(userId, shareType, data)
+        return true
+      } catch (err) {
+        if (err.name !== 'AbortError') console.error(err)
+        return false
+      }
+    } else if (navigator.clipboard) {
+      try {
+        await navigator.clipboard.writeText(`${title}\n${description}\n${shareUrl}`)
+        await get().trackShare(userId, shareType, data)
+        return true
+      } catch (err) { console.error(err); return false }
+    } else {
+      console.warn('No share or clipboard API available');
+      return false;
+    }
   },
 
   fetchStickers: async (userId, albumId) => {
@@ -264,10 +292,10 @@ export const useAppStore = create((set, get) => ({
     const targetTable = tableByType[type]
     if (!targetTable) return
 
-    const rows = numbers.map((n) => ({
+    const rows = numbers.map((stickerNumber) => ({
       user_id: userId,
       album_id: albumId,
-      sticker_number: n,
+      sticker_number: stickerNumber,
     }))
 
     await Promise.all(

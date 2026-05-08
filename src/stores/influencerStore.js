@@ -1,4 +1,4 @@
-﻿import { create } from 'zustand'
+import { create } from 'zustand'
 import { supabase } from '../lib/supabase'
 import {
   buildAttributedUserRecord,
@@ -305,6 +305,8 @@ export const useInfluencerStore = create((set, get) => ({
   },
 
   recordConversion: async (userId, planName, value = 0) => {
+    if (typeof window === 'undefined') return { error: 'Not a browser environment' }
+    
     const campaignId = localStorage.getItem('figus_ref_campaign')
     const affiliateId = localStorage.getItem('figus_ref_affiliate')
     const code = localStorage.getItem('figus_ref_code')
@@ -355,16 +357,20 @@ export const useInfluencerStore = create((set, get) => ({
 
     if (!error) {
       // Clean up attribution after successful conversion
-      localStorage.removeItem('figus_ref_campaign')
-      localStorage.removeItem('figus_ref_affiliate')
-      localStorage.removeItem('figus_ref_code')
-      localStorage.removeItem('figus_ref_ts')
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('figus_ref_campaign')
+        localStorage.removeItem('figus_ref_affiliate')
+        localStorage.removeItem('figus_ref_code')
+        localStorage.removeItem('figus_ref_ts')
+      }
     }
 
     return { data, error }
   },
 
   checkAndProcessReferral: async (userId) => {
+    if (typeof window === 'undefined') return
+
     const code = localStorage.getItem('figus_ref_code')
     const campaignId = localStorage.getItem('figus_ref_campaign')
     if (!campaignId || !userId) return
@@ -458,13 +464,23 @@ export const useInfluencerStore = create((set, get) => ({
   },
 
   trackClick: async (campaignId, affiliateId, source = 'link') => {
-    await supabase.from('affiliate_clicks').insert({
-      campaign_id: campaignId,
-      affiliate_id: affiliateId,
-      source,
-      user_agent: navigator.userAgent,
-      referrer: document.referrer || null
-    })
+    if (typeof window !== 'undefined') {
+        await supabase.from('affiliate_clicks').insert({
+          campaign_id: campaignId,
+          affiliate_id: affiliateId,
+          source,
+          user_agent: navigator.userAgent,
+          referrer: document.referrer || null
+        })
+      } else {
+        await supabase.from('affiliate_clicks').insert({
+          campaign_id: campaignId,
+          affiliate_id: affiliateId,
+          source,
+          user_agent: '',
+          referrer: null
+        })
+      }
     // Try to increment clicks (atomic)
     const { error: rpcError } = await supabase.rpc('increment_campaign_clicks', { cid: campaignId })
     if (rpcError) {
@@ -718,7 +734,7 @@ export const useInfluencerStore = create((set, get) => ({
     ;(conversions || []).forEach(c => {
       planCounts[c.plan_purchased] = (planCounts[c.plan_purchased] || 0) + 1
     })
-    const topPlan = Object.entries(planCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || 'â€”'
+    const topPlan = Object.entries(planCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || '-'
 
     return { totalRevenue, totalCommission, totalClicks, totalConversions, conversionRate, topPlan }
   },
@@ -726,8 +742,9 @@ export const useInfluencerStore = create((set, get) => ({
   getInfluencerDashboardData: async ({ userId, affiliateId, isAdmin = false }) => {
     if (!userId) return { error: { message: 'Missing user' } }
 
-    let affiliateQuery = supabase
-      .from('affiliates')
+    try {
+      let affiliateQuery = supabase
+        .from('affiliates')
       .select('*')
       .limit(1)
 
@@ -929,32 +946,36 @@ export const useInfluencerStore = create((set, get) => ({
         },
         error: null,
       }
-    },
+    } catch (err) {
+      console.error('getInfluencerDashboardData Error:', err)
+      return { error: err }
+    }
+  },
 
-    updatePayoutAccount: async (userId, email) => {
-      // Escribir a AMBAS tablas para mantener consistencia
-      // (payout_accounts es la tabla canónica, profiles.paypal_email lo lee el edge function)
-      const [payoutResult, profileResult] = await Promise.all([
-        supabase
-          .from('payout_accounts')
-          .upsert({ user_id: userId, payout_email: email, updated_at: new Date().toISOString() }, { onConflict: 'user_id' })
-          .select()
-          .single(),
-        supabase
-          .from('profiles')
-          .update({ paypal_email: email })
-          .eq('id', userId)
-      ])
-      
-      const { data, error } = payoutResult
-      if (!error && data) {
-        set({ payoutAccount: data })
-      }
-      if (profileResult.error) {
-        console.warn('[updatePayoutAccount] profiles sync failed:', profileResult.error.message)
-      }
-      return { data, error }
-    },
+  updatePayoutAccount: async (userId, email) => {
+    // Escribir a AMBAS tablas para mantener consistencia
+    // (payout_accounts es la tabla canónica, profiles.paypal_email lo lee el edge function)
+    const [payoutResult, profileResult] = await Promise.all([
+      supabase
+        .from('payout_accounts')
+        .upsert({ user_id: userId, payout_email: email, updated_at: new Date().toISOString() }, { onConflict: 'user_id' })
+        .select()
+        .single(),
+      supabase
+        .from('profiles')
+        .update({ paypal_email: email })
+        .eq('id', userId)
+    ])
+    
+    const { data, error } = payoutResult
+    if (!error && data) {
+      set({ payoutAccount: data })
+    }
+    if (profileResult.error) {
+      console.warn('[updatePayoutAccount] profiles sync failed:', profileResult.error.message)
+    }
+    return { data, error }
+  },
 
   checkInfluencerAccess: async ({ userId, affiliateId, role }) => {
     if (!userId) return { data: { allowed: false, isAdmin: false, affiliate: null } }
