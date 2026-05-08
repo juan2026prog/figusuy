@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+﻿import React, { useEffect, useState } from 'react'
 import { useAdminStore } from '../stores/adminStore'
 import { useAuthStore } from '../stores/authStore'
 import { supabase } from '../lib/supabase'
@@ -10,7 +10,7 @@ const fallbackDescriptions = {
   // Algorithm
   match_weight_active: 'Peso que se le da a la actividad reciente del usuario en el cálculo de matches. Un valor más alto prioriza usuarios activos.',
   match_weight_compatibility: 'Peso de la compatibilidad de figuritas (faltantes vs repetidas) en el score de matching. Es el factor principal del algoritmo.',
-  match_weight_mutual: 'Peso del beneficio mutuo — cuántas figuritas pueden intercambiarse en ambas direcciones. El más importante del algoritmo.',
+  match_weight_mutual: 'Peso del beneficio mutuo â€” cuántas figuritas pueden intercambiarse en ambas direcciones. El más importante del algoritmo.',
   match_weight_rating: 'Peso de la reputación/valoración del usuario. Usuarios bien calificados aparecen más arriba en los resultados.',
   match_weight_premium_boost: 'Multiplicador adicional para usuarios premium en el ranking de resultados. Solo actúa como desempate, no altera la relevancia base.',
   match_max_free: 'Cantidad máxima de matches (cruces) visibles por día para usuarios del plan gratuito. Los premium no tienen límite.',
@@ -29,10 +29,16 @@ const fallbackDescriptions = {
   checklist_images_enabled: 'Muestra imágenes de figuritas en el checklist del álbum. Si se desactiva, se muestran solo números/nombres.',
   premium_free_mode: 'Modo de acceso gratuito a funciones premium. disabled = cobro normal, days = trial, everyone = gratis total.',
   premium_free_days: 'Cantidad de días de prueba gratuita de funciones premium para nuevos usuarios.',
+  // PointScore Engine
+  point_score_weight_activity: 'Peso de la actividad reciente (mensajes, visitas) en el score del punto. Rango recomendado: 0.1 - 0.5.',
+  point_score_weight_conversion: 'Peso de los intercambios exitosos completados en el lugar. Es el factor de "éxito" del punto.',
+  point_score_weight_trust: 'Peso de la confianza (verificación, antigÃ¼edad, reportes). Asegura que los puntos recomendados sean seguros.',
+  point_score_weight_utility: 'Peso de la utilidad (vende figuritas, permite canje). Valoriza los servicios adicionales del local.',
+  point_score_weight_boost: 'Multiplicador para puntos patrocinados o Partner Stores. Permite destacar locales comerciales.',
 }
 
 export default function AdminSettings() {
-  const { settings, fetchSettings, updateSetting, users, fetchUsers, logAction } = useAdminStore()
+  const { settings, fetchSettings, updateSetting, users, fetchUsers, logAction, fetchAlgorithmConfig } = useAdminStore()
   const { profile } = useAuthStore()
   const [editKey, setEditKey] = useState(null)
   const [editVal, setEditVal] = useState('')
@@ -61,6 +67,7 @@ export default function AdminSettings() {
 
   useEffect(() => {
     fetchSettings()
+    fetchAlgorithmConfig()
     loadSpecialSettings()
   }, [])
 
@@ -147,14 +154,14 @@ export default function AdminSettings() {
         logAction(profile?.id, 'MANUAL_PLAN_CHANGE', 'location', planTarget.id, { plan: planValue, target_name: planTarget.name })
       }
 
-      setPlanMsg(`✅ Plan de "${planTarget.name}" cambiado a ${planValue}`)
+      setPlanMsg(`âœ… Plan de "${planTarget.name}" cambiado a ${planValue}`)
       setTimeout(() => setPlanMsg(''), 4000)
       setPlanTarget(null)
       setPlanSearch('')
       setLocSearch('')
     } catch (e) {
       console.error('Plan change error:', e)
-      setPlanMsg(`❌ Error: ${e.message}`)
+      setPlanMsg(`âŒ Error: ${e.message}`)
     } finally {
       setPlanSaving(false)
     }
@@ -178,7 +185,7 @@ export default function AdminSettings() {
     return acc
   }, {})
 
-  const categoryLabels = { general: '⚙️ General', algorithm: '🧠 Algoritmo', limits: '🔒 Límites', safety: '🛡️ Seguridad', social: '🌐 Social', monetization: '💰 Monetización' }
+  const categoryLabels = { general: 'âš™ï¸ General', algorithm: 'ðŸ§  Algoritmo', limits: 'ðŸ”’ Límites', safety: 'ðŸ›¡ï¸ Seguridad', social: 'ðŸŒ Social', monetization: 'ðŸ’° Monetización' }
 
   const handleSave = async (key) => {
     let val = editVal
@@ -213,7 +220,7 @@ export default function AdminSettings() {
             <p style={{ fontSize: '0.8125rem', color: "var(--admin-muted2)" }}>
               {checklistImages
                 ? 'Los usuarios ven imágenes en sus checklists de figuritas.'
-                : 'Las imágenes están deshabilitadas — se muestran solo números/nombres.'}
+                : 'Las imágenes están deshabilitadas â€” se muestran solo números/nombres.'}
             </p>
           </div>
           <button
@@ -242,16 +249,16 @@ export default function AdminSettings() {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
           {/* User Plan */}
           <div>
-            <label style={{ display: 'block', fontSize: '0.6875rem', fontWeight: 800, color: "var(--admin-muted2)", textTransform: 'uppercase', marginBottom: '0.375rem' }}>👤 Buscar Usuario</label>
+            <label style={{ display: 'block', fontSize: '0.6875rem', fontWeight: 800, color: "var(--admin-muted2)", textTransform: 'uppercase', marginBottom: '0.375rem' }}>ðŸ‘¤ Buscar Usuario</label>
             <input type="text" placeholder="Nombre o email..." value={planSearch}
               onChange={e => { setPlanSearch(e.target.value); setPlanTarget(null); setPlanMsg('') }}
               style={input} />
             {planSearch.length > 1 && matchedUsers.length > 0 && !planTarget && (
               <div style={{ border: "1px solid var(--admin-line)", borderRadius: '0.5rem', maxHeight: '10rem', overflowY: 'auto', marginTop: '0.25rem', background: "var(--admin-panel2)" }}>
                 {matchedUsers.map(u => (
-                  <div key={u.id} onClick={() => { setPlanTarget({ type: 'user', id: u.id, name: u.name || u.email }); setPlanSearch(u.name + ' — ' + u.email); setPlanValue(u.plan_name || 'gratis') }}
+                  <div key={u.id} onClick={() => { setPlanTarget({ type: 'user', id: u.id, name: u.name || u.email }); setPlanSearch(u.name + ' â€” ' + u.email); setPlanValue(u.plan_name || 'gratis') }}
                     style={{ padding: '0.5rem 0.75rem', cursor: 'pointer', fontSize: '0.8125rem', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span>{u.name} — <span style={{ color: "var(--admin-muted)" }}>{u.email}</span></span>
+                    <span>{u.name} â€” <span style={{ color: "var(--admin-muted)" }}>{u.email}</span></span>
                     <span style={{ fontSize: '0.6875rem', fontWeight: 700, color: 'var(--color-primary)', background: "rgba(249, 115, 22, 0.1)", padding: '0.125rem 0.375rem', borderRadius: '0.375rem' }}>{u.plan_name || 'gratis'}</span>
                   </div>
                 ))}
@@ -261,7 +268,7 @@ export default function AdminSettings() {
 
           {/* Business Plan */}
           <div>
-            <label style={{ display: 'block', fontSize: '0.6875rem', fontWeight: 800, color: "var(--admin-muted2)", textTransform: 'uppercase', marginBottom: '0.375rem' }}>🏪 Buscar Tienda/Local</label>
+            <label style={{ display: 'block', fontSize: '0.6875rem', fontWeight: 800, color: "var(--admin-muted2)", textTransform: 'uppercase', marginBottom: '0.375rem' }}>ðŸª Buscar Tienda/Local</label>
             <input type="text" placeholder="Nombre del local..." value={locSearch}
               onChange={e => { setLocSearch(e.target.value); setPlanTarget(null); setPlanMsg('') }}
               style={input} />
@@ -282,7 +289,7 @@ export default function AdminSettings() {
         {planTarget && (
           <div style={{ marginTop: '1.25rem', padding: '1rem', background: "var(--admin-panel2)", borderRadius: '0.75rem', border: "1px solid var(--admin-line)" }}>
             <p style={{ fontSize: '0.875rem', fontWeight: 700, marginBottom: '0.75rem' }}>
-              <span style={{ color: "var(--admin-muted2)" }}>{planTarget.type === 'user' ? '👤 Usuario:' : '🏪 Local:'}</span>{' '}
+              <span style={{ color: "var(--admin-muted2)" }}>{planTarget.type === 'user' ? 'ðŸ‘¤ Usuario:' : 'ðŸª Local:'}</span>{' '}
               <strong style={{ color: "#f5f5f5" }}>{planTarget.name}</strong>
             </p>
             <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
@@ -299,14 +306,14 @@ export default function AdminSettings() {
             <div style={{ display: 'flex', gap: '0.75rem' }}>
               <button onClick={handlePlanChange} disabled={planSaving} style={{
                 background: 'var(--color-primary)', color: 'white', border: 'none', padding: '0.625rem 1.5rem', borderRadius: '0.5rem', fontWeight: 700, cursor: 'pointer', opacity: planSaving ? 0.5 : 1
-              }}>{planSaving ? '⏳ Cambiando...' : '💾 Confirmar Cambio'}</button>
+              }}>{planSaving ? 'â³ Cambiando...' : 'ðŸ’¾ Confirmar Cambio'}</button>
               <button onClick={() => { setPlanTarget(null); setPlanSearch(''); setLocSearch('') }} style={{ background: "var(--admin-panel2)", color: "var(--admin-muted2)", border: 'none', padding: '0.625rem 1rem', borderRadius: '0.5rem', fontWeight: 600, cursor: 'pointer' }}>Cancelar</button>
             </div>
           </div>
         )}
 
         {planMsg && (
-          <p style={{ marginTop: '0.75rem', fontSize: '0.875rem', fontWeight: 700, color: planMsg.startsWith('✅') ? '#10b981' : '#ef4444' }}>{planMsg}</p>
+          <p style={{ marginTop: '0.75rem', fontSize: '0.875rem', fontWeight: 700, color: planMsg.startsWith('âœ…') ? '#10b981' : '#ef4444' }}>{planMsg}</p>
         )}
       </div>
 
@@ -317,7 +324,7 @@ export default function AdminSettings() {
           Modo Premium Gratuito
         </h3>
         <p style={{ fontSize: '0.8125rem', color: "var(--admin-muted2)", marginBottom: '1rem' }}>
-          Habilita las funciones premium para todos los usuarios de forma gratuita — útil para lanzamientos, betas o promociones.
+          Habilita las funciones premium para todos los usuarios de forma gratuita â€” útil para lanzamientos, betas o promociones.
         </p>
 
         <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
@@ -366,7 +373,38 @@ export default function AdminSettings() {
         </div>
       </div>
 
-      {/* ========== 4. GENERIC SETTINGS (existing) ========== */}
+      {/* ========== 4. POINTSCORE ENGINE ========== */}
+      <div style={{ ...card, marginBottom: '1.5rem', borderLeft: '4px solid #f59e0b' }}>
+        <h3 style={{ fontSize: '1rem', fontWeight: 800, color: "#f5f5f5", display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+          <span className="material-symbols-outlined" style={{ color: '#f59e0b' }}>analytics</span>
+          Motor PointScore (Ranking Inteligente)
+        </h3>
+        <p style={{ fontSize: '0.8125rem', color: "var(--admin-muted2)", marginBottom: '1rem' }}>
+          Ajusta los pesos del algoritmo que rankea los puntos en el mapa y en la lista de tiendas.
+        </p>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          {useAdminStore.getState().algorithmConfig.filter(c => c.category === 'point_score').map(c => (
+            <div key={c.config_key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem', background: "var(--admin-panel2)", borderRadius: '0.5rem', border: "1px solid var(--admin-line)" }}>
+              <div style={{ flex: 1 }}>
+                <p style={{ fontSize: '0.8125rem', fontWeight: 800, color: "#f5f5f5" }}>{c.config_key.replace('point_score_weight_', '').toUpperCase()}</p>
+                <p style={{ fontSize: '0.6875rem', color: "var(--admin-muted)" }}>{fallbackDescriptions[c.config_key]}</p>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <input 
+                  type="number" 
+                  step="0.01"
+                  style={{ ...input, width: '5rem', textAlign: 'center' }}
+                  defaultValue={c.config_value}
+                  onBlur={(e) => useAdminStore.getState().updateAlgorithmConfig(c.config_key, e.target.value, profile?.id)}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ========== 5. GENERIC SETTINGS (existing) ========== */}
       <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: "#f5f5f5", marginBottom: '1rem', marginTop: '2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
         <span className="material-symbols-outlined" style={{ color: 'var(--color-primary)' }}>tune</span>
         Parámetros del Sistema
@@ -374,13 +412,13 @@ export default function AdminSettings() {
 
       {Object.entries(grouped).map(([cat, items]) => {
         const catMeta = {
-          algorithm: { icon: '🧠', color: '#8b5cf6', borderColor: '#c4b5fd' },
-          general: { icon: '⚙️', color: '#3b82f6', borderColor: '#93c5fd' },
-          limits: { icon: '🔒', color: '#f59e0b', borderColor: '#fcd34d' },
-          safety: { icon: '🛡️', color: '#10b981', borderColor: '#6ee7b7' },
-          social: { icon: '🌐', color: '#06b6d4', borderColor: '#67e8f9' },
-          monetization: { icon: '💰', color: 'var(--color-primary)', borderColor: '#fdba74' },
-        }[cat] || { icon: '📋', color: "var(--admin-muted2)", borderColor: "var(--admin-muted)" }
+          algorithm: { icon: 'ðŸ§ ', color: '#8b5cf6', borderColor: '#c4b5fd' },
+          general: { icon: 'âš™ï¸', color: '#3b82f6', borderColor: '#93c5fd' },
+          limits: { icon: 'ðŸ”’', color: '#f59e0b', borderColor: '#fcd34d' },
+          safety: { icon: 'ðŸ›¡ï¸', color: '#10b981', borderColor: '#6ee7b7' },
+          social: { icon: 'ðŸŒ', color: '#06b6d4', borderColor: '#67e8f9' },
+          monetization: { icon: 'ðŸ’°', color: 'var(--color-primary)', borderColor: '#fdba74' },
+        }[cat] || { icon: 'ðŸ“‹', color: "var(--admin-muted2)", borderColor: "var(--admin-muted)" }
 
         return (
           <div key={cat} style={{ ...card, marginBottom: '1rem', borderLeft: `4px solid ${catMeta.borderColor}` }}>
@@ -419,15 +457,15 @@ export default function AdminSettings() {
                       {editKey === s.key ? (
                         <>
                           <input style={{ ...input, width: '12rem' }} value={editVal} onChange={e => setEditVal(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSave(s.key)} autoFocus />
-                          <button onClick={() => handleSave(s.key)} style={{ padding: '0.375rem 0.625rem', borderRadius: '0.375rem', background: '#10b981', color: 'white', border: 'none', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}>✓</button>
-                          <button onClick={() => setEditKey(null)} style={{ padding: '0.375rem 0.625rem', borderRadius: '0.375rem', background: "var(--admin-panel2)", color: "var(--admin-muted2)", border: 'none', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}>✕</button>
+                          <button onClick={() => handleSave(s.key)} style={{ padding: '0.375rem 0.625rem', borderRadius: '0.375rem', background: '#10b981', color: 'white', border: 'none', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}>âœ“</button>
+                          <button onClick={() => setEditKey(null)} style={{ padding: '0.375rem 0.625rem', borderRadius: '0.375rem', background: "var(--admin-panel2)", color: "var(--admin-muted2)", border: 'none', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}>âœ•</button>
                         </>
                       ) : (
                         <>
                           <code style={{ fontSize: '0.8125rem', background: "var(--admin-panel2)", padding: '0.3rem 0.75rem', borderRadius: '0.5rem', color: catMeta.color, border: "1px solid var(--admin-line)", fontWeight: 800, whiteSpace: 'nowrap' }}>
                             {JSON.stringify(s.value).replace(/"/g, '')}
                           </code>
-                          <button onClick={() => { setEditKey(s.key); setEditVal(typeof s.value === 'string' ? s.value : JSON.stringify(s.value)) }} style={{ padding: '0.3rem 0.5rem', borderRadius: '0.375rem', background: "rgba(249, 115, 22, 0.1)", color: 'var(--color-primary)', border: 'none', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s' }}>✏️</button>
+                          <button onClick={() => { setEditKey(s.key); setEditVal(typeof s.value === 'string' ? s.value : JSON.stringify(s.value)) }} style={{ padding: '0.3rem 0.5rem', borderRadius: '0.375rem', background: "rgba(249, 115, 22, 0.1)", color: 'var(--color-primary)', border: 'none', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s' }}>âœï¸</button>
                         </>
                       )}
                     </div>

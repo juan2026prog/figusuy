@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from 'react'
+﻿import React, { useEffect, useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { getLocalBusinessPlanRules } from '../lib/businessPlans'
 import PromoDetailModal, { getPromoStatus, PROMO_STATUS_CONFIG } from '../components/PromoDetailModal'
 import ConfirmDialog from '../components/ConfirmDialog'
 import { useToast } from '../components/Toast'
+import BusinessPlansModal from '../components/BusinessPlansModal'
 
 export default function BusinessPromo() {
   const { location } = useOutletContext()
@@ -16,6 +17,7 @@ export default function BusinessPromo() {
   const [saving, setSaving] = useState(false)
   const [previewPromo, setPreviewPromo] = useState(null)
   const [deletePromo, setDeletePromo] = useState(null)
+  const [showPlansModal, setShowPlansModal] = useState(false)
   const toast = useToast()
 
   useEffect(() => {
@@ -46,17 +48,17 @@ export default function BusinessPromo() {
 
   const handleCreate = async () => {
     if (!planRules || planRules.max_active_promos === 0) {
-      toast.warning('Tu plan Gratis no permite promos activas. Mejora a Turbo.')
+      toast.warning('Tu plan actual no permite promos activas. Mejora a Radar o Conversion.')
+      setShowPlansModal(true)
       return
     }
 
-    const activeCount = promos.filter(p => p.is_active).length
-    if (planRules.max_active_promos !== null && activeCount >= planRules.max_active_promos) {
-      toast.warning(`Tu plan permite ${planRules.max_active_promos} promo activa. Pausa la actual para crear otra.`)
+    if (planRules.max_active_promos !== null && promos.length >= planRules.max_active_promos * 5) {
+      toast.warning(`Límite de borradores alcanzado. Elimina promos antiguas para crear nuevas.`)
       return
     }
 
-    const { error } = await supabase.from('sponsored_placements').insert({
+    const { data, error } = await supabase.from('sponsored_placements').insert({
       location_id: location.id,
       title: 'Nueva Promo',
       description: '',
@@ -65,12 +67,15 @@ export default function BusinessPromo() {
       sponsor_type: 'local',
       is_active: false,
       cta_label: 'Ver Promo',
-      whatsapp: location.whatsapp
+      whatsapp: location.whatsapp || ''
     }).select()
 
-    if (!error) {
+    if (!error && data && data.length > 0) {
       toast.success('Promo creada')
-      fetchPromos()
+      await fetchPromos()
+      startEdit(data[0])
+    } else if (error) {
+      toast.error('Error al crear promo: ' + error.message)
     }
   }
 
@@ -405,8 +410,8 @@ export default function BusinessPromo() {
         <div className="upsell-banner">
           <span className="material-symbols-outlined" style={{ fontSize: '3rem', color: 'var(--orange)' }}>rocket_launch</span>
           <h3>Llega a mas coleccionistas</h3>
-          <p>Las promos te permiten aparecer destacado en puntos de alto trafico. Esta capa comercial se desbloquea con Turbo o Dominio.</p>
-          <button className="biz-btn-primary">Ver planes</button>
+          <p>Las promos te permiten aparecer destacado en puntos de alto trafico. Esta capa comercial se desbloquea con Radar o Conversion.</p>
+          <button className="biz-btn-primary" onClick={() => setShowPlansModal(true)}>Ver planes</button>
         </div>
       )}
 
@@ -424,7 +429,7 @@ export default function BusinessPromo() {
             const dateStatus = getDateStatus(promo)
             const isEditing = editingId === promo.id
             const formatShortDate = (d) => {
-              if (!d) return '—'
+              if (!d) return 'â€”'
               return new Date(d).toLocaleDateString('es-UY', { day: 'numeric', month: 'short' })
             }
 
@@ -507,7 +512,7 @@ export default function BusinessPromo() {
                         onChange={e => setEditForm({ ...editForm, image_url: e.target.value })}
                         placeholder="https://..."
                       />
-                      <div className="bp-hint">URL de imagen promocional. Si no hay, se usa un fallback visual.</div>
+                      <div className="bp-hint">URL de imagen promocional (Recomendado: 800x400px o ratio 2:1). Si no hay, se usa un fallback visual.</div>
                     </div>
                     <div className="bp-edit-row">
                       <div className="bp-field">
@@ -600,6 +605,10 @@ export default function BusinessPromo() {
         cancelText="Cancelar"
         onConfirm={handleDelete}
         onCancel={() => setDeletePromo(null)}
+      />
+      <BusinessPlansModal
+        isOpen={showPlansModal}
+        onClose={() => setShowPlansModal(false)}
       />
     </div>
   )

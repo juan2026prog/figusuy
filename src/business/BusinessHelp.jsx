@@ -1,10 +1,10 @@
-import React from 'react'
+﻿import React from 'react'
 
 export default function BusinessHelp() {
   const faqs = [
-    { q: 'Como aparezco mas arriba en el mapa?', a: 'Los planes Turbo y Dominio tienen prioridad en el mapa y listados. Completar horarios, fotos y descripcion tambien mejora tu presencia.' },
-    { q: 'Como funcionan las promos?', a: 'Las promos destacan un mensaje comercial como llegada de albumes o descuentos puntuales. Requieren plan Turbo o Dominio.' },
-    { q: 'Puedo cambiar mis fotos?', a: 'Si. Desde la seccion Fotos puedes subir, reemplazar y mantener actualizada la identidad visual del local.' }
+    { q: 'Como gano mas visibilidad?', a: 'Radar y Conversion mejoran tu presencia local y tu peso comercial. Completar horarios, fotos y descripcion tambien ayuda a convertir mejor.' },
+    { q: 'Para que sirven los puntos sugeridos?', a: 'Los usuarios ayudan a descubrir lugares utiles para intercambiar. Si tu punto entra bien posicionado, capturas trafico y contexto comercial.' },
+    { q: 'Que cambia con Collector Hub?', a: 'Collector Hub agrega validacion de albumes y usuarios, badge oficial, rewards asociados y prioridad premium dentro del ecosistema.' }
   ]
 
   return (

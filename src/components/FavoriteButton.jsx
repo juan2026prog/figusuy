@@ -1,4 +1,4 @@
-import React from 'react'
+﻿import React from 'react'
 import { useFavoritesStore } from '../stores/favoritesStore'
 import { useAuthStore } from '../stores/authStore'
 import { useThemeStore } from '../stores/themeStore'

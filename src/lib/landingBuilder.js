@@ -1,4 +1,51 @@
-export const LANDING_PAGE_KEY = 'official'
+﻿export const LANDING_PAGE_KEY = 'official'
+export const LANDING_POINTS_PAGE_KEY = 'points'
+export const LANDING_INFLUENCERS_PAGE_KEY = 'influencers'
+
+export const LANDING_PAGE_OPTIONS = [
+  {
+    key: LANDING_PAGE_KEY,
+    label: 'Landing principal',
+    route: '/',
+    description: 'Home principal con producto, planes y conversion.',
+    blockTypes: [
+      'navbar',
+      'hero',
+      'now',
+      'albums',
+      'exchange_points',
+      'how_it_works',
+      'influencers',
+      'gamification',
+      'user_plans',
+      'business_plans',
+      'final_cta',
+      'footer',
+      'faq',
+    ],
+  },
+  {
+    key: LANDING_POINTS_PAGE_KEY,
+    label: 'Landing Lugares',
+    route: '/puntos',
+    description: 'Captacion de lugares, tiendas y comercios aliados.',
+    blockTypes: ['exchange_points', 'influencers', 'business_plans', 'final_cta', 'faq'],
+  },
+  {
+    key: LANDING_INFLUENCERS_PAGE_KEY,
+    label: 'Landing influencers',
+    route: '/influencers',
+    description: 'Programa de influencers y adquisicion por performance.',
+    blockTypes: [
+      'influencer_program_hero',
+      'influencer_program_pillars',
+      'influencer_program_tiers',
+      'influencer_program_steps',
+      'faq',
+      'influencer_program_cta',
+    ],
+  },
+]
 
 export const CTA_STYLE_OPTIONS = [
   { value: 'primary', label: 'Principal' },
@@ -13,6 +60,23 @@ const toneOptions = [
   { value: 'yellow', label: 'Yellow' },
   { value: 'neutral', label: 'Neutral' },
 ]
+
+function mapDefaultBlocks(pageKey, blocks) {
+  return blocks.map((block, index) => ({
+    page_key: pageKey,
+    internal_title: block.internal_title,
+    slug: block.slug,
+    block_type: block.block_type,
+    preview_image_url: block.preview_image_url,
+    draft_content: block.draft_content,
+    published_content: block.draft_content,
+    draft_visible: true,
+    published_visible: true,
+    draft_order: index,
+    published_order: index,
+    is_enabled: true,
+  }))
+}
 
 const ctaGroupFields = [
   { key: 'label', label: 'Texto', type: 'text' },
@@ -102,54 +166,54 @@ const albumItems = [
 
 const userPlans = [
   {
-    name: 'Gratis',
+    name: 'GRATIS',
     price: '$0',
-    badge: 'Base',
+    badge: 'BASE',
     highlight: false,
-    cta: { label: 'Empezar gratis', url: '/login', style: 'secondary' },
+    cta: { label: 'EMPEZAR GRATIS', url: '/login', style: 'secondary' },
     benefits: ['1 album activo', 'Matches limitados por mes', 'Chat inicial', 'Busqueda por barrio'],
   },
   {
-    name: 'Plus',
+    name: 'PLUS',
     price: '$290',
-    badge: 'Mas elegido',
+    badge: 'MAS ELEGIDO',
     highlight: true,
-    cta: { label: 'Probar 7 dias', url: '/login', style: 'primary' },
+    cta: { label: 'PROBAR 7 DIAS', url: '/login', style: 'primary' },
     benefits: ['Mas albumes activos', 'Alertas utiles', 'Mayor visibilidad', 'Mas velocidad para completar'],
   },
   {
-    name: 'Pro',
+    name: 'PRO',
     price: '$490',
-    badge: 'Power users',
+    badge: 'POWER USERS',
     highlight: false,
-    cta: { label: 'Elegir Pro', url: '/login', style: 'secondary' },
+    cta: { label: 'ELEGIR PRO', url: '/login', style: 'secondary' },
     benefits: ['Albumes ilimitados', 'Prioridad en cruces', 'Radar extendido', 'Automatches'],
   },
 ]
 
 const businessPlans = [
   {
-    name: 'Boost',
+    name: 'BOOST',
     price: '$590',
-    badge: 'Entrada',
+    badge: 'ENTRADA',
     highlight: false,
-    cta: { label: 'Quiero aparecer', url: '/business/apply', style: 'secondary' },
+    cta: { label: 'QUIERO APARECER', url: '/business/apply', style: 'secondary' },
     benefits: ['Presencia base', 'CTA simple', 'Cobertura local'],
   },
   {
-    name: 'Zone',
+    name: 'RADAR',
     price: '$990',
-    badge: 'Escala local',
+    badge: 'ESCALA LOCAL',
     highlight: false,
-    cta: { label: 'Ver plan', url: '/business/apply', style: 'secondary' },
+    cta: { label: 'VER PLAN', url: '/business/apply', style: 'secondary' },
     benefits: ['Mas visibilidad', 'Prioridad en zona', 'Promos locales'],
   },
   {
-    name: 'PartnerStore',
+    name: 'PARTNERSTORE',
     price: '$1490',
-    badge: 'Destacado',
+    badge: 'DESTACADO',
     highlight: true,
-    cta: { label: 'Hablar con el equipo', url: '/business/apply', style: 'primary' },
+    cta: { label: 'HABLAR CON EL EQUIPO', url: '/business/apply', style: 'primary' },
     benefits: ['Validacion de intercambios', 'Rewards', 'Badge premium', 'Cobertura extendida'],
   },
 ]
@@ -242,6 +306,25 @@ export const LANDING_BLOCK_LIBRARY = [
     ],
   },
   {
+    type: 'influencers',
+    label: 'Influencers',
+    description: 'Bloque para reclutar influencers con beneficios y CTAs.',
+    preview: 'Influencers',
+    fields: [
+      { key: 'kicker', label: 'Kicker', type: 'text' },
+      { key: 'title', label: 'Titulo', type: 'textarea' },
+      { key: 'description', label: 'Descripcion', type: 'textarea' },
+      { key: 'image', label: 'Imagen', type: 'url' },
+      { key: 'chips', label: 'Chips', type: 'list', itemLabel: 'Chip', fields: [
+        { key: 'label', label: 'Texto', type: 'text' },
+        { key: 'tone', label: 'Tono', type: 'select', options: toneOptions },
+      ] },
+      { key: 'benefits', label: 'Beneficios', type: 'simple-list', itemLabel: 'Beneficio' },
+      { key: 'primaryCta', label: 'CTA Principal', type: 'group', fields: ctaGroupFields },
+      { key: 'secondaryCta', label: 'CTA Secundario', type: 'group', fields: ctaGroupFields },
+    ],
+  },
+  {
     type: 'now',
     label: 'Ahora en FigusUY',
     description: 'Bloque de actividad, chips y tarjetas de movimiento.',
@@ -271,8 +354,8 @@ export const LANDING_BLOCK_LIBRARY = [
   },
   {
     type: 'exchange_points',
-    label: 'Agregar puntos de intercambio',
-    description: 'Bloque promocional para sugerir puntos.',
+    label: 'Agregar lugares de intercambio',
+    description: 'Bloque promocional para sugerir lugares.',
     preview: 'Promo',
     fields: promoFields,
   },
@@ -340,7 +423,7 @@ export const LANDING_BLOCK_LIBRARY = [
   {
     type: 'business_plans',
     label: 'Planes negocio',
-    description: 'Planes editables para tiendas y puntos.',
+    description: 'Planes editables para tiendas y lugares.',
     preview: 'Pricing',
     fields: planFields,
   },
@@ -354,6 +437,121 @@ export const LANDING_BLOCK_LIBRARY = [
       { key: 'subtitle', label: 'Subtitulo', type: 'textarea' },
       { key: 'background', label: 'Color de fondo', type: 'color' },
       { key: 'image', label: 'Imagen opcional', type: 'url' },
+      { key: 'cta', label: 'CTA', type: 'group', fields: ctaGroupFields },
+    ],
+  },
+  {
+    type: 'faq',
+    label: 'FAQ',
+    description: 'Preguntas frecuentes en formato acordeon o lista.',
+    preview: 'FAQ',
+    fields: [
+      { key: 'kicker', label: 'Kicker', type: 'text' },
+      { key: 'title', label: 'Titulo', type: 'textarea' },
+      { key: 'subtitle', label: 'Subtitulo', type: 'textarea' },
+      {
+        key: 'items',
+        label: 'Preguntas',
+        type: 'list',
+        itemLabel: 'Pregunta',
+        fields: [
+          { key: 'question', label: 'Pregunta', type: 'textarea' },
+          { key: 'answer', label: 'Respuesta', type: 'textarea' },
+        ],
+      },
+    ],
+  },
+  {
+    type: 'influencer_program_hero',
+    label: 'Influencer hero',
+    description: 'Hero de alto impacto para el programa de influencers.',
+    preview: 'Hero',
+    fields: [
+      { key: 'badge', label: 'Badge', type: 'text' },
+      { key: 'titleLineOne', label: 'Titulo linea 1', type: 'text' },
+      { key: 'titleLineTwo', label: 'Titulo linea 2', type: 'text' },
+      { key: 'accentWord', label: 'Palabra acento', type: 'text' },
+      { key: 'subtitle', label: 'Subtitulo', type: 'textarea' },
+      { key: 'scrollTarget', label: 'Anchor saber mas', type: 'text' },
+      { key: 'primaryCta', label: 'CTA principal', type: 'group', fields: ctaGroupFields },
+      { key: 'secondaryCta', label: 'CTA secundario', type: 'group', fields: ctaGroupFields },
+    ],
+  },
+  {
+    type: 'influencer_program_pillars',
+    label: 'Influencer pilares',
+    description: 'Pilares de performance real del programa.',
+    preview: 'Pilares',
+    fields: [
+      { key: 'kicker', label: 'Kicker', type: 'text' },
+      { key: 'title', label: 'Titulo', type: 'textarea' },
+      { key: 'subtitle', label: 'Subtitulo', type: 'textarea' },
+      {
+        key: 'items',
+        label: 'Pilares',
+        type: 'list',
+        itemLabel: 'Pilar',
+        fields: [
+          { key: 'tag', label: 'Tag', type: 'text' },
+          { key: 'icon', label: 'Icono', type: 'text' },
+          { key: 'title', label: 'Titulo', type: 'text' },
+          { key: 'description', label: 'Descripcion', type: 'textarea' },
+        ],
+      },
+    ],
+  },
+  {
+    type: 'influencer_program_tiers',
+    label: 'Influencer tiers',
+    description: 'Resumen de tiers y beneficios del programa.',
+    preview: 'Tiers',
+    fields: [
+      { key: 'title', label: 'Titulo', type: 'textarea' },
+      { key: 'subtitle', label: 'Subtitulo', type: 'textarea' },
+      {
+        key: 'items',
+        label: 'Tiers',
+        type: 'list',
+        itemLabel: 'Tier',
+        fields: [
+          { key: 'name', label: 'Nombre', type: 'text' },
+          { key: 'commissionLabel', label: 'Comision', type: 'text' },
+          { key: 'isFeatured', label: 'Destacado', type: 'toggle' },
+          { key: 'benefits', label: 'Beneficios', type: 'simple-list', itemLabel: 'Beneficio' },
+        ],
+      },
+    ],
+  },
+  {
+    type: 'influencer_program_steps',
+    label: 'Influencer pasos',
+    description: 'Proceso del programa explicado en pasos.',
+    preview: 'Proceso',
+    fields: [
+      { key: 'kicker', label: 'Kicker', type: 'text' },
+      { key: 'title', label: 'Titulo', type: 'textarea' },
+      {
+        key: 'items',
+        label: 'Pasos',
+        type: 'list',
+        itemLabel: 'Paso',
+        fields: [
+          { key: 'number', label: 'Numero', type: 'text' },
+          { key: 'title', label: 'Titulo', type: 'text' },
+          { key: 'description', label: 'Descripcion', type: 'textarea' },
+        ],
+      },
+    ],
+  },
+  {
+    type: 'influencer_program_cta',
+    label: 'Influencer CTA final',
+    description: 'Cierre del programa de influencers.',
+    preview: 'Cierre',
+    fields: [
+      { key: 'backgroundWord', label: 'Texto de fondo', type: 'text' },
+      { key: 'title', label: 'Titulo', type: 'textarea' },
+      { key: 'subtitle', label: 'Subtitulo', type: 'textarea' },
       { key: 'cta', label: 'CTA', type: 'group', fields: ctaGroupFields },
     ],
   },
@@ -379,7 +577,7 @@ export const LANDING_BLOCK_LIBRARY = [
   },
 ]
 
-export const LANDING_DEFAULT_BLOCKS = [
+const OFFICIAL_DEFAULT_BLOCKS = mapDefaultBlocks(LANDING_PAGE_KEY, [
   {
     block_type: 'navbar',
     internal_title: 'Navbar principal',
@@ -471,21 +669,21 @@ export const LANDING_DEFAULT_BLOCKS = [
   },
   {
     block_type: 'exchange_points',
-    internal_title: 'Agregar puntos de intercambio',
+    internal_title: 'Agregar lugares de intercambio',
     slug: 'agregar-puntos',
     preview_image_url: '',
     draft_content: {
       kicker: '// descubri',
-      title: 'Agrega puntos de intercambio',
+      title: 'Agrega lugares de intercambio',
       description: 'Sugeri plazas, kioscos, cafes o tiendas donde la comunidad ya se junta. Si se aprueba, ganas visibilidad, XP y ayudas a mover la red.',
       image: 'https://images.unsplash.com/photo-1515169067868-5387ec356754?q=80&w=1200&auto=format&fit=crop',
       background: '#111111',
       chips: [
-        { label: 'Puntos sugeridos', tone: 'green' },
+        { label: 'Lugares sugeridos', tone: 'green' },
         { label: 'Aprobacion rapida', tone: 'blue' },
         { label: 'Reward', tone: 'orange' },
       ],
-      cta: { label: 'Sugerir punto', url: '/login', style: 'primary' },
+      cta: { label: 'Sugerir punto', url: 'action:suggest-point', style: 'primary' },
     },
   },
   {
@@ -535,8 +733,8 @@ export const LANDING_DEFAULT_BLOCKS = [
         { label: 'Rewards', tone: 'blue' },
       ],
       benefits: ['Invita amigos', 'Desbloquea dias premium', 'Activa tu zona', 'Conviertete en referencia local'],
-      primaryCta: { label: 'Quiero mi codigo', url: '/login', style: 'primary' },
-      secondaryCta: { label: 'Ver programa', url: '/affiliate-join/demo', style: 'secondary' },
+      primaryCta: { label: 'Quiero mi codigo', url: 'action:influencer-apply', style: 'primary' },
+      secondaryCta: { label: 'Ver programa', url: 'action:influencer-info', style: 'secondary' },
     },
   },
   {
@@ -581,6 +779,30 @@ export const LANDING_DEFAULT_BLOCKS = [
     },
   },
   {
+    block_type: 'influencers',
+    internal_title: 'Influencers Promo',
+    slug: 'influencers-promo',
+    preview_image_url: '',
+    draft_content: {
+      kicker: '// programa de influencers',
+      title: 'Tu audiencia vale mas de lo que pensas',
+      description: 'Sumate como partner oficial de FigusUY. No pedimos seguidores, pedimos activaciones reales.',
+      image: 'https://images.unsplash.com/photo-1557804506-669a67965ba0?q=80&w=1200&auto=format&fit=crop',
+      chips: [
+        { label: 'Tier System', tone: 'orange' },
+        { label: 'Real Performance', tone: 'neutral' },
+      ],
+      benefits: [
+        'Dashboard de performance en vivo',
+        'Codigos de invitacion unicos',
+        'Comisiones por usuarios activos',
+        'Pagos mensuales garantizados',
+      ],
+      primaryCta: { label: 'Quiero mi código', url: 'action:influencer-apply', style: 'primary' },
+      secondaryCta: { label: 'Ver programa', url: 'action:influencer-info', style: 'secondary' },
+    },
+  },
+  {
     block_type: 'user_plans',
     internal_title: 'Planes usuario',
     slug: 'planes-usuario',
@@ -599,7 +821,7 @@ export const LANDING_DEFAULT_BLOCKS = [
     preview_image_url: '',
     draft_content: {
       kicker: '// planes negocio',
-      title: 'Planes para tiendas y puntos',
+      title: 'Planes para tiendas y lugares',
       subtitle: 'Aparece donde ya existe intencion real de compra, intercambio y validacion.',
       plans: businessPlans,
     },
@@ -625,7 +847,7 @@ export const LANDING_DEFAULT_BLOCKS = [
     draft_content: {
       logoText: 'FIGUS',
       logoAccent: 'UY',
-      legal: '© 2026 FigusUY. Todos los derechos reservados.',
+      legal: 'Â© 2026 FigusUY. Todos los derechos reservados.',
       social: [
         { label: 'Instagram', url: 'https://instagram.com' },
         { label: 'TikTok', url: 'https://tiktok.com' },
@@ -638,23 +860,241 @@ export const LANDING_DEFAULT_BLOCKS = [
       cta: { label: 'Entrar', url: '/login', style: 'secondary' },
     },
   },
-].map((block, index) => ({
-  page_key: LANDING_PAGE_KEY,
-  internal_title: block.internal_title,
-  slug: block.slug,
-  block_type: block.block_type,
-  preview_image_url: block.preview_image_url,
-  draft_content: block.draft_content,
-  published_content: block.draft_content,
-  draft_visible: true,
-  published_visible: true,
-  draft_order: index,
-  published_order: index,
-  is_enabled: true,
-}))
+])
+
+const POINTS_DEFAULT_BLOCKS = mapDefaultBlocks(LANDING_POINTS_PAGE_KEY, [
+  {
+    block_type: 'exchange_points',
+    internal_title: 'Hero lugares',
+    slug: 'points-hero',
+    preview_image_url: '',
+    draft_content: {
+      kicker: '// lugares oficiales',
+      title: 'Converti tu local en lugar de intercambio',
+      description: 'Activa trafico real en tu zona, aparece en el mapa y sumate a la red donde los coleccionistas ya estan buscando ir.',
+      image: 'https://images.unsplash.com/photo-1515169067868-5387ec356754?q=80&w=1200&auto=format&fit=crop',
+      background: '#101010',
+      chips: [
+        { label: 'Trafico real', tone: 'orange' },
+        { label: 'Mapa oficial', tone: 'green' },
+        { label: 'Activacion local', tone: 'blue' },
+      ],
+      cta: { label: 'Quiero ser un lugar oficial', url: 'action:business-apply', style: 'primary' },
+    },
+  },
+  {
+    block_type: 'influencers',
+    internal_title: 'Programa lugares',
+    slug: 'points-program',
+    preview_image_url: '',
+    draft_content: {
+      kicker: '// programa de lugares',
+      title: 'Tu tienda puede mover la red',
+      description: 'No se trata solo de aparecer. Se trata de convertir tu local en una referencia para intercambios, validaciones y nuevas compras.',
+      image: 'https://images.unsplash.com/photo-1556740749-887f6717d7e4?q=80&w=1200&auto=format&fit=crop',
+      chips: [
+        { label: 'Comercios aliados', tone: 'orange' },
+        { label: 'Visibilidad local', tone: 'green' },
+        { label: 'Captacion directa', tone: 'blue' },
+      ],
+      benefits: [
+        'Aparece en el mapa oficial',
+        'Recibe trafico de coleccionistas cercanos',
+        'Destaca promos y beneficios del local',
+        'Activa tu zona con demanda real',
+      ],
+      primaryCta: { label: 'Unirme como lugar oficial', url: 'action:business-apply', style: 'primary' },
+      secondaryCta: { label: 'Ver planes', url: '#planes-negocio', style: 'secondary' },
+    },
+  },
+  {
+    block_type: 'business_plans',
+    internal_title: 'Planes lugares',
+    slug: 'planes-negocio',
+    preview_image_url: '',
+    draft_content: {
+      kicker: '// planes negocio',
+      title: 'Escala tu presencia en la red',
+      subtitle: 'Desde visibilidad local hasta conversion premium, elige el plan segun el nivel de activacion que quieras capturar.',
+      plans: businessPlans,
+    },
+  },
+  {
+    block_type: 'final_cta',
+    internal_title: 'CTA lugares',
+    slug: 'points-cta',
+    preview_image_url: '',
+    draft_content: {
+      title: 'Activa tu local donde ya existe intencion real',
+      subtitle: 'Postulate hoy y empeza a captar coleccionistas en tu zona.',
+      background: '#141414',
+      image: '',
+      cta: { label: 'Solicitar alta', url: 'action:business-apply', style: 'primary' },
+    },
+  },
+])
+
+const INFLUENCERS_DEFAULT_BLOCKS = mapDefaultBlocks(LANDING_INFLUENCERS_PAGE_KEY, [
+  {
+    block_type: 'influencer_program_hero',
+    internal_title: 'Hero influencers',
+    slug: 'influencer-program-hero',
+    preview_image_url: '',
+    draft_content: {
+      badge: 'Influencer Growth Program',
+      titleLineOne: 'Tu influencia vale',
+      titleLineTwo: 'por resultados.',
+      accentWord: 'resultados.',
+      subtitle: 'Convertí tu comunidad en resultados reales. Sumate a un programa pensado para impulsar interacción, conversiones y crecimiento constante dentro de la plataforma.',
+      scrollTarget: 'performance-real',
+      primaryCta: { label: 'Postularme ahora', url: 'action:influencer-apply', style: 'primary' },
+      secondaryCta: { label: 'Saber mas', url: '#performance-real', style: 'ghost' },
+    },
+  },
+  {
+    block_type: 'influencer_program_pillars',
+    internal_title: 'Pilares influencers',
+    slug: 'performance-real',
+    preview_image_url: '',
+    draft_content: {
+      kicker: '// performance real',
+      title: 'La comunidad es lo que cuenta',
+      subtitle: 'En FigusUY priorizamos la actividad real, la participación y el valor que aportás a tus seguidores.',
+      items: [
+        {
+          tag: 'Utility first',
+          icon: 'analytics',
+          title: 'Metricas reales',
+          description: 'Sigue activaciones, conversiones y calidad de usuarios atribuidos a tu codigo.',
+        },
+        {
+          tag: 'Trust based',
+          icon: 'shield_with_heart',
+          title: 'Reputacion y tiers',
+          description: 'Tu progreso depende de resultados sostenidos, no de percepcion ni volumen vacio.',
+        },
+        {
+          tag: 'Network effect',
+          icon: 'groups_2',
+          title: 'Red de creadores',
+          description: 'Accede a beneficios y oportunidades por activar comunidad con valor economico real.',
+        },
+      ],
+    },
+  },
+  {
+    block_type: 'influencer_program_tiers',
+    internal_title: 'Tiers influencers',
+    slug: 'tiers-influencers',
+    preview_image_url: '',
+    draft_content: {
+      title: 'Niveles de crecimiento',
+      subtitle: 'Tu performance define automaticamente el tier y las condiciones del programa.',
+      items: [
+        {
+          name: 'Community',
+          commissionLabel: 'Comision base: 5% usuarios / 8% negocios',
+          isFeatured: false,
+          benefits: ['10+ activaciones validas', '2+ conversiones', 'Dashboard de performance'],
+        },
+        {
+          name: 'Growth',
+          commissionLabel: 'Comision: 6-7% usuarios / 10% negocios',
+          isFeatured: true,
+          benefits: ['40+ activaciones validas', '10+ conversiones', 'Buena retencion y progresion'],
+        },
+        {
+          name: 'Partner',
+          commissionLabel: 'Comision: 7-8% usuarios / 12% negocios',
+          isFeatured: false,
+          benefits: ['100+ activaciones validas', '25+ conversiones', 'Alta calidad sostenida'],
+        },
+      ],
+    },
+  },
+  {
+    block_type: 'influencer_program_steps',
+    internal_title: 'Proceso influencers',
+    slug: 'proceso-influencers',
+    preview_image_url: '',
+    draft_content: {
+      kicker: '// proceso',
+      title: 'Como entras al programa',
+      items: [
+        { number: '01', title: 'Postulacion', description: 'Completa tu solicitud con tus canales y contexto de comunidad.' },
+        { number: '02', title: 'Curacion', description: 'Revisamos fit, autenticidad y capacidad real de activar red.' },
+        { number: '03', title: 'Activacion', description: 'Recibes codigo, dashboard y objetivos para empezar a convertir.' },
+      ],
+    },
+  },
+  {
+    block_type: 'faq',
+    internal_title: 'FAQ influencers',
+    slug: 'faq-influencers',
+    preview_image_url: '',
+    draft_content: {
+      kicker: '// faq',
+      title: 'FAQ y condiciones',
+      subtitle: 'Transparencia sobre como funciona el programa y como se liquida.',
+      items: [
+        {
+          question: 'Como se calculan los pagos?',
+          answer: 'Las comisiones salen del valor neto de conversiones reales atribuidas a tu codigo. Lo ves reflejado en tu dashboard.',
+        },
+        {
+          question: 'Como subo de tier?',
+          answer: 'Subes por activacion, conversion y calidad. El sistema recalcula periodicamente y muestra que te falta para avanzar.',
+        },
+        {
+          question: 'Hay un mínimo de seguidores para aplicar?',
+          answer: 'La condición mínima es tener 1500 seguidores en cada plataforma que vayas a utilizar para promocionar la app (Instagram, TikTok y/o YouTube).',
+        },
+        {
+          question: 'Cuando cobro?',
+          answer: 'Las liquidaciones se procesan segun la configuracion activa del programa y tu saldo validado.',
+        },
+      ],
+    },
+  },
+  {
+    block_type: 'influencer_program_cta',
+    internal_title: 'CTA influencers',
+    slug: 'cta-influencers',
+    preview_image_url: '',
+    draft_content: {
+      backgroundWord: 'Join the network',
+      title: 'Estas listo?',
+      subtitle: 'Unete a los creadores que estan activando el coleccionismo con performance real.',
+      cta: { label: 'Enviar mi solicitud', url: 'action:influencer-apply', style: 'primary' },
+    },
+  },
+])
+
+export const LANDING_DEFAULT_BLOCKS_BY_PAGE = {
+  [LANDING_PAGE_KEY]: OFFICIAL_DEFAULT_BLOCKS,
+  [LANDING_POINTS_PAGE_KEY]: POINTS_DEFAULT_BLOCKS,
+  [LANDING_INFLUENCERS_PAGE_KEY]: INFLUENCERS_DEFAULT_BLOCKS,
+}
+
+export const LANDING_DEFAULT_BLOCKS = LANDING_DEFAULT_BLOCKS_BY_PAGE[LANDING_PAGE_KEY]
 
 export function getBlockDefinition(type) {
   return LANDING_BLOCK_LIBRARY.find((block) => block.type === type)
+}
+
+export function getLandingPageDefinition(pageKey = LANDING_PAGE_KEY) {
+  return LANDING_PAGE_OPTIONS.find((page) => page.key === pageKey) || LANDING_PAGE_OPTIONS[0]
+}
+
+export function getLandingPageBlockLibrary(pageKey = LANDING_PAGE_KEY) {
+  const page = getLandingPageDefinition(pageKey)
+  return page.blockTypes
+    .map((type) => LANDING_BLOCK_LIBRARY.find((block) => block.type === type))
+    .filter(Boolean)
+}
+
+export function getDefaultBlocksForPage(pageKey = LANDING_PAGE_KEY) {
+  return cloneBlockContent(LANDING_DEFAULT_BLOCKS_BY_PAGE[pageKey] || LANDING_DEFAULT_BLOCKS)
 }
 
 export function cloneBlockContent(value) {
@@ -687,12 +1127,15 @@ export function isScheduledNow(block) {
   return true
 }
 
-export function createEmptyBlock(type) {
+export function createEmptyBlock(type, pageKey = LANDING_PAGE_KEY) {
   const definition = getBlockDefinition(type)
-  const base = LANDING_DEFAULT_BLOCKS.find((item) => item.block_type === type)
+  const base = [
+    ...(LANDING_DEFAULT_BLOCKS_BY_PAGE[pageKey] || []),
+    ...Object.values(LANDING_DEFAULT_BLOCKS_BY_PAGE).flat(),
+  ].find((item) => item.block_type === type)
 
   return {
-    page_key: LANDING_PAGE_KEY,
+    page_key: pageKey,
     block_type: type,
     internal_title: definition?.label || 'Nuevo bloque',
     slug: `${type}-${Math.random().toString(36).slice(2, 8)}`,

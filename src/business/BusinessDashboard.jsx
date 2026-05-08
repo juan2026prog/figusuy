@@ -1,5 +1,5 @@
-import React from 'react'
-import { useOutletContext, Link } from 'react-router-dom'
+﻿import { useOutletContext, Link } from 'react-router-dom'
+import { getBusinessPlanLabel } from '../lib/businessPlans'
 
 export default function BusinessDashboard() {
   const { location } = useOutletContext()
@@ -169,13 +169,13 @@ export default function BusinessDashboard() {
 
         <aside className="biz-card emphasis dashboard-hero-side">
           <div>
-            <div className="biz-page-kicker">/ tu modelo mental</div>
-            <h3>Me ven → me tocan → me eligen.</h3>
-            <p className="biz-card-copy">Tus metricas responden ese flujo. El siguiente paso es mejorar visibilidad y sostener presencia consistente.</p>
+            <div className="biz-page-kicker">/ Rendimiento de tu tienda</div>
+            <h3>Más actividad genera más visibilidad.</h3>
+            <p className="biz-card-copy">Más visibilidad genera más visitas, validaciones y conversiones. Mantener promociones y participación activa mejora el rendimiento de tu tienda.</p>
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '.55rem' }}>
             <span className="biz-chip green">Perfil activo</span>
-            <span className="biz-chip orange" style={{ textTransform: 'capitalize' }}>{location.business_plan}</span>
+            <span className="biz-chip orange">{getBusinessPlanLabel(location.business_plan)}</span>
           </div>
         </aside>
       </section>
@@ -204,7 +204,7 @@ export default function BusinessDashboard() {
           </div>
           <div className="biz-kpi" style={{ background: 'rgba(255, 90, 0, .08)', borderColor: 'rgba(255, 90, 0, .22)' }}>
             <span className="biz-kpi-label" style={{ color: 'var(--orange)' }}>Plan actual</span>
-            <strong className="biz-kpi-value" style={{ color: 'var(--orange)', textTransform: 'capitalize' }}>{location.business_plan}</strong>
+            <strong className="biz-kpi-value" style={{ color: 'var(--orange)' }}>{getBusinessPlanLabel(location.business_plan)}</strong>
           </div>
         </div>
       </section>

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+﻿import React, { useEffect, useState } from 'react'
 import { useAdminStore } from '../stores/adminStore'
 import { useAuthStore } from '../stores/authStore'
 
@@ -51,7 +51,7 @@ export default function AdminPlans() {
 
       {saved && (
         <div style={{ background: '#dcfce7', border: '1px solid #86efac', borderRadius: '0.5rem', padding: '0.75rem 1rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', fontWeight: 600, color: '#166534' }}>
-          ✅ Plan guardado exitosamente.
+          âœ… Plan guardado exitosamente.
         </div>
       )}
 
@@ -81,7 +81,7 @@ export default function AdminPlans() {
                   <div>
                     <h3 style={{ fontSize: '1.25rem', fontWeight: 900, color: "#f5f5f5", textTransform: 'capitalize', margin: 0 }}>{plan.plan_name}</h3>
                     <p style={{ fontSize: '0.75rem', color: "var(--admin-muted)", margin: 0 }}>
-                      Boost: +{((plan.priority_boost || 0) * 100).toFixed(0)}% · Ranking: {plan.match_depth}
+                      Boost: +{((plan.priority_boost || 0) * 100).toFixed(0)}% Â· Ranking: {plan.match_depth}
                     </p>
                   </div>
                 </div>
@@ -150,7 +150,7 @@ export default function AdminPlans() {
 
                     <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
                       <button onClick={handleSave} disabled={saving} style={{ flex: 1, background: '#10b981', color: 'white', border: 'none', padding: '0.625rem', borderRadius: '0.5rem', fontWeight: 700, cursor: 'pointer', opacity: saving ? 0.6 : 1 }}>
-                        {saving ? '⏳ Guardando...' : '💾 Guardar'}
+                        {saving ? 'â³ Guardando...' : 'ðŸ’¾ Guardar'}
                       </button>
                       <button onClick={() => setEditingId(null)} style={{ background: "var(--admin-panel2)", color: "var(--admin-muted2)", border: 'none', padding: '0.625rem 1rem', borderRadius: '0.5rem', fontWeight: 700, cursor: 'pointer' }}>Cancelar</button>
                     </div>
@@ -160,8 +160,8 @@ export default function AdminPlans() {
                     {/* View Mode */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1.25rem' }}>
                       {[
-                        { label: 'Máx álbumes', value: plan.max_active_albums ?? '∞', icon: 'menu_book' },
-                        { label: 'Favoritos', value: plan.favorite_limit ?? '∞', icon: 'favorite' },
+                        { label: 'Máx álbumes', value: plan.max_active_albums ?? 'âˆž', icon: 'menu_book' },
+                        { label: 'Favoritos', value: plan.favorite_limit ?? 'âˆž', icon: 'favorite' },
                         { label: 'Chat expira', value: plan.chat_expiration_hours ? `${plan.chat_expiration_hours}h` : 'Nunca', icon: 'timer' },
                         { label: 'Match depth', value: plan.match_depth, icon: 'search' },
                         { label: 'Refresh', value: plan.match_refresh_level, icon: 'sync' },
@@ -190,7 +190,7 @@ export default function AdminPlans() {
                         <span key={f.key} style={{
                           padding: '0.25rem 0.5rem', borderRadius: '0.375rem', fontSize: '0.6875rem', fontWeight: 700,
                           background: plan[f.key] ? '#ecfdf5' : "var(--admin-panel2)", color: plan[f.key] ? '#10b981' : "var(--admin-muted)"
-                        }}>{plan[f.key] ? '✓' : '✕'} {f.label}</span>
+                        }}>{plan[f.key] ? 'âœ“' : 'âœ•'} {f.label}</span>
                       ))}
                     </div>
 
@@ -199,7 +199,7 @@ export default function AdminPlans() {
                       background: `${color}10`, color, border: `1px solid ${color}30`,
                       fontWeight: 700, cursor: 'pointer', fontSize: '0.8125rem'
                     }}>
-                      ✏️ Editar Plan
+                      âœï¸ Editar Plan
                     </button>
                   </>
                 )}

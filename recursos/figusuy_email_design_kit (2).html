@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FigusUY — Email Design Kit</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 0;
+      background: #050505;
+      font-family: Arial, Helvetica, sans-serif;
+      color: #f5f5f5;
+    }
+    .page {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 32px 16px 80px;
+    }
+    .kit-title {
+      font-family: Arial, Helvetica, sans-serif;
+      text-transform: uppercase;
+      letter-spacing: -2px;
+      font-size: 44px;
+      line-height: .9;
+      font-weight: 900;
+      margin: 0 0 8px;
+    }
+    .kit-sub {
+      color: rgba(255,255,255,.58);
+      margin: 0 0 28px;
+      line-height: 1.5;
+      max-width: 760px;
+    }
+    .template-label {
+      margin: 42px 0 14px;
+      color: #ff5a00;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    /* Email canvas */
+    .email-wrap {
+      width: 100%;
+      background: #050505;
+      padding: 28px 0;
+      border: 1px solid rgba(255,255,255,.08);
+      margin-bottom: 36px;
+    }
+    .email {
+      width: 100%;
+      max-width: 640px;
+      margin: 0 auto;
+      background: #0b0b0b;
+      border: 1px solid rgba(255,255,255,.1);
+      overflow: hidden;
+    }
+    .email-header {
+      padding: 24px 26px;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+      background: #0b0b0b;
+    }
+    .brand {
+      font-size: 28px;
+      font-weight: 900;
+      letter-spacing: -1px;
+      text-transform: uppercase;
+      color: #fff;
+    }
+    .brand span { color: #ff5a00; }
+    .email-hero {
+      padding: 34px 26px 30px;
+      background: linear-gradient(135deg, #171717 0%, #0c0c0c 56%, rgba(255,90,0,.18) 100%);
+    }
+    .email-hero.green {
+      background: linear-gradient(135deg, #171717 0%, #0c0c0c 56%, rgba(34,197,94,.16) 100%);
+    }
+    .email-hero.blue {
+      background: linear-gradient(135deg, #171717 0%, #0c0c0c 56%, rgba(56,189,248,.16) 100%);
+    }
+    .email-hero.purple {
+      background: linear-gradient(135deg, #171717 0%, #0c0c0c 56%, rgba(168,85,247,.18) 100%);
+    }
+    .eyebrow {
+      color: #ff5a00;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      font-size: 11px;
+      font-weight: 900;
+      margin-bottom: 12px;
+    }
+    .email-hero.green .eyebrow { color: #22c55e; }
+    .email-hero.blue .eyebrow { color: #38bdf8; }
+    .email-hero.purple .eyebrow { color: #a855f7; }
+    .hero-title {
+      margin: 0;
+      color: #fff;
+      font-size: 42px;
+      line-height: .92;
+      letter-spacing: -1.5px;
+      text-transform: uppercase;
+      font-weight: 900;
+    }
+    .hero-copy {
+      color: rgba(255,255,255,.68);
+      font-size: 15px;
+      line-height: 1.6;
+      margin: 16px 0 0;
+    }
+    .email-body {
+      padding: 26px;
+      background: #0b0b0b;
+    }
+    .card {
+      background: #121212;
+      border: 1px solid rgba(255,255,255,.09);
+      padding: 18px;
+      margin-bottom: 14px;
+    }
+    .card.highlight {
+      border-color: rgba(255,90,0,.35);
+      background: linear-gradient(135deg, rgba(255,90,0,.09), #111 70%);
+    }
+    .card.green {
+      border-color: rgba(34,197,94,.3);
+      background: linear-gradient(135deg, rgba(34,197,94,.08), #111 70%);
+    }
+    .card.blue {
+      border-color: rgba(56,189,248,.3);
+      background: linear-gradient(135deg, rgba(56,189,248,.08), #111 70%);
+    }
+    .card.purple {
+      border-color: rgba(168,85,247,.3);
+      background: linear-gradient(135deg, rgba(168,85,247,.08), #111 70%);
+    }
+    .card-title {
+      margin: 0 0 8px;
+      color: #fff;
+      font-size: 22px;
+      line-height: 1;
+      text-transform: uppercase;
+      font-weight: 900;
+      letter-spacing: -.4px;
+    }
+    .card-copy {
+      margin: 0;
+      color: rgba(255,255,255,.65);
+      font-size: 14px;
+      line-height: 1.55;
+    }
+    .stats {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0 18px;
+    }
+    .stats td {
+      width: 33.333%;
+      background: #121212;
+      border: 1px solid rgba(255,255,255,.09);
+      padding: 16px 12px;
+      vertical-align: top;
+    }
+    .stat-num {
+      display: block;
+      font-size: 30px;
+      line-height: .9;
+      color: #ff5a00;
+      font-weight: 900;
+      letter-spacing: -1px;
+    }
+    .stat-num.green { color: #22c55e; }
+    .stat-num.blue { color: #38bdf8; }
+    .stat-num.purple { color: #a855f7; }
+    .stat-label {
+      display: block;
+      margin-top: 8px;
+      color: rgba(255,255,255,.45);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: 900;
+    }
+    .button {
+      display: inline-block;
+      background: #ff5a00;
+      color: #fff !important;
+      text-decoration: none;
+      padding: 15px 22px;
+      font-size: 13px;
+      text-transform: uppercase;
+      font-weight: 900;
+      letter-spacing: 1px;
+      margin-top: 12px;
+    }
+    .button.green { background: #22c55e; color: #071107 !important; }
+    .button.blue { background: #38bdf8; color: #061017 !important; }
+    .button.purple { background: #a855f7; color: #fff !important; }
+    .secondary-link {
+      display: inline-block;
+      color: rgba(255,255,255,.65) !important;
+      text-decoration: none;
+      margin-left: 14px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .list {
+      margin: 16px 0 0;
+      padding: 0;
+      list-style: none;
+    }
+    .list li {
+      border-bottom: 1px solid rgba(255,255,255,.07);
+      padding: 12px 0;
+      color: rgba(255,255,255,.68);
+      font-size: 14px;
+      line-height: 1.45;
+    }
+    .list li:last-child { border-bottom: 0; }
+    .tag {
+      display: inline-block;
+      border: 1px solid rgba(255,255,255,.15);
+      color: rgba(255,255,255,.6);
+      text-transform: uppercase;
+      font-size: 10px;
+      letter-spacing: 1px;
+      font-weight: 900;
+      padding: 5px 7px;
+      margin: 4px 4px 0 0;
+    }
+    .tag.orange { color: #ff5a00; border-color: rgba(255,90,0,.35); background: rgba(255,90,0,.08); }
+    .tag.green { color: #22c55e; border-color: rgba(34,197,94,.35); background: rgba(34,197,94,.08); }
+    .tag.blue { color: #38bdf8; border-color: rgba(56,189,248,.35); background: rgba(56,189,248,.08); }
+    .tag.purple { color: #a855f7; border-color: rgba(168,85,247,.35); background: rgba(168,85,247,.08); }
+    .progress {
+      background: #1b1b1b;
+      height: 12px;
+      overflow: hidden;
+      margin: 14px 0 8px;
+    }
+    .progress-fill {
+      height: 100%;
+      background: #ff5a00;
+      width: 68%;
+    }
+    .progress-fill.green { background: #22c55e; }
+    .progress-fill.blue { background: #38bdf8; }
+    .progress-fill.purple { background: #a855f7; }
+    .footer {
+      padding: 22px 26px;
+      background: #080808;
+      border-top: 1px solid rgba(255,255,255,.08);
+      color: rgba(255,255,255,.42);
+      font-size: 12px;
+      line-height: 1.55;
+    }
+    .footer a { color: rgba(255,255,255,.62); text-decoration: underline; }
+
+    @media(max-width: 700px){
+      .page { padding: 20px 10px 60px; }
+      .kit-title { font-size: 34px; }
+      .email-wrap { padding: 14px 0; }
+      .email { max-width: 100%; }
+      .email-header,.email-hero,.email-body,.footer { padding-left: 18px; padding-right: 18px; }
+      .hero-title { font-size: 33px; }
+      .stats, .stats tbody, .stats tr, .stats td { display: block; width: 100%; }
+      .stats td { margin-bottom: 8px; }
+      .secondary-link { display:block; margin-left:0; margin-top:12px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <h1 class="kit-title">FigusUY Email Design Kit</h1>
+    <p class="kit-sub">Cuatro diseños maestros para usar como base en todos los emails del sistema: activación, progreso/confianza, negocios/PartnerStore e influencers/performance.</p>
+
+    <!-- TEMPLATE 1 -->
+    <div class="template-label">01 / Core Activation Email</div>
+    <div class="email-wrap">
+      <div class="email">
+        <div class="email-header">
+          <div class="brand">Figus<span>UY</span></div>
+        </div>
+        <div class="email-hero">
+          <div class="eyebrow">Bienvenido a la red</div>
+          <h2 class="hero-title">Tu álbum ya puede empezar a moverse</h2>
+          <p class="hero-copy">Hola {{first_name}}, cargá tus faltantes y repetidas para descubrir quién tiene justo lo que necesitás cerca tuyo.</p>
+        </div>
+        <div class="email-body">
+          <div class="card highlight">
+            <h3 class="card-title">Primer paso recomendado</h3>
+            <p class="card-copy">Elegí tu álbum activo y marcá al menos 15 figuritas para que FigusUY pueda encontrar tus primeros cruces reales.</p>
+            <a class="button" href="{{cta_url}}">Cargar mi álbum</a>
+            <a class="secondary-link" href="{{secondary_url}}">Ver cómo funciona</a>
+          </div>
+          <table class="stats" role="presentation">
+            <tr>
+              <td><span class="stat-num">3</span><span class="stat-label">pasos para empezar</span></td>
+              <td><span class="stat-num green">0</span><span class="stat-label">costo inicial</span></td>
+              <td><span class="stat-num blue">Hoy</span><span class="stat-label">primer match posible</span></td>
+            </tr>
+          </table>
+          <div class="card">
+            <h3 class="card-title">Qué podés hacer gratis</h3>
+            <ul class="list">
+              <li>Crear tu perfil de coleccionista.</li>
+              <li>Cargar faltantes y repetidas.</li>
+              <li>Ver matches, mapa y puntos de intercambio.</li>
+              <li>Coordinar intercambios con otros usuarios.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="footer">
+          Recibiste este email porque creaste una cuenta en FigusUY.<br>
+          <a href="{{preferences_url}}">Preferencias</a> · <a href="{{support_url}}">Soporte</a> · FigusUY
+        </div>
+      </div>
+    </div>
+
+    <!-- TEMPLATE 2 -->
+    <div class="template-label">02 / Trust & Progress Email</div>
+    <div class="email-wrap">
+      <div class="email">
+        <div class="email-header">
+          <div class="brand">Figus<span>UY</span></div>
+        </div>
+        <div class="email-hero green">
+          <div class="eyebrow">Progreso confirmado</div>
+          <h2 class="hero-title">Desbloqueaste {{achievement_name}}</h2>
+          <p class="hero-copy">Tu actividad suma reputación, XP y confianza dentro de la comunidad. Este avance ya aparece en tu perfil.</p>
+        </div>
+        <div class="email-body">
+          <div class="card green">
+            <h3 class="card-title">{{achievement_name}}</h3>
+            <p class="card-copy">{{achievement_description}}</p>
+            <div>
+              <span class="tag green">+{{xp_amount}} XP</span>
+              <span class="tag orange">{{badge_name}}</span>
+              <span class="tag blue">Perfil actualizado</span>
+            </div>
+            <a class="button green" href="{{cta_url}}">Ver mi progreso</a>
+          </div>
+          <table class="stats" role="presentation">
+            <tr>
+              <td><span class="stat-num green">{{completed_exchanges}}</span><span class="stat-label">intercambios</span></td>
+              <td><span class="stat-num">{{trust_score}}</span><span class="stat-label">confianza</span></td>
+              <td><span class="stat-num blue">{{level_name}}</span><span class="stat-label">nivel actual</span></td>
+            </tr>
+          </table>
+          <div class="card">
+            <h3 class="card-title">Siguiente oportunidad</h3>
+            <p class="card-copy">Tenés {{match_count}} matches nuevos que pueden ayudarte a avanzar en {{album_name}}.</p>
+            <a class="button" href="{{matches_url}}">Ver matches</a>
+          </div>
+        </div>
+        <div class="footer">
+          Este email forma parte de tus actualizaciones de progreso y confianza en FigusUY.<br>
+          <a href="{{preferences_url}}">Preferencias</a> · <a href="{{support_url}}">Soporte</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- TEMPLATE 3 -->
+    <div class="template-label">03 / Business & PartnerStore Email</div>
+    <div class="email-wrap">
+      <div class="email">
+        <div class="email-header">
+          <div class="brand">Figus<span>UY</span></div>
+        </div>
+        <div class="email-hero blue">
+          <div class="eyebrow">Panel de negocio</div>
+          <h2 class="hero-title">{{store_name}} ya tiene movimiento</h2>
+          <p class="hero-copy">Tu local recibió actividad dentro de FigusUY. Revisá leads, validaciones, promociones y oportunidades para convertir más visitas.</p>
+        </div>
+        <div class="email-body">
+          <table class="stats" role="presentation">
+            <tr>
+              <td><span class="stat-num blue">{{views}}</span><span class="stat-label">vistas</span></td>
+              <td><span class="stat-num green">{{whatsapp_clicks}}</span><span class="stat-label">clicks WhatsApp</span></td>
+              <td><span class="stat-num">{{validations}}</span><span class="stat-label">validaciones</span></td>
+            </tr>
+          </table>
+          <div class="card blue">
+            <h3 class="card-title">Acción recomendada</h3>
+            <p class="card-copy">{{recommended_action}}</p>
+            <a class="button blue" href="{{cta_url}}">Abrir panel</a>
+          </div>
+          <div class="card">
+            <h3 class="card-title">Estado actual</h3>
+            <ul class="list">
+              <li>Plan activo: {{business_plan}}</li>
+              <li>Ranking actual: {{store_rank}}</li>
+              <li>Promos activas: {{active_promos}}</li>
+              <li>Beneficio PartnerStore: {{partner_benefit}}</li>
+            </ul>
+          </div>
+        </div>
+        <div class="footer">
+          Recibiste este email porque administrás un negocio en FigusUY.<br>
+          <a href="{{business_settings_url}}">Configuración</a> · <a href="{{support_url}}">Soporte comercial</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- TEMPLATE 4 -->
+    <div class="template-label">04 / Influencer Performance Email</div>
+    <div class="email-wrap">
+      <div class="email">
+        <div class="email-header">
+          <div class="brand">Figus<span>UY</span></div>
+        </div>
+        <div class="email-hero purple">
+          <div class="eyebrow">Programa de influencers</div>
+          <h2 class="hero-title">Tu código está generando resultados</h2>
+          <p class="hero-copy">{{first_name}}, tu comunidad está activando FigusUY. Revisá tus conversiones, comisión estimada y progreso de tier.</p>
+        </div>
+        <div class="email-body">
+          <div class="card purple">
+            <h3 class="card-title">Código {{affiliate_code}}</h3>
+            <p class="card-copy">Compartilo con tu comunidad para seguir generando activaciones válidas y conversiones.</p>
+            <div>
+              <span class="tag purple">{{tier_name}}</span>
+              <span class="tag green">{{commission_rate}} comisión</span>
+              <span class="tag orange">{{campaign_name}}</span>
+            </div>
+          </div>
+          <table class="stats" role="presentation">
+            <tr>
+              <td><span class="stat-num purple">{{activations}}</span><span class="stat-label">activaciones</span></td>
+              <td><span class="stat-num green">{{conversions}}</span><span class="stat-label">conversiones</span></td>
+              <td><span class="stat-num">${{estimated_commission}}</span><span class="stat-label">comisión estimada</span></td>
+            </tr>
+          </table>
+          <div class="card">
+            <h3 class="card-title">Progreso al próximo nivel</h3>
+            <p class="card-copy">Te faltan {{next_tier_requirement}} para acercarte a mejores condiciones.</p>
+            <div class="progress"><div class="progress-fill purple" style="width:{{tier_progress}}%"></div></div>
+            <a class="button purple" href="{{dashboard_url}}">Abrir dashboard</a>
+            <a class="secondary-link" href="{{assets_url}}">Ver piezas para compartir</a>
+          </div>
+        </div>
+        <div class="footer">
+          Recibiste este email porque participás o solicitaste participar del Programa de Influencers FigusUY.<br>
+          <a href="{{preferences_url}}">Preferencias</a> · <a href="{{support_url}}">Soporte</a>
+        </div>
+      </div>
+    </div>
+
+  
+
+    <!-- TEMPLATE 5 -->
+    <div class="template-label">05 / Auth — Confirmación de Email</div>
+    <div class="email-wrap">
+      <div class="email">
+        <div class="email-header">
+          <div class="brand">Figus<span>UY</span></div>
+        </div>
+        <div class="email-hero">
+          <div class="eyebrow">Seguridad de cuenta</div>
+          <h2 class="hero-title">Confirmá tu email para activar tu cuenta</h2>
+          <p class="hero-copy">Necesitamos verificar tu dirección de correo para activar tu perfil y proteger tu cuenta dentro de FigusUY.</p>
+        </div>
+        <div class="email-body">
+          <div class="card highlight">
+            <h3 class="card-title">Confirmación requerida</h3>
+            <p class="card-copy">Hacé click en el botón para verificar tu email y terminar la activación de tu cuenta.</p>
+            <a class="button" href="{{confirm_email_url}}">Confirmar email</a>
+          </div>
+          <div class="card">
+            <h3 class="card-title">¿No fuiste vos?</h3>
+            <p class="card-copy">Si no creaste esta cuenta, podés ignorar este mensaje. Tu email no será utilizado.</p>
+          </div>
+        </div>
+        <div class="footer">
+          Este es un email automático de seguridad de FigusUY.<br>
+          <a href="{{support_url}}">Soporte</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- TEMPLATE 6 -->
+    <div class="template-label">06 / Auth — Recuperar contraseña</div>
+    <div class="email-wrap">
+      <div class="email">
+        <div class="email-header">
+          <div class="brand">Figus<span>UY</span></div>
+        </div>
+        <div class="email-hero blue">
+          <div class="eyebrow">Acceso a cuenta</div>
+          <h2 class="hero-title">Solicitaste cambiar tu contraseña</h2>
+          <p class="hero-copy">Recibimos una solicitud para actualizar la contraseña de tu cuenta FigusUY.</p>
+        </div>
+        <div class="email-body">
+          <div class="card blue">
+            <h3 class="card-title">Restablecer acceso</h3>
+            <p class="card-copy">El siguiente enlace estará disponible por tiempo limitado para proteger tu cuenta.</p>
+            <a class="button blue" href="{{reset_password_url}}">Cambiar contraseña</a>
+          </div>
+          <div class="card">
+            <h3 class="card-title">Importante</h3>
+            <ul class="list">
+              <li>No compartas este enlace con nadie.</li>
+              <li>El enlace expira automáticamente.</li>
+              <li>Si no solicitaste esto, ignorá este email.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="footer">
+          Seguridad FigusUY · <a href="{{support_url}}">Soporte</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- TEMPLATE 7 -->
+    <div class="template-label">07 / Bienvenida — Usuario</div>
+    <div class="email-wrap">
+      <div class="email">
+        <div class="email-header">
+          <div class="brand">Figus<span>UY</span></div>
+        </div>
+        <div class="email-hero">
+          <div class="eyebrow">Cuenta activada</div>
+          <h2 class="hero-title">Ya sos parte de la comunidad</h2>
+          <p class="hero-copy">Hola {{first_name}}, tu cuenta ya está lista. Ahora podés empezar a cargar tus álbumes, encontrar matches y participar en la red de intercambio.</p>
+        </div>
+        <div class="email-body">
+          <div class="card highlight">
+            <h3 class="card-title">Qué te recomendamos hacer ahora</h3>
+            <ul class="list">
+              <li>Elegir tu primer álbum.</li>
+              <li>Cargar faltantes y repetidas.</li>
+              <li>Explorar puntos de intercambio cercanos.</li>
+              <li>Activar tu perfil público.</li>
+            </ul>
+            <a class="button" href="{{dashboard_url}}">Abrir FigusUY</a>
+          </div>
+        </div>
+        <div class="footer">
+          Bienvenido a FigusUY.<br>
+          <a href="{{support_url}}">Soporte</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- TEMPLATE 8 -->
+    <div class="template-label">08 / Bienvenida — Negocio</div>
+    <div class="email-wrap">
+      <div class="email">
+        <div class="email-header">
+          <div class="brand">Figus<span>UY</span></div>
+        </div>
+        <div class="email-hero blue">
+          <div class="eyebrow">Cuenta comercial</div>
+          <h2 class="hero-title">Tu negocio ya está dentro de FigusUY</h2>
+          <p class="hero-copy">Tu cuenta comercial fue creada correctamente. Ahora podés configurar promociones, validar álbumes y aparecer en el mapa de la comunidad.</p>
+        </div>
+        <div class="email-body">
+          <div class="card blue">
+            <h3 class="card-title">Primeros pasos</h3>
+            <ul class="list">
+              <li>Completar información del negocio.</li>
+              <li>Agregar horarios y ubicación.</li>
+              <li>Publicar promociones activas.</li>
+              <li>Solicitar PartnerStore.</li>
+            </ul>
+            <a class="button blue" href="{{business_dashboard_url}}">Abrir panel comercial</a>
+          </div>
+        </div>
+        <div class="footer">
+          Panel Comercial FigusUY · <a href="{{support_url}}">Soporte</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- TEMPLATE 9 -->
+    <div class="template-label">09 / Bienvenida — Influencer</div>
+    <div class="email-wrap">
+      <div class="email">
+        <div class="email-header">
+          <div class="brand">Figus<span>UY</span></div>
+        </div>
+        <div class="email-hero purple">
+          <div class="eyebrow">Programa de influencers</div>
+          <h2 class="hero-title">Tu acceso fue aprobado</h2>
+          <p class="hero-copy">Ya formás parte del programa de influencers de FigusUY. Tu código y dashboard ya están disponibles.</p>
+        </div>
+        <div class="email-body">
+          <div class="card purple">
+            <h3 class="card-title">Código activado</h3>
+            <p class="card-copy">Tu comunidad ya puede empezar a usar tu código personalizado.</p>
+            <div>
+              <span class="tag purple">{{affiliate_code}}</span>
+              <span class="tag green">{{tier_name}}</span>
+            </div>
+            <a class="button purple" href="{{dashboard_url}}">Abrir dashboard</a>
+          </div>
+          <div class="card">
+            <h3 class="card-title">Qué podés hacer</h3>
+            <ul class="list">
+              <li>Compartir tu código y link.</li>
+              <li>Ver activaciones y conversiones.</li>
+              <li>Subir campañas y piezas.</li>
+              <li>Escalar de tier por performance.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="footer">
+          Programa de Influencers FigusUY · <a href="{{support_url}}">Soporte</a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>

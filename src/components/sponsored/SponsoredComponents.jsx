@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
+import whpIcon from '../WhpIcon.png';
 
 // Helper for tracking
 const trackEvent = async (placementId, eventType, placementContext, page) => {
@@ -138,13 +139,13 @@ export function SponsoredPointCard({ placement, page }) {
       placementId={placement.id} 
       placementContext="points_featured" 
       page={page}
-      badgeText={placement.badge_text || '⭐ Destacado'}
+      badgeText={placement.badge_text || 'â­ Destacado'}
       badgeIcon="star"
     >
       <SponsoredImageGallery placementId={placement.id} />
       <h3 style={{ fontSize: '1.125rem', fontWeight: 900, marginBottom: '0.25rem' }}>{placement.title}</h3>
       <p style={{ fontSize: '0.8125rem', color: 'var(--color-text-muted)', marginBottom: '0.5rem' }}>
-        {placement.target_neighborhood} · {placement.target_department}
+        {placement.target_neighborhood} Â· {placement.target_department}
       </p>
       <p style={{ fontSize: '0.875rem', marginBottom: '1rem', color: 'var(--color-text-secondary)' }}>
         {placement.description}
@@ -152,7 +153,8 @@ export function SponsoredPointCard({ placement, page }) {
       
       <div style={{ display: 'flex', gap: '0.5rem' }}>
         {placement.whatsapp && (
-          <button onClick={handleWhatsapp} className="btn btn-primary" style={{ flex: 1, padding: '0.5rem', fontSize: '0.8125rem' }}>
+          <button onClick={handleWhatsapp} className="btn btn-primary" style={{ flex: 1, padding: '0.5rem', fontSize: '0.8125rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+            <img src={whpIcon} alt="WhatsApp" style={{ width: '18px', height: '18px' }} />
             WhatsApp
           </button>
         )}
@@ -237,7 +239,7 @@ export function ExchangeContextPromo({ page }) {
       placementId={promo.id} 
       placementContext="exchange_contextual" 
       page={page}
-      badgeText="📍 Punto seguro cerca"
+      badgeText="ðŸ“ Punto seguro cerca"
       badgeIcon="location_on"
     >
       <h3 style={{ fontSize: '1rem', fontWeight: 900, marginBottom: '0.25rem' }}>{promo.title}</h3>

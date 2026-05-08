@@ -1,4 +1,4 @@
-import React from 'react'
+﻿import React from 'react'
 
 const pages = {
   matches: {
@@ -76,6 +76,9 @@ export default function AdminPage({ section }) {
         .admin-generic-page {
           display: grid;
           gap: 1.25rem;
+          width: 100%;
+          max-width: 100%;
+          min-width: 0;
         }
 
         .ag-hero,
@@ -110,6 +113,11 @@ export default function AdminPage({ section }) {
           align-items: start;
           justify-content: space-between;
           gap: 1rem;
+          flex-wrap: wrap;
+        }
+
+        .ag-hero-row > * {
+          min-width: 0;
         }
 
         .ag-title {
@@ -206,6 +214,17 @@ export default function AdminPage({ section }) {
             grid-template-columns: 1fr;
           }
         }
+
+        @media (max-width: 720px) {
+          .ag-hero-row {
+            flex-direction: column;
+            align-items: stretch;
+          }
+
+          .ag-icon-box {
+            align-self: flex-start;
+          }
+        }
       `}</style>
 
       <section className="ag-hero">
@@ -259,4 +278,3 @@ export default function AdminPage({ section }) {
     </div>
   )
 }
-

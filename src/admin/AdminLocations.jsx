@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+﻿import React, { useEffect, useState } from 'react'
 import { useAdminStore } from '../stores/adminStore'
 import { useAuthStore } from '../stores/authStore'
 import { formatScore, getScoreColor, buildScoreBreakdown } from '../lib/ranking'
@@ -16,7 +16,25 @@ export default function AdminLocations() {
   const [scoringBiz, setScoringBiz] = useState(null)
   const toast = useToast()
   const [confirmConfig, setConfirmConfig] = useState({ isOpen: false, title: '', message: '', onConfirm: null })
+  const [editingLocation, setEditingLocation] = useState(null)
+  const [editForm, setEditForm] = useState({ name: '', address: '', city: '', department: '', type: '' })
 
+  const handleEditClick = (loc) => {
+    setEditingLocation(loc.id)
+    setEditForm({
+      name: loc.name || '',
+      address: loc.address || '',
+      city: loc.city || '',
+      department: loc.department || '',
+      type: loc.type || 'store'
+    })
+  }
+
+  const handleSaveEdit = async () => {
+    await updateLocation(editingLocation, editForm)
+    toast.success('Local actualizado')
+    setEditingLocation(null)
+  }
   const loadBizScore = async (id) => {
     const data = await getBusinessRanking(id)
     if (data) setBizScores(prev => ({ ...prev, [id]: data }))
@@ -129,10 +147,10 @@ export default function AdminLocations() {
               </div>
               <div style={{ 
                 padding: '0.25rem 0.5rem', borderRadius: '0.375rem', fontSize: '0.625rem', fontWeight: 900, textTransform: 'uppercase',
-                background: loc.plan === 'dominio' ? "#f5f5f5" : (loc.plan === 'turbo' ? 'var(--color-primary)' : "var(--admin-panel2)"),
-                color: loc.plan === 'dominio' || loc.plan === 'turbo' ? 'white' : "var(--admin-muted2)"
+                background: loc.plan === 'partner_store' ? 'var(--admin-orange)' : (loc.plan === 'dominio' ? "#f5f5f5" : (loc.plan === 'turbo' ? 'var(--color-primary)' : "var(--admin-panel2)")),
+                color: loc.plan === 'partner_store' || loc.plan === 'turbo' ? 'white' : (loc.plan === 'dominio' ? '#1f2937' : "var(--admin-muted2)")
               }}>
-                {loc.plan || 'Free'}
+                {loc.plan === 'partner_store' ? 'Collector Hub' : (loc.plan === 'dominio' ? 'Conversion' : (loc.plan === 'turbo' ? 'Radar' : 'Boost'))}
               </div>
             </div>
 
@@ -169,7 +187,7 @@ export default function AdminLocations() {
                    <span className="material-symbols-outlined" style={{ fontSize: '1rem', color: '#8b5cf6' }}>leaderboard</span> Ranking Score
                  </p>
                  <button onClick={() => recalcBiz(loc.id)} disabled={scoringBiz === loc.id} style={{ padding: '0.125rem 0.5rem', borderRadius: '0.25rem', background: '#f5f3ff', color: '#8b5cf6', border: "1px solid var(--admin-line)", fontSize: '0.625rem', fontWeight: 700, cursor: 'pointer' }}>
-                   {scoringBiz === loc.id ? '...' : '🔄'}
+                   {scoringBiz === loc.id ? '...' : 'ðŸ”„'}
                  </button>
                </div>
                {bizScores[loc.id] ? (() => {
@@ -203,7 +221,7 @@ export default function AdminLocations() {
                 <span className="material-symbols-outlined" style={{ fontSize: '1.125rem' }}>{loc.is_active ? 'pause_circle' : 'play_circle'}</span>
                 {loc.is_active ? 'Pausar' : 'Activar'}
               </button>
-              <button style={{ ...btn("var(--admin-panel2)", "var(--admin-muted)"), padding: '0.375rem', width: '2.25rem', justifyContent: 'center' }}>
+              <button onClick={() => handleEditClick(loc)} style={{ ...btn("var(--admin-panel2)", "var(--admin-muted)"), padding: '0.375rem', width: '2.25rem', justifyContent: 'center' }}>
                 <span className="material-symbols-outlined" style={{ fontSize: '1.125rem' }}>edit</span>
               </button>
               <button onClick={() => handleDelete(loc.id)} style={{ ...btn('#fef2f2', '#ef4444'), padding: '0.375rem', width: '2.25rem', justifyContent: 'center' }}>
@@ -219,6 +237,48 @@ export default function AdminLocations() {
           </div>
         )}
       </div>
+
+      {editingLocation && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 100, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '1rem' }}
+          onClick={() => setEditingLocation(null)}
+        >
+          <div style={{ background: "var(--admin-panel)", borderRadius: '1rem', width: '100%', maxWidth: '30rem', padding: '1.5rem', border: "1px solid var(--admin-line)" }} onClick={e => e.stopPropagation()}>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: "#f5f5f5", marginBottom: '1rem' }}>Editar Local</h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: "var(--admin-muted2)", textTransform: 'uppercase', marginBottom: '0.25rem' }}>Nombre</label>
+                <input type="text" value={editForm.name} onChange={e => setEditForm({...editForm, name: e.target.value})} style={{ width: '100%', padding: '0.625rem', borderRadius: '0.5rem', border: "1px solid var(--admin-line)", background: '#0d0d0d', color: '#fff' }} />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: "var(--admin-muted2)", textTransform: 'uppercase', marginBottom: '0.25rem' }}>Dirección</label>
+                <input type="text" value={editForm.address} onChange={e => setEditForm({...editForm, address: e.target.value})} style={{ width: '100%', padding: '0.625rem', borderRadius: '0.5rem', border: "1px solid var(--admin-line)", background: '#0d0d0d', color: '#fff' }} />
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: "var(--admin-muted2)", textTransform: 'uppercase', marginBottom: '0.25rem' }}>Ciudad</label>
+                  <input type="text" value={editForm.city} onChange={e => setEditForm({...editForm, city: e.target.value})} style={{ width: '100%', padding: '0.625rem', borderRadius: '0.5rem', border: "1px solid var(--admin-line)", background: '#0d0d0d', color: '#fff' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: "var(--admin-muted2)", textTransform: 'uppercase', marginBottom: '0.25rem' }}>Departamento</label>
+                  <input type="text" value={editForm.department} onChange={e => setEditForm({...editForm, department: e.target.value})} style={{ width: '100%', padding: '0.625rem', borderRadius: '0.5rem', border: "1px solid var(--admin-line)", background: '#0d0d0d', color: '#fff' }} />
+                </div>
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: "var(--admin-muted2)", textTransform: 'uppercase', marginBottom: '0.25rem' }}>Tipo</label>
+                <select value={editForm.type} onChange={e => setEditForm({...editForm, type: e.target.value})} style={{ width: '100%', padding: '0.625rem', borderRadius: '0.5rem', border: "1px solid var(--admin-line)", background: '#0d0d0d', color: '#fff' }}>
+                  <option value="store">Tienda / Kiosko</option>
+                  <option value="meetup">Punto de Encuentro</option>
+                  <option value="safe_exchange_zone">Zona Segura</option>
+                </select>
+              </div>
+              <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
+                <button onClick={handleSaveEdit} style={{ ...btn('var(--color-primary)', 'white'), flex: 1, justifyContent: 'center' }}>Guardar Cambios</button>
+                <button onClick={() => setEditingLocation(null)} style={{ ...btn("var(--admin-panel2)", "var(--admin-muted2)"), flex: 1, justifyContent: 'center' }}>Cancelar</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <ConfirmDialog
         isOpen={confirmConfig.isOpen}

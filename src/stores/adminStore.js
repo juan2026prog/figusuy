@@ -1,5 +1,98 @@
-import { create } from 'zustand'
+﻿import { create } from 'zustand'
 import { supabase } from '../lib/supabase'
+
+const ALBUM_FALLBACK_DROP_ORDER = [
+  'has_sticker_codes',
+  'has_sticker_names',
+  'has_sticker_images',
+  'numbering_type',
+  'has_detailed_stickers',
+  'special_codes',
+  'images',
+  'cover_url',
+  'editorial',
+  'country',
+  'category',
+  'status',
+]
+
+const isAlbumSchemaError = (error) => {
+  const message = String(error?.message || '').toLowerCase()
+  const details = String(error?.details || '').toLowerCase()
+  const hint = String(error?.hint || '').toLowerCase()
+  const raw = `${message} ${details} ${hint}`
+
+  return (
+    error?.status === 400 ||
+    raw.includes('column') ||
+    raw.includes('schema cache') ||
+    raw.includes('could not find') ||
+    raw.includes('does not exist')
+  )
+}
+
+const extractMissingColumn = (error) => {
+  const raw = `${error?.message || ''} ${error?.details || ''} ${error?.hint || ''}`
+  const patterns = [
+    /column ['"]?([a-zA-Z0-9_]+)['"]?/i,
+    /Could not find the ['"]?([a-zA-Z0-9_]+)['"]? column/i,
+  ]
+
+  for (const pattern of patterns) {
+    const match = raw.match(pattern)
+    if (match?.[1]) return match[1]
+  }
+
+  return null
+}
+
+const stripUndefined = (payload) =>
+  Object.fromEntries(Object.entries(payload).filter(([, value]) => value !== undefined))
+
+const buildAlbumPayload = (album) => {
+  const payload = {
+    ...album,
+    year: parseInt(album.year) || null,
+    total_stickers: parseInt(album.total_stickers) || 0,
+    cover_url: album.cover_url || album.images?.[0] || null,
+    images: Array.isArray(album.images) ? album.images : (album.cover_url ? [album.cover_url] : [])
+  }
+  return stripUndefined(payload)
+}
+
+const writeAlbumWithFallback = async (mode, payload, id) => {
+  let currentPayload = buildAlbumPayload(payload)
+  let dropIndex = 0
+
+  for (let attempt = 0; attempt < ALBUM_FALLBACK_DROP_ORDER.length + 2; attempt += 1) {
+    const query = mode === 'insert'
+      ? supabase.from('albums').insert(currentPayload)
+      : supabase.from('albums').update(currentPayload).eq('id', id)
+
+    const { error } = await query
+    if (!error) return null
+    if (!isAlbumSchemaError(error)) return error
+
+    const missingColumn = extractMissingColumn(error)
+    if (missingColumn && Object.prototype.hasOwnProperty.call(currentPayload, missingColumn)) {
+      const { [missingColumn]: _removed, ...rest } = currentPayload
+      currentPayload = rest
+      continue
+    }
+
+    const nextKey = ALBUM_FALLBACK_DROP_ORDER.slice(dropIndex).find((key) =>
+      Object.prototype.hasOwnProperty.call(currentPayload, key)
+    )
+
+    if (!nextKey) return error
+
+    dropIndex = ALBUM_FALLBACK_DROP_ORDER.indexOf(nextKey) + 1
+    const { [nextKey]: _removed, ...rest } = currentPayload
+    currentPayload = rest
+  }
+
+  return new Error('No se pudo guardar el album con el schema actual.')
+}
 
 export const useAdminStore = create((set, get) => ({
   // State
@@ -14,6 +107,8 @@ export const useAdminStore = create((set, get) => ({
   locations: [],
   locationRequests: [],
   reportedChats: [],
+  exchangeCompletions: [],
+  exchangeCompletionMetrics: null,
   cmsContent: [],
   albumStickers: [],
   payments: [],
@@ -26,6 +121,7 @@ export const useAdminStore = create((set, get) => ({
   algorithmConfig: [],
   rolePermissions: [],
   adminNotes: [],
+  influencerApplications: [],
   loading: false,
   isAdmin: false,
   adminRole: null,
@@ -40,7 +136,7 @@ export const useAdminStore = create((set, get) => ({
       .from('user_roles')
       .select('role')
       .eq('user_id', userId)
-      .single()
+      .maybeSingle()
     
     let role = data?.role || 'user'
     
@@ -61,12 +157,12 @@ export const useAdminStore = create((set, get) => ({
       { count: totalTrades },
       { count: pendingReports },
       { count: totalLocations },
-      { count: totalAffiliates },
+      { count: totalInfluencers },
     ] = await Promise.all([
       supabase.from('profiles').select('*', { count: 'exact', head: true }),
       supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('is_premium', true),
       supabase.from('albums').select('*', { count: 'exact', head: true }),
-      supabase.from('trades').select('*', { count: 'exact', head: true }),
+      supabase.from('exchange_completions').select('*', { count: 'exact', head: true }).eq('status', 'completed'),
       supabase.from('reports').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
       supabase.from('locations').select('*', { count: 'exact', head: true }),
       supabase.from('affiliates').select('*', { count: 'exact', head: true }),
@@ -95,6 +191,9 @@ export const useAdminStore = create((set, get) => ({
       .from('reports').select('reported_chat_id').not('reported_chat_id', 'is', null)
     const reportedChatCount = new Set(reportData?.map(r => r.reported_chat_id)).size
 
+    const { count: pendingInfluencerApps } = await supabase
+      .from('influencer_applications').select('*', { count: 'exact', head: true }).eq('status', 'pending')
+
     set({
       stats: {
         totalUsers: totalUsers || 0,
@@ -108,7 +207,8 @@ export const useAdminStore = create((set, get) => ({
         pendingLocationRequests: pendingLocationRequests || 0,
         reportedChatCount: reportedChatCount || 0,
         totalLocations: totalLocations || 0,
-        totalAffiliates: totalAffiliates || 0,
+        totalInfluencers: totalInfluencers || 0,
+        pendingInfluencerApps: pendingInfluencerApps || 0,
       },
       loading: false,
     })
@@ -156,12 +256,69 @@ export const useAdminStore = create((set, get) => ({
     await get().fetchUsers()
   },
 
-  setUserRole: async (userId, role) => {
+  setUserRole: async (userId, role, userProfile, adminId = null) => {
     const { error } = await supabase.from('user_roles').upsert({ user_id: userId, role }, { onConflict: 'user_id' })
     if (error) {
       console.error('Error setting user role:', error)
       return error
     }
+
+    if (adminId) {
+      await get().logAction(adminId, 'ROLE_CHANGE', 'user', userId, {
+        new_role: role,
+        user_name: userProfile?.name
+      })
+    }
+    
+    if (role === 'influencer' && userId) {
+      const { data: existing } = await supabase.from('affiliates').select('id, invitation_code').eq('user_id', userId).single()
+      let affiliateId = existing?.id
+      let inviteCode = existing?.invitation_code
+
+      if (!existing) {
+        inviteCode = Math.random().toString(36).substring(2, 10).toUpperCase()
+        const handle = userProfile?.name ? userProfile.name.toLowerCase().replace(/[^a-z0-9]/g, '') : `user${inviteCode}`
+        
+        const { data: newAff, error: affErr } = await supabase.from('affiliates').insert({
+          user_id: userId,
+          name: userProfile?.name || 'Nuevo Influencer',
+          handle: handle,
+          category: 'other',
+          status: 'activo',
+          avatar_url: userProfile?.avatar_url,
+          contact_email: userProfile?.email,
+          invitation_code: inviteCode
+        }).select().single()
+        
+        if (!affErr && newAff) {
+          affiliateId = newAff.id
+        }
+      }
+
+      // Automatically create a default campaign if none exists
+      if (affiliateId) {
+        const { data: campaigns } = await supabase.from('affiliate_campaigns').select('id').eq('affiliate_id', affiliateId)
+        if (!campaigns?.length) {
+          const { data: campaign, error: campErr } = await supabase.from('affiliate_campaigns').insert({
+            affiliate_id: affiliateId,
+            code: inviteCode,
+            slug: inviteCode.toLowerCase(),
+            status: 'activo'
+          }).select().single()
+
+          if (!campErr && campaign) {
+            // Also create a default commission rule (e.g., 5% or fixed amount)
+            await supabase.from('affiliate_commissions').insert({
+              campaign_id: campaign.id,
+              commission_type: 'percent',
+              commission_value: 5,
+              is_active: true
+            })
+          }
+        }
+      }
+    }
+    
     await get().fetchUsers()
   },
 
@@ -183,6 +340,12 @@ export const useAdminStore = create((set, get) => ({
     await get().fetchUsers()
   },
 
+  addAlbumToUser: async (userId, albumId) => {
+    const { error } = await supabase.from('user_albums').upsert({ user_id: userId, album_id: albumId }, { onConflict: 'user_id,album_id' })
+    if (error) console.error('Error adding album to user:', error)
+    return error
+  },
+
   // ========== ALBUMS ==========
   fetchAllAlbums: async () => {
     set({ loading: true })
@@ -201,13 +364,13 @@ export const useAdminStore = create((set, get) => ({
   },
 
   createAlbum: async (album) => {
-    const { error } = await supabase.from('albums').insert(album)
+    const error = await writeAlbumWithFallback('insert', album)
     if (!error) get().fetchAllAlbums()
     return error
   },
 
   updateAlbum: async (id, updates) => {
-    const { error } = await supabase.from('albums').update(updates).eq('id', id)
+    const error = await writeAlbumWithFallback('update', updates, id)
     if (!error) get().fetchAllAlbums()
     return error
   },
@@ -391,19 +554,45 @@ export const useAdminStore = create((set, get) => ({
       if (fetchErr || !request) throw new Error('No se encontró la solicitud')
 
       // 1. Create location
-      const { error: locError } = await supabase.from('locations').insert({
-        name: request.name,
-        address: request.address,
-        city: request.city,
-        department: request.department,
-        lat: request.lat,
-        lng: request.lng,
-        whatsapp: request.whatsapp,
-        business_plan: request.business_plan || 'gratis',
-        owner_user_id: request.user_id,
-        is_active: true,
-        type: 'store'
-      })
+      const requestType = request.metadata?.request_type || 'store'
+      const isSuggestedPoint = requestType === 'suggested'
+      const { error: locError } = await supabase.from('locations').insert(
+        isSuggestedPoint
+          ? {
+              name: request.name,
+              address: request.address,
+              city: request.city,
+              department: request.department,
+              neighborhood: request.neighborhood,
+              lat: request.lat,
+              lng: request.lng,
+              business_plan: 'gratis',
+              owner_user_id: null,
+              is_active: true,
+              type: 'meetup',
+              description: request.metadata?.notes || request.notes || 'Punto sugerido por la comunidad.',
+              metadata: {
+                request_type: 'suggested',
+                display_type: 'Punto de intercambio',
+                allows_exchange: true,
+                suggested_by_user_id: request.user_id || null
+              }
+            }
+          : {
+              name: request.name,
+              address: request.address,
+              city: request.city,
+              department: request.department,
+              neighborhood: request.neighborhood,
+              lat: request.lat,
+              lng: request.lng,
+              whatsapp: request.whatsapp,
+              business_plan: request.business_plan || 'gratis',
+              owner_user_id: request.user_id,
+              is_active: true,
+              type: 'store'
+            }
+      )
 
       if (locError) throw locError
 
@@ -416,7 +605,7 @@ export const useAdminStore = create((set, get) => ({
       if (reqErr) throw reqErr
       
       // 3. Update user profile to grant business access (only if user exists)
-      if (request.user_id) {
+      if (!isSuggestedPoint && request.user_id) {
         const { error: profErr } = await supabase.from('profiles').update({
           business_access: true,
           business_status: 'approved',
@@ -433,17 +622,17 @@ export const useAdminStore = create((set, get) => ({
       // 5. Send Email (Edge Function)
       try {
         const targetEmail = request.applicant_email || request.profile?.email
-        if (targetEmail) {
+        if (targetEmail && !isSuggestedPoint) {
           await supabase.functions.invoke('send-email', {
             body: { 
               to: targetEmail,
-              subject: 'Tu local fue aprobado 🎉',
+              subject: 'Tu local fue aprobado ðŸŽ‰',
               template: 'business_approved',
               data: {
                 name: request.applicant_name || request.profile?.name || 'Comerciante',
-                plan: request.business_plan === 'legend' ? 'Plan Legend' :
-                      request.business_plan === 'dominio' ? 'Plan Dominio' : 
-                      request.business_plan === 'turbo' ? 'Plan Turbo' : 'Plan Gratuito',
+                plan: (request.business_plan === 'legend' || request.business_plan === 'partner_store') ? 'Collector Hub' :
+                      request.business_plan === 'dominio' ? 'Plan Conversion' : 
+                      request.business_plan === 'turbo' ? 'Plan Radar' : 'Plan Gratuito',
                 link: 'https://figusuy.vercel.app/login?type=business'
               }
             }
@@ -495,6 +684,43 @@ export const useAdminStore = create((set, get) => ({
     await supabase.from('reports').update({ status: 'escalated', resolved_by: adminId }).eq('id', reportId)
     get().logAction(adminId, 'ESCALATE_CHAT_REPORT', 'report', reportId, {})
     get().fetchReportedChats()
+  },
+
+  // ========== EXCHANGE COMPLETION ==========
+  fetchExchangeCompletions: async () => {
+    set({ loading: true })
+    const [listRes, metricsRes] = await Promise.all([
+      supabase
+        .from('exchange_completion_admin_v')
+        .select('*')
+        .order('updated_at', { ascending: false })
+        .limit(250),
+      supabase.rpc('admin_get_exchange_completion_metrics'),
+    ])
+
+    set({
+      exchangeCompletions: listRes.data || [],
+      exchangeCompletionMetrics: metricsRes.data?.error ? null : (metricsRes.data || null),
+      loading: false,
+    })
+  },
+
+  updateExchangeReviewStatus: async (exchangeId, adminReviewStatus, adminId) => {
+    const { error } = await supabase
+      .from('exchange_completions')
+      .update({ admin_review_status: adminReviewStatus, updated_at: new Date().toISOString() })
+      .eq('id', exchangeId)
+
+    if (error) {
+      console.error('Error updating exchange review status:', error)
+      return error
+    }
+
+    if (adminId) {
+      get().logAction(adminId, 'UPDATE_EXCHANGE_REVIEW', 'exchange_completion', exchangeId, { adminReviewStatus })
+    }
+    await get().fetchExchangeCompletions()
+    return null
   },
 
   // ========== PAYMENTS ==========
@@ -625,8 +851,6 @@ export const useAdminStore = create((set, get) => ({
   createNotificationCampaign: async (campaign, adminId) => {
     const { error } = await supabase.from('notification_campaigns').insert({ ...campaign, sent_by: adminId, status: 'sent', sent_at: new Date().toISOString() })
     if (!error) {
-      // Also insert into notifications for in-app delivery
-      await supabase.from('notifications').insert({ title: campaign.title, body: campaign.body, type: campaign.type, is_global: campaign.segment === 'all', metadata: { segment: campaign.segment, campaign: true } })
       get().logAction(adminId, 'SEND_CAMPAIGN', 'notification_campaign', null, { title: campaign.title, segment: campaign.segment })
     }
     get().fetchNotificationCampaigns()
@@ -647,6 +871,91 @@ export const useAdminStore = create((set, get) => ({
   addAdminNote: async (entityType, entityId, note, adminId) => {
     await supabase.from('admin_notes').insert({ entity_type: entityType, entity_id: entityId, note, author_id: adminId })
     get().fetchAdminNotes(entityType, entityId)
+  },
+
+  // ========== INFLUENCER APPLICATIONS ==========
+  fetchInfluencerApplications: async () => {
+    set({ loading: true })
+    const { data, error } = await supabase
+      .from('influencer_applications')
+      .select('*, profile:user_id(name, email, avatar_url)')
+      .order('created_at', { ascending: false })
+    if (!error) set({ influencerApplications: data || [] })
+    set({ loading: false })
+  },
+
+  updateInfluencerApplication: async (id, status, notes = '', adminId = null) => {
+    const { data: app, error: fetchErr } = await supabase
+      .from('influencer_applications')
+      .select('*')
+      .eq('id', id)
+      .single()
+    
+    if (fetchErr || !app) return { error: 'Application not found' }
+
+    const { error } = await supabase
+      .from('influencer_applications')
+      .update({ status, admin_notes: notes })
+      .eq('id', id)
+
+    if (error) return { error }
+
+    if (status === 'approved' && app.user_id) {
+      const roleResult = await get().setUserRole(app.user_id, 'influencer', {
+        name: app.full_name,
+        email: app.email
+      }, adminId)
+      
+      if (roleResult && roleResult.message) return { error: roleResult.message }
+      
+      // Update the influencer handle/category if provided in application
+      const { data: affiliate } = await supabase.from('affiliates').select('*').eq('user_id', app.user_id).single()
+      if (affiliate) {
+        // Extract a handle from social urls if available
+        const rawHandle = app.instagram_url || app.tiktok_url || app.youtube_url || affiliate.handle
+        const cleanHandle = rawHandle.split('/').pop().replace('@', '').toLowerCase() || affiliate.handle
+
+        await supabase.from('affiliates').update({
+          handle: cleanHandle,
+          category: app.content_type || 'creator',
+          notes: `Aprobado desde solicitud. Propuesta: ${app.message || 'Sin mensaje'}. ${notes}`,
+          social_links: {
+            instagram: app.instagram_url,
+            tiktok: app.tiktok_url,
+            youtube: app.youtube_url,
+            other: app.other_social_url
+          }
+        }).eq('id', affiliate.id)
+      }
+
+      // Send Smart Notification
+      await supabase.from('smart_notifications').insert({
+        user_id: app.user_id,
+        trigger_key: 'influencer_approved',
+        type: 'system',
+        title: '¡Solicitud de Influencer Aprobada!',
+        message: 'Bienvenido al equipo FigusUY. Ya podes empezar a usar tu código.',
+        action_url: '/influencer',
+        metadata: { application_id: id }
+      })
+    } else if (status === 'rejected' && app.user_id) {
+      // Send Smart Notification for rejection
+      await supabase.from('smart_notifications').insert({
+        user_id: app.user_id,
+        trigger_key: 'influencer_rejected',
+        type: 'system',
+        title: 'Actualización de Solicitud',
+        message: 'Hemos revisado tu solicitud de influencer. Podes contactarnos para mas info.',
+        metadata: { application_id: id, reason: notes }
+      })
+    }
+
+    if (adminId) {
+      get().logAction(adminId, `INFLUENCER_APP_${status.toUpperCase()}`, 'influencer_application', id, { notes })
+    }
+
+    await get().fetchInfluencerApplications()
+    return { error: null }
   },
 
   // ========== ROLE PERMISSIONS ==========

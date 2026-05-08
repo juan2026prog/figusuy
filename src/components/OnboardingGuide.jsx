@@ -1,12 +1,86 @@
-import React from 'react'
-import { useNavigate } from 'react-router-dom'
+﻿import React from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useGrowthStore } from '../stores/growthStore'
+import { useAuthStore } from '../stores/authStore'
 
 export default function OnboardingGuide() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { onboardingProgress, onboardingVisible, dismissOnboarding, trackOnboardingStep } = useGrowthStore()
+  const { profile } = useAuthStore()
 
-  if (!onboardingVisible || !onboardingProgress || onboardingProgress.isActivated) return null
+  if (!onboardingVisible || location.pathname.startsWith('/admin')) return null
+
+  if (profile?.role === 'influencer') {
+    return (
+      <div className="ob-guide">
+        <style>{`
+          .ob-guide{position:fixed;bottom:80px;right:16px;width:min(380px,calc(100vw - 32px));z-index:80;font-family:'Barlow',sans-serif}
+          .ob-card{background:#121212;border:1px solid rgba(255,255,255,.1);overflow:hidden;animation:ob-slide .4s cubic-bezier(.4,0,.2,1)}
+          @keyframes ob-slide{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+          .ob-head{padding:18px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,.06);background:linear-gradient(135deg,rgba(255,90,0,.12),transparent 60%)}
+          .ob-head-left h3{font:italic 900 1.55rem 'Barlow Condensed';text-transform:uppercase;color:#f5f5f5;line-height:.9;margin:0}
+          .ob-kicker{font:900 .68rem 'Barlow Condensed';letter-spacing:.14em;text-transform:uppercase;color:#ff5a00;margin-bottom:4px}
+          .ob-close{width:32px;height:32px;display:grid;place-items:center;border:1px solid rgba(255,255,255,.12);background:transparent;color:rgba(255,255,255,.5);cursor:pointer;font-size:.9rem}
+          .ob-close:hover{border-color:#ff5a00;color:#ff5a00}
+          .ob-steps{padding:8px 0}
+          .ob-step{display:grid;grid-template-columns:42px 1fr auto;gap:12px;align-items:center;padding:12px 20px;border-bottom:1px solid rgba(255,255,255,.04);transition:background .15s}
+          .ob-step:last-child{border-bottom:0}
+          .ob-step:hover{background:rgba(255,255,255,.02)}
+          .ob-step-icon{width:42px;height:42px;display:grid;place-items:center;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.03)}
+          .ob-step-icon .material-symbols-outlined{font-size:1.2rem;color:rgba(245,245,245,.5)}
+          .ob-step.current .ob-step-icon{border-color:rgba(255,90,0,.4);background:rgba(255,90,0,.1)}
+          .ob-step.current .ob-step-icon .material-symbols-outlined{color:#ff5a00}
+          .ob-step-text h4{font:900 .84rem 'Barlow Condensed';text-transform:uppercase;color:#f5f5f5;margin:0 0 2px;line-height:1.1}
+          .ob-step-text p{font-size:.76rem;color:rgba(245,245,245,.4);margin:0;line-height:1.3}
+          .ob-step-action{border:1px solid rgba(255,90,0,.3);background:rgba(255,90,0,.08);color:#ff5a00;padding:6px 12px;font:900 .68rem 'Barlow Condensed';letter-spacing:.06em;text-transform:uppercase;cursor:pointer;white-space:nowrap}
+          .ob-step-action:hover{background:#ff5a00;color:#fff}
+          @media(max-width:768px){.ob-guide{bottom:70px;right:8px;left:8px;width:auto}}
+        `}</style>
+        <div className="ob-card">
+          <div className="ob-head">
+            <div className="ob-head-left">
+              <div className="ob-kicker">// TU CAMPAÑA</div>
+              <h3>Guía de Influencer</h3>
+            </div>
+            <button className="ob-close" onClick={dismissOnboarding}>âœ•</button>
+          </div>
+          <div className="ob-steps">
+            <div className="ob-step current">
+              <div className="ob-step-icon">
+                <span className="material-symbols-outlined">campaign</span>
+              </div>
+              <div className="ob-step-text">
+                <h4>1. Copia tu enlace</h4>
+                <p>Ve a "Mi campaña" y copia tu enlace.</p>
+              </div>
+              <button className="ob-step-action" onClick={() => { navigate('/influencer/dashboard'); dismissOnboarding(); }}>MI CAMPAÑA</button>
+            </div>
+            <div className="ob-step">
+              <div className="ob-step-icon">
+                <span className="material-symbols-outlined">share</span>
+              </div>
+              <div className="ob-step-text">
+                <h4>2. Comparte</h4>
+                <p>Publicalo en tus redes sociales.</p>
+              </div>
+            </div>
+            <div className="ob-step">
+              <div className="ob-step-icon">
+                <span className="material-symbols-outlined">monitoring</span>
+              </div>
+              <div className="ob-step-text">
+                <h4>3. Monitorea y gana</h4>
+                <p>Revisa tus conversiones y comisiones.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (!onboardingProgress || onboardingProgress.isActivated) return null
 
   const { steps, percent, currentStep, completed, total } = onboardingProgress
 
@@ -52,10 +126,14 @@ export default function OnboardingGuide() {
       <div className="ob-card">
         <div className="ob-head">
           <div className="ob-head-left">
-            <div className="ob-kicker">// primeros pasos</div>
-            <h3>Tu primer valor</h3>
+            <div className="ob-kicker">
+              {location.pathname.startsWith('/business') ? '// impulso comercial' : '// primeros pasos'}
+            </div>
+            <h3>
+              {location.pathname.startsWith('/business') ? 'Liderá tu zona' : 'Cómo empezar'}
+            </h3>
           </div>
-          <button className="ob-close" onClick={dismissOnboarding}>✕</button>
+          <button className="ob-close" onClick={dismissOnboarding}>âœ•</button>
         </div>
 
         <div className="ob-progress">
@@ -78,7 +156,7 @@ export default function OnboardingGuide() {
                   <p>{step.description}</p>
                 </div>
                 {step.done ? (
-                  <span className="ob-step-check">✓ Listo</span>
+                  <span className="ob-step-check">âœ“ Listo</span>
                 ) : isCurrent ? (
                   <button className="ob-step-action" onClick={() => handleStepAction(step)}>
                     {step.action}

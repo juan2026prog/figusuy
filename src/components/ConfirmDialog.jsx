@@ -1,4 +1,4 @@
-import React from 'react'
+﻿import React from 'react'
 
 export default function ConfirmDialog({
   isOpen,
@@ -10,15 +10,30 @@ export default function ConfirmDialog({
   onCancel,
   variant = 'danger'
 }) {
+  React.useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [isOpen]);
+
   if (!isOpen) return null
 
   return (
-    <div className="cd-overlay" onClick={onCancel}>
+    <div 
+      className="cd-overlay" 
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onCancel()
+      }}
+    >
       <style>{`
         .cd-overlay {
-          position: fixed; inset: 0; z-index: 1000;
-          background: rgba(11,11,11,0.85); backdrop-filter: blur(4px);
-          display: flex; align-items: center; justify-content: center; padding: 16px;
+          position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; height: 100dvh;
+          z-index: 20000;
+          background: rgba(0,0,0,0.9); backdrop-filter: blur(10px);
+          display: flex; align-items: center; justify-content: center; padding: 20px;
         }
         .cd-card {
           background: #181818; border: 1px solid rgba(255,255,255,0.08);
@@ -65,7 +80,11 @@ export default function ConfirmDialog({
           .cd-btn { width: 100%; padding: 16px; }
         }
       `}</style>
-      <div className="cd-card" onClick={(e) => e.stopPropagation()}>
+      <div 
+        className="cd-card" 
+        onClick={(e) => e.stopPropagation()} 
+        onPointerDown={(e) => e.stopPropagation()}
+      >
         <div className="cd-icon">
           {variant === 'danger' ? '!' : variant === 'info' ? 'i' : '?'}
         </div>

@@ -1,11 +1,12 @@
-import { useEffect } from 'react'
+﻿import { useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../stores/authStore'
 import { useLocation } from 'react-router-dom'
 
 export function useAnalytics() {
-  const { user } = useAuthStore()
+  const user = useAuthStore(state => state.user)
   const location = useLocation()
+  const lastPageViewKeyRef = useRef('')
 
   const getSessionId = () => {
     const existing = localStorage.getItem('session_id')
@@ -30,8 +31,12 @@ export function useAnalytics() {
   }
 
   useEffect(() => {
+    const pageViewKey = `${location.pathname}${location.search}`
+    if (lastPageViewKeyRef.current === pageViewKey) return
+
+    lastPageViewKeyRef.current = pageViewKey
     trackEvent('page_view', { path: location.pathname, search: location.search })
-  }, [location.pathname, location.search, user?.id])
+  }, [location.pathname, location.search])
 
   return { trackEvent }
 }

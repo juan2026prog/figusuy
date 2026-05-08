@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+﻿import React, { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 
 const card = { background: "var(--admin-panel)", borderRadius: "0.5rem", padding: "1.25rem", border: "1px solid var(--admin-line)" }
@@ -30,8 +30,9 @@ export default function AdminBusinessPlans() {
     fetchPlans()
   }
 
-  const planColors = { gratis: "var(--admin-muted2)", turbo: 'var(--color-primary)', dominio: "#f5f5f5" }
-  const planIcons = { gratis: 'storefront', turbo: 'rocket_launch', dominio: 'diamond' }
+  const planColors = { gratis: "var(--admin-muted2)", turbo: 'var(--color-primary)', dominio: "#f5f5f5", partner_store: "var(--admin-orange)" }
+  const planIcons = { gratis: 'storefront', turbo: 'rocket_launch', dominio: 'diamond', partner_store: 'stars' }
+  const planDisplay = { gratis: 'Boost', turbo: 'Radar', dominio: 'Conversion', partner_store: 'Collector Hub' }
 
   return (
     <div style={{ paddingBottom: '2rem' }}>
@@ -41,7 +42,7 @@ export default function AdminBusinessPlans() {
           Planes de Negocios
         </h1>
         <p style={{ fontSize: '0.9375rem', color: "var(--admin-muted2)", marginTop: '0.25rem' }}>
-          Configuración de planes para locales y puntos de intercambio: Gratis, Turbo y Dominio.
+          Configuración de planes para locales y puntos de intercambio: Gratis, Turbo, Dominio y Collector Hub.
         </p>
       </div>
 
@@ -53,6 +54,7 @@ export default function AdminBusinessPlans() {
             const isEditing = editing === plan.id
             const color = planColors[plan.plan_name] || "var(--admin-muted2)"
             const icon = planIcons[plan.plan_name] || 'store'
+            const displayName = planDisplay[plan.plan_name] || plan.plan_name
 
             return (
               <div key={plan.id} style={{ ...card, borderTop: `4px solid ${color}`, position: 'relative' }}>
@@ -61,7 +63,7 @@ export default function AdminBusinessPlans() {
                     <span className="material-symbols-outlined" style={{ fontSize: '1.5rem' }}>{icon}</span>
                   </div>
                   <div>
-                    <h3 style={{ fontSize: '1.25rem', fontWeight: 900, color: "#f5f5f5", textTransform: 'capitalize', margin: 0 }}>{plan.plan_name}</h3>
+                    <h3 style={{ fontSize: '1.25rem', fontWeight: 900, color: "#f5f5f5", textTransform: 'capitalize', margin: 0 }}>{displayName}</h3>
                     <p style={{ fontSize: '1.5rem', fontWeight: 900, color, margin: 0 }}>
                       ${isEditing ? form.monthly_price : plan.monthly_price}
                       <span style={{ fontSize: '0.75rem', color: "var(--admin-muted)", fontWeight: 500 }}> UYU/mes</span>
@@ -104,8 +106,8 @@ export default function AdminBusinessPlans() {
                   <>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1.25rem' }}>
                       {[
-                        { label: 'Máx fotos', value: plan.max_photos ?? '∞', icon: 'photo_camera' },
-                        { label: 'Máx promos', value: plan.max_active_promos ?? '∞', icon: 'campaign' },
+                        { label: 'Máx fotos', value: plan.max_photos ?? 'âˆž', icon: 'photo_camera' },
+                        { label: 'Máx promos', value: plan.max_active_promos ?? 'âˆž', icon: 'campaign' },
                         { label: 'Boost elegibilidad', value: `+${((plan.eligibility_boost || 0) * 100).toFixed(0)}%`, icon: 'trending_up' },
                       ].map(item => (
                         <div key={item.label} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0.75rem', background: "var(--admin-panel2)", borderRadius: '0.5rem', fontSize: '0.8125rem' }}>
@@ -128,7 +130,7 @@ export default function AdminBusinessPlans() {
                         <span key={f.key} style={{
                           padding: '0.25rem 0.5rem', borderRadius: '0.375rem', fontSize: '0.6875rem', fontWeight: 700,
                           background: plan[f.key] ? '#ecfdf5' : "var(--admin-panel2)", color: plan[f.key] ? '#10b981' : "var(--admin-muted)"
-                        }}>{plan[f.key] ? '✓' : '✕'} {f.label}</span>
+                        }}>{plan[f.key] ? 'âœ“' : 'âœ•'} {f.label}</span>
                       ))}
                     </div>
                     <button onClick={() => startEdit(plan)} style={{ width: '100%', padding: '0.625rem', borderRadius: '0.5rem', background: `${color}10`, color, border: `1px solid ${color}30`, fontWeight: 700, cursor: 'pointer', fontSize: '0.8125rem' }}>

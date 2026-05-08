@@ -1,16 +1,19 @@
-import React from 'react'
-import { useNavigate } from 'react-router-dom'
+﻿import React from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useGrowthStore } from '../stores/growthStore'
 import { NOTIFICATION_TRIGGERS, NOTIFICATION_PRIORITIES } from '../lib/growthEngine'
 
 export default function SmartNotifications() {
   const navigate = useNavigate()
+  const location = useLocation()
   const {
     notifications, notificationCenter,
     toggleNotificationCenter, markNotificationRead,
     markAllRead, trackNotificationAction
   } = useGrowthStore()
   const { open, unread } = notificationCenter
+
+  if (location.pathname.startsWith('/admin')) return null
 
   const handleAction = async (notif) => {
     await markNotificationRead(notif.id)
@@ -47,7 +50,7 @@ export default function SmartNotifications() {
       {open && <div className="sn-backdrop" onClick={toggleNotificationCenter} />}
       <div className={`sn-panel ${open ? 'open' : ''}`}>
         <style>{`
-          .sn-trigger-wrapper { position: fixed; bottom: 80px; right: 20px; z-index: 85; }
+          .sn-trigger-wrapper { position: fixed; bottom: 140px; right: 20px; z-index: 85; }
           .sn-bell{position:relative;display:inline-grid;place-items:center;width:46px;height:46px;border:1px solid rgba(255,255,255,.12);background:var(--color-surface, #121212);color:#fff;cursor:pointer;transition:border-color .2s;border-radius:23px;box-shadow:0 4px 12px rgba(0,0,0,.3)}
           .sn-bell:hover{border-color:var(--admin-orange,#ff5a00);background:#1a1a1a}
           .sn-bell .material-symbols-outlined{font-size:1.4rem}
@@ -79,20 +82,20 @@ export default function SmartNotifications() {
 
         <div className="sn-header">
           <div>
-            <div style={{font:"900 .72rem 'Barlow Condensed'",letterSpacing:'.16em',textTransform:'uppercase',color:'#ff5a00'}}>// oportunidades</div>
-            <h2>Notificaciones</h2>
+            <div style={{font:"900 .72rem 'Barlow Condensed'",letterSpacing:'.16em',textTransform:'uppercase',color:'#ff5a00'}}>// ahora en figusuy</div>
+            <h2>Movimiento activo</h2>
           </div>
           <div className="sn-header-actions">
             {unread > 0 && <button className="sn-btn-sm" onClick={handleMarkAll}>Marcar todo</button>}
-            <button className="sn-btn-sm" onClick={toggleNotificationCenter}>✕</button>
+            <button className="sn-btn-sm" onClick={toggleNotificationCenter}>âœ•</button>
           </div>
         </div>
 
         <div className="sn-scroll">
           {notifications.length === 0 ? (
             <div className="sn-empty">
-              <span className="sn-empty-icon">🔔</span>
-              <h3>Sin novedades</h3>
+              <span className="sn-empty-icon">ðŸ””</span>
+              <h3>Sin movimiento nuevo</h3>
               <p>Cuando haya una oportunidad real, te avisamos acá.</p>
             </div>
           ) : (

@@ -1,4 +1,4 @@
-import React from 'react'
+﻿import React from 'react'
 
 export class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -22,7 +22,7 @@ export class ErrorBoundary extends React.Component {
           padding: '2rem', background: '#fafaf9',
         }}>
           <div style={{ textAlign: 'center', maxWidth: '24rem' }}>
-            <span style={{ fontSize: '4rem', display: 'block', marginBottom: '1.5rem' }}>😵</span>
+            <span style={{ fontSize: '4rem', display: 'block', marginBottom: '1.5rem' }}>ðŸ˜µ</span>
             <h1 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '0.5rem', color: '#1c1917' }}>
               Algo salió mal
             </h1>
@@ -38,7 +38,7 @@ export class ErrorBoundary extends React.Component {
                 border: 'none', cursor: 'pointer',
                 boxShadow: '0 4px 12px rgba(234,88,12,0.3)',
               }}>
-              🔄 Recargar página
+              ðŸ”„ Recargar página
             </button>
             {process.env.NODE_ENV === 'development' && this.state.error && (
               <details style={{ marginTop: '1.5rem', textAlign: 'left' }}>

@@ -444,9 +444,9 @@ values
     "title":"Planes para coleccionistas",
     "subtitle":"No pagas por usar FigusUY. Pagas por completar mas rapido.",
     "plans":[
-      {"name":"Gratis","price":"$0","badge":"Base","highlight":false,"cta":{"label":"Empezar gratis","url":"/login","style":"secondary"},"benefits":["1 album activo","Matches limitados por mes","Chat inicial","Busqueda por barrio"]},
-      {"name":"Plus","price":"$290","badge":"Mas elegido","highlight":true,"cta":{"label":"Probar 7 dias","url":"/login","style":"primary"},"benefits":["Mas albumes activos","Alertas utiles","Mayor visibilidad","Mas velocidad para completar"]},
-      {"name":"Pro","price":"$490","badge":"Power users","highlight":false,"cta":{"label":"Elegir Pro","url":"/login","style":"secondary"},"benefits":["Albumes ilimitados","Prioridad en cruces","Radar extendido","Automatches"]}
+      {"name":"GRATIS","price":"$0","badge":"BASE","highlight":false,"cta":{"label":"EMPEZAR GRATIS","url":"/login","style":"secondary"},"benefits":["1 album activo","Matches limitados por mes","Chat inicial","Busqueda por barrio"]},
+      {"name":"PLUS","price":"$290","badge":"MAS ELEGIDO","highlight":true,"cta":{"label":"PROBAR 7 DIAS","url":"/login","style":"primary"},"benefits":["Mas albumes activos","Alertas utiles","Mayor visibilidad","Mas velocidad para completar"]},
+      {"name":"PRO","price":"$490","badge":"POWER USERS","highlight":false,"cta":{"label":"ELEGIR PRO","url":"/login","style":"secondary"},"benefits":["Albumes ilimitados","Prioridad en cruces","Radar extendido","Automatches"]}
     ]
   }$$::jsonb,
   $${
@@ -454,9 +454,9 @@ values
     "title":"Planes para coleccionistas",
     "subtitle":"No pagas por usar FigusUY. Pagas por completar mas rapido.",
     "plans":[
-      {"name":"Gratis","price":"$0","badge":"Base","highlight":false,"cta":{"label":"Empezar gratis","url":"/login","style":"secondary"},"benefits":["1 album activo","Matches limitados por mes","Chat inicial","Busqueda por barrio"]},
-      {"name":"Plus","price":"$290","badge":"Mas elegido","highlight":true,"cta":{"label":"Probar 7 dias","url":"/login","style":"primary"},"benefits":["Mas albumes activos","Alertas utiles","Mayor visibilidad","Mas velocidad para completar"]},
-      {"name":"Pro","price":"$490","badge":"Power users","highlight":false,"cta":{"label":"Elegir Pro","url":"/login","style":"secondary"},"benefits":["Albumes ilimitados","Prioridad en cruces","Radar extendido","Automatches"]}
+      {"name":"GRATIS","price":"$0","badge":"BASE","highlight":false,"cta":{"label":"EMPEZAR GRATIS","url":"/login","style":"secondary"},"benefits":["1 album activo","Matches limitados por mes","Chat inicial","Busqueda por barrio"]},
+      {"name":"PLUS","price":"$290","badge":"MAS ELEGIDO","highlight":true,"cta":{"label":"PROBAR 7 DIAS","url":"/login","style":"primary"},"benefits":["Mas albumes activos","Alertas utiles","Mayor visibilidad","Mas velocidad para completar"]},
+      {"name":"PRO","price":"$490","badge":"POWER USERS","highlight":false,"cta":{"label":"ELEGIR PRO","url":"/login","style":"secondary"},"benefits":["Albumes ilimitados","Prioridad en cruces","Radar extendido","Automatches"]}
     ]
   }$$::jsonb,
   true, true, 8, 8, true
@@ -468,9 +468,9 @@ values
     "title":"Planes para tiendas y puntos",
     "subtitle":"Aparece donde ya existe intencion real de compra, intercambio y validacion.",
     "plans":[
-      {"name":"Boost","price":"$590","badge":"Entrada","highlight":false,"cta":{"label":"Quiero aparecer","url":"/business/apply","style":"secondary"},"benefits":["Presencia base","CTA simple","Cobertura local"]},
-      {"name":"Zone","price":"$990","badge":"Escala local","highlight":false,"cta":{"label":"Ver plan","url":"/business/apply","style":"secondary"},"benefits":["Mas visibilidad","Prioridad en zona","Promos locales"]},
-      {"name":"PartnerStore","price":"$1490","badge":"Destacado","highlight":true,"cta":{"label":"Hablar con el equipo","url":"/business/apply","style":"primary"},"benefits":["Validacion de intercambios","Rewards","Badge premium","Cobertura extendida"]}
+      {"name":"BOOST","price":"$590","badge":"ENTRADA","highlight":false,"cta":{"label":"QUIERO APARECER","url":"/business/apply","style":"secondary"},"benefits":["Presencia base","CTA simple","Cobertura local"]},
+      {"name":"ZONE","price":"$990","badge":"ESCALA LOCAL","highlight":false,"cta":{"label":"VER PLAN","url":"/business/apply","style":"secondary"},"benefits":["Mas visibilidad","Prioridad en zona","Promos locales"]},
+      {"name":"PARTNERSTORE","price":"$1490","badge":"DESTACADO","highlight":true,"cta":{"label":"HABLAR CON EL EQUIPO","url":"/business/apply","style":"primary"},"benefits":["Validacion de intercambios","Rewards","Badge premium","Cobertura extendida"]}
     ]
   }$$::jsonb,
   $${
@@ -478,9 +478,9 @@ values
     "title":"Planes para tiendas y puntos",
     "subtitle":"Aparece donde ya existe intencion real de compra, intercambio y validacion.",
     "plans":[
-      {"name":"Boost","price":"$590","badge":"Entrada","highlight":false,"cta":{"label":"Quiero aparecer","url":"/business/apply","style":"secondary"},"benefits":["Presencia base","CTA simple","Cobertura local"]},
-      {"name":"Zone","price":"$990","badge":"Escala local","highlight":false,"cta":{"label":"Ver plan","url":"/business/apply","style":"secondary"},"benefits":["Mas visibilidad","Prioridad en zona","Promos locales"]},
-      {"name":"PartnerStore","price":"$1490","badge":"Destacado","highlight":true,"cta":{"label":"Hablar con el equipo","url":"/business/apply","style":"primary"},"benefits":["Validacion de intercambios","Rewards","Badge premium","Cobertura extendida"]}
+      {"name":"BOOST","price":"$590","badge":"ENTRADA","highlight":false,"cta":{"label":"QUIERO APARECER","url":"/business/apply","style":"secondary"},"benefits":["Presencia base","CTA simple","Cobertura local"]},
+      {"name":"ZONE","price":"$990","badge":"ESCALA LOCAL","highlight":false,"cta":{"label":"VER PLAN","url":"/business/apply","style":"secondary"},"benefits":["Mas visibilidad","Prioridad en zona","Promos locales"]},
+      {"name":"PARTNERSTORE","price":"$1490","badge":"DESTACADO","highlight":true,"cta":{"label":"HABLAR CON EL EQUIPO","url":"/business/apply","style":"primary"},"benefits":["Validacion de intercambios","Rewards","Badge premium","Cobertura extendida"]}
     ]
   }$$::jsonb,
   true, true, 9, 9, true
@@ -506,16 +506,12 @@ values
 (
   'official', 'footer', 'Footer', 'footer',
   $${
-    "logoText":"FIGUS","logoAccent":"UY","legal":"© 2026 FigusUY. Todos los derechos reservados.",
-    "social":[{"label":"Instagram","url":"https://instagram.com"},{"label":"TikTok","url":"https://tiktok.com"}],
-    "links":[{"label":"Terminos","url":"/p/terminos"},{"label":"Privacidad","url":"/p/privacidad"},{"label":"Seguridad","url":"/p/seguridad"}],
-    "cta":{"label":"Entrar","url":"/login","style":"secondary"}
+    "logoText":"FIGUS","logoAccent":"UY","legal":"© 2026 FigusUY. Uruguay.",
+    "links":[{"label":"Términos","url":"/p/terminos"},{"label":"Privacidad","url":"/p/privacidad"},{"label":"Seguridad","url":"/p/seguridad"}]
   }$$::jsonb,
   $${
-    "logoText":"FIGUS","logoAccent":"UY","legal":"© 2026 FigusUY. Todos los derechos reservados.",
-    "social":[{"label":"Instagram","url":"https://instagram.com"},{"label":"TikTok","url":"https://tiktok.com"}],
-    "links":[{"label":"Terminos","url":"/p/terminos"},{"label":"Privacidad","url":"/p/privacidad"},{"label":"Seguridad","url":"/p/seguridad"}],
-    "cta":{"label":"Entrar","url":"/login","style":"secondary"}
+    "logoText":"FIGUS","logoAccent":"UY","legal":"© 2026 FigusUY. Uruguay.",
+    "links":[{"label":"Términos","url":"/p/terminos"},{"label":"Privacidad","url":"/p/privacidad"},{"label":"Seguridad","url":"/p/seguridad"}]
   }$$::jsonb,
   true, true, 11, 11, true
 )

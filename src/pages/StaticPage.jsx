@@ -1,7 +1,6 @@
-import React, { useEffect, useState } from 'react'
+﻿import React, { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { supabase } from "../lib/supabase"
-import GlobalFooter from '../components/GlobalFooter'
 
 const escapeHtml = (text) =>
   text
@@ -73,32 +72,31 @@ export default function StaticPage() {
   }, [slug])
 
   if (loading) {
-    return <div className="flex-center" style={{ minHeight: '100vh' }}>Cargando...</div>
+    return <div className="flex-center" style={{ minHeight: '60vh' }}>Cargando...</div>
   }
 
   if (page === false) {
     return (
-      <div className="flex-center flex-col gap-lg" style={{ minHeight: '100vh' }}>
-        <h1 style={{ fontSize: '4rem', fontWeight: 900 }}>404</h1>
+      <div className="flex-center flex-col gap-lg" style={{ minHeight: '60vh' }}>
+        <h1 style={{ fontSize: '4rem', fontWeight: 900, color: '#ff5a00' }}>404</h1>
         <p>La página que buscas no existe o no está disponible.</p>
-        <a href="/" style={{ color: 'var(--color-primary)', marginTop: '1rem' }}>Volver al inicio</a>
+        <a href="/" style={{ color: '#ff5a00', marginTop: '1rem' }}>Volver al inicio</a>
       </div>
     )
   }
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <main style={{ flex: 1, padding: '4rem 2rem', maxWidth: '800px', margin: '0 auto', width: '100%' }}>
-        <h1 style={{ fontSize: '2.5rem', fontWeight: 900, marginBottom: '2rem', textTransform: 'uppercase', fontFamily: 'Barlow Condensed' }}>
+    <div className="static-page-content">
+      <main style={{ flex: 1, padding: '100px 2rem 60px', maxWidth: '800px', margin: '0 auto', width: '100%' }}>
+        <h1 style={{ fontSize: '3.5rem', fontWeight: 900, marginBottom: '2rem', textTransform: 'uppercase', fontFamily: 'Barlow Condensed', fontStyle: 'italic', color: '#fff' }}>
           {page.title}
         </h1>
         <div 
           className="markdown-content" 
-          style={{ lineHeight: 1.8, color: 'var(--color-text-muted)' }}
+          style={{ lineHeight: 1.8, color: 'rgba(255,255,255,0.7)', fontSize: '1.1rem' }}
           dangerouslySetInnerHTML={parseMarkdown(page.content)}
         />
       </main>
-      <GlobalFooter />
     </div>
   )
 }

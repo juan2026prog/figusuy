@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+﻿import React, { useEffect, useState } from 'react'
 import { useAdminStore } from '../stores/adminStore'
 import { useAuthStore } from '../stores/authStore'
 import ConfirmDialog from '../components/ConfirmDialog'
@@ -95,11 +95,11 @@ export default function AdminSubscriptions() {
                     <td style={{ padding: '0.75rem', fontWeight: 700, textTransform: 'capitalize' }}>{sub.plan_name}</td>
                     <td style={{ padding: '0.75rem' }}><span style={badge(sc.bg, sc.color)}>{sub.status}</span></td>
                     <td style={{ padding: '0.75rem', color: isExpiringSoon ? '#ef4444' : 'var(--admin-muted2)', fontWeight: isExpiringSoon ? 700 : 400 }}>
-                      {sub.expires_at ? new Date(sub.expires_at).toLocaleDateString() : '∞'}
+                      {sub.expires_at ? new Date(sub.expires_at).toLocaleDateString() : 'âˆž'}
                       {isExpiringSoon && sub.status === 'active' && <span style={{ fontSize: '0.625rem', color: '#ef4444', display: 'block' }}>Por vencer</span>}
                     </td>
                     <td style={{ padding: '0.75rem', fontSize: '0.75rem', color: 'var(--admin-muted2)' }}>
-                      {sub.payment ? `$${sub.payment.amount} ${sub.payment.currency}` : '—'}
+                      {sub.payment ? `$${sub.payment.amount} ${sub.payment.currency}` : 'â€”'}
                     </td>
                     <td style={{ padding: '0.75rem' }}>
                       <div style={{ display: 'flex', gap: '0.375rem' }}>

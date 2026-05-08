@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+﻿import React, { useEffect } from 'react'
 import { useAdminStore } from '../stores/adminStore'
 
 const card = { background: "var(--admin-panel)", borderRadius: "0.5rem", padding: "1.25rem", border: "1px solid var(--admin-line)" }
@@ -18,12 +18,16 @@ export default function AdminAnalytics() {
     { label: 'Premium', value: d.premium_users, icon: 'workspace_premium', color: '#ec4899', bg: '#fdf2f8' },
     { label: 'Registros (7d)', value: d.registrations_7d, icon: 'person_add', color: '#10b981', bg: '#ecfdf5' },
     { label: 'Registros (30d)', value: d.registrations_30d, icon: 'groups', color: '#06b6d4', bg: '#ecfeff' },
-    { label: 'Álbumes Activos', value: d.active_albums, icon: 'menu_book', color: 'var(--color-primary)', bg: '#fff7ed' },
+    { label: 'Ãlbumes Activos', value: d.active_albums, icon: 'menu_book', color: 'var(--color-primary)', bg: '#fff7ed' },
     { label: 'Cruces Totales', value: d.total_trades, icon: 'swap_horiz', color: '#8b5cf6', bg: '#f5f3ff' },
     { label: 'Cruces (7d)', value: d.trades_7d, icon: 'trending_up', color: '#10b981', bg: '#ecfdf5' },
     { label: 'Chats Totales', value: d.total_chats, icon: 'forum', color: '#3b82f6', bg: '#eff6ff' },
     { label: 'Chats (7d)', value: d.chats_7d, icon: 'chat_bubble', color: '#06b6d4', bg: '#ecfeff' },
     { label: 'Chats Expirados', value: d.expired_chats, icon: 'timer_off', color: '#f59e0b', bg: '#fffbeb' },
+    { label: 'Exchanges OK', value: d.exchanges_completed, icon: 'verified', color: '#22c55e', bg: '#ecfdf5' },
+    { label: 'Pend. confirm.', value: d.pending_confirmations, icon: 'hourglass_top', color: '#f59e0b', bg: '#fffbeb' },
+    { label: 'Disputados', value: d.disputed_exchanges, icon: 'gavel', color: '#ef4444', bg: '#fef2f2' },
+    { label: 'Cierre chat->exchange', value: d.chat_to_exchange_rate != null ? `${Number(d.chat_to_exchange_rate).toFixed(1)}%` : '0%', icon: 'conversion_path', color: '#38bdf8', bg: '#ecfeff' },
     { label: 'Locales Activos', value: d.active_locations, icon: 'storefront', color: 'var(--color-primary)', bg: '#fff7ed' },
     { label: 'Favoritos', value: d.total_favorites, icon: 'favorite', color: '#ef4444', bg: '#fef2f2' },
     { label: 'Reportes Pend.', value: d.pending_reports, icon: 'report', color: '#ef4444', bg: '#fef2f2' },
@@ -48,7 +52,7 @@ export default function AdminAnalytics() {
             Analytics & Business Intelligence
           </h1>
           <p style={{ fontSize: '0.9375rem', color: "var(--admin-muted2)", marginTop: '0.25rem' }}>
-            Métricas reales del sistema — datos de Supabase en tiempo real.
+            Métricas reales del sistema â€” datos de Supabase en tiempo real.
           </p>
         </div>
         <button onClick={fetchAnalytics} style={{ padding: '0.625rem 1.25rem', borderRadius: '0.5rem', background: "var(--admin-panel2)", color: "var(--admin-muted)", border: "1px solid var(--admin-line)", fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -69,7 +73,7 @@ export default function AdminAnalytics() {
                   <span className="material-symbols-outlined" style={{ fontSize: '1.25rem' }}>{k.icon}</span>
                 </div>
                 <div>
-                  <p style={{ fontSize: '1.25rem', fontWeight: 900, color: "#f5f5f5", lineHeight: 1, margin: 0 }}>{k.value ?? '—'}</p>
+                  <p style={{ fontSize: '1.25rem', fontWeight: 900, color: "#f5f5f5", lineHeight: 1, margin: 0 }}>{k.value ?? 'â€”'}</p>
                   <p style={{ fontSize: '0.625rem', fontWeight: 700, color: "var(--admin-muted2)", textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0.25rem 0 0' }}>{k.label}</p>
                 </div>
               </div>

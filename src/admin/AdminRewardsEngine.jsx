@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+﻿import React, { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { GROWTH_ACHIEVEMENTS } from '../lib/growthEngine'
 import { REWARD_TYPES, ACHIEVEMENT_REWARDS } from '../lib/gamification'
@@ -113,7 +113,7 @@ export default function AdminRewardsEngine() {
             </div>
             <div style={{padding:'14px 20px'}}>
               {Object.entries(stats.byType).sort((a,b) => b[1]-a[1]).map(([type, count]) => {
-                const def = REWARD_TYPES[type] || { name: type, icon: '🎁' }
+                const def = REWARD_TYPES[type] || { name: type, icon: 'ðŸŽ' }
                 const maxVal = Math.max(...Object.values(stats.byType))
                 return (
                   <div key={type} style={{marginBottom:'12px'}}>
@@ -190,15 +190,15 @@ export default function AdminRewardsEngine() {
           {filtered.length === 0 ? (
             <div style={{padding:'40px',textAlign:'center',color:'var(--admin-muted)'}}>Sin rewards en esta categoría</div>
           ) : filtered.map(r => {
-            const def = REWARD_TYPES[r.type] || { name: r.type, icon: '🎁' }
+            const def = REWARD_TYPES[r.type] || { name: r.type, icon: 'ðŸŽ' }
             const isActive = !r.consumed_at && (!r.expires_at || new Date(r.expires_at) > now)
             return (
               <div key={r.id} style={{display:'grid',gridTemplateColumns:'48px 1fr auto',gap:'12px',alignItems:'center',padding:'12px 20px',borderBottom:'1px solid var(--admin-line)'}}>
                 <div style={{width:'48px',height:'48px',display:'grid',placeItems:'center',border:'1px solid var(--admin-line)',background:'rgba(255,255,255,.02)',fontSize:'1.4rem'}}>{def.icon}</div>
                 <div>
-                  <div style={{font:"900 .78rem 'Barlow Condensed'",textTransform:'uppercase',color:'#f5f5f5'}}>{def.name} · {r.value}</div>
+                  <div style={{font:"900 .78rem 'Barlow Condensed'",textTransform:'uppercase',color:'#f5f5f5'}}>{def.name} Â· {r.value}</div>
                   <div style={{fontSize:'.68rem',color:'var(--admin-muted2)',marginTop:'2px'}}>
-                    {r.source?.replace('achievement:','Hito: ').replace('growth:','Growth: ').replace('referral:','Ref: ')} · user: {r.user_id?.slice(0,8)}...
+                    {r.source?.replace('achievement:','Hito: ').replace('growth:','Growth: ').replace('referral:','Ref: ')} Â· user: {r.user_id?.slice(0,8)}...
                   </div>
                 </div>
                 <div style={{textAlign:'right',display:'flex',flexDirection:'column',gap:'4px',alignItems:'flex-end'}}>

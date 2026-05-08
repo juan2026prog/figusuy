@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+﻿import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../stores/authStore'
 
@@ -8,9 +8,9 @@ import { useAuthStore } from '../stores/authStore'
  * free for N days since registration, or normal paid mode.
  * 
  * Returns { isPremium, planName, reason }
- *   - isPremium: boolean — whether the user has premium access
- *   - planName: string — the user's actual plan name
- *   - reason: string — 'paid' | 'free_mode' | 'free_trial' | 'none'
+ *   - isPremium: boolean â€” whether the user has premium access
+ *   - planName: string â€” the user's actual plan name
+ *   - reason: string â€” 'paid' | 'free_mode' | 'free_trial' | 'none'
  */
 
 let _cachedFreeMode = null
@@ -64,7 +64,7 @@ export function usePremiumAccess() {
 
   // Check free mode
   if (freeMode === 'everyone') {
-    return { isPremium: true, planName: 'pro', reason: 'free_mode' }
+    return { isPremium: true, planName: actualPlanName, reason: 'free_mode' }
   }
 
   if (freeMode === 'days' && freeDays > 0 && profile?.created_at) {
@@ -72,7 +72,7 @@ export function usePremiumAccess() {
     const now = new Date()
     const daysSinceRegistration = (now - registeredAt) / (1000 * 60 * 60 * 24)
     if (daysSinceRegistration <= freeDays) {
-      return { isPremium: true, planName: 'pro', reason: 'free_trial' }
+      return { isPremium: true, planName: actualPlanName, reason: 'free_trial' }
     }
   }
 

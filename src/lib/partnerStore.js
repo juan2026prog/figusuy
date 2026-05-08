@@ -1,4 +1,4 @@
-import { supabase } from './supabase'
+﻿import { supabase } from './supabase'
 
 export const ALBUM_PROGRESS_STATES = {
   IN_PROGRESS: 'in_progress',

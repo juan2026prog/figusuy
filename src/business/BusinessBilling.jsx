@@ -1,52 +1,109 @@
-import React from 'react'
+﻿import React, { useEffect, useState } from 'react'
 import { useOutletContext, Link } from 'react-router-dom'
 import { BUSINESS_PLAN_ORDER, getBusinessPlanLabel } from '../lib/businessPlans'
+import { useBusinessPlanStore } from '../stores/businessPlanStore'
+
+const PLAN_METADATA = {
+  gratis: {
+    id: 'gratis',
+    name: 'Gratis',
+    stage: 'Entrar en el circuito',
+    subtitle: 'Presencia inicial para aparecer en el mapa, captar puntos sugeridos y activar una ficha comercial simple.',
+    contact: { icon: 'storefront', label: 'Contacto visible', class: 'none' },
+    features: [
+      'Aparecer en puntos y mapa',
+      '1 foto principal',
+      'Promo simple',
+      'Contacto',
+      'Visibilidad basica'
+    ],
+    priceDisplay: { main: '$0', label: 'SIEMPRE' }
+  },
+  radar: {
+    id: 'turbo',
+    name: 'Radar',
+    stage: 'Ganar el radar',
+    subtitle: 'Mas visibilidad local para capturar trafico cercano cuando el usuario ya esta buscando donde ir.',
+    contact: { icon: 'location_on', label: 'Prioridad local', class: 'phone' },
+    features: [
+      'Todo Boost',
+      'Mas visibilidad',
+      'Promos destacadas',
+      'Prioridad local',
+      'Mejor mapa'
+    ],
+    priceDisplay: { usd: '16.85', uyu: '690' }
+  },
+  conversion: {
+    id: 'dominio',
+    name: 'Conversion',
+    stage: 'Convertir intencion',
+    subtitle: 'Top CTA y prioridad comercial para transformar visibilidad en contactos y acciones medibles.',
+    contact: { icon: 'ads_click', label: 'Top CTA', class: 'whatsapp' },
+    features: [
+      'Todo Radar',
+      'Top CTA',
+      'Prioridad comercial',
+      'Promo first',
+      'Mejor intencion'
+    ],
+    priceDisplay: { usd: '32.20', uyu: '1320' }
+  },
+  partnerstore: {
+    id: 'partner_store',
+    name: 'Collector Hub',
+    stage: 'Validar y liderar',
+    subtitle: 'Convierte tu local en punto de confianza para validar, otorgar rewards y capturar liquidez premium.',
+    contact: { icon: 'workspace_premium', label: 'Badge Collector Hub', class: 'legend' },
+    features: [
+      'Todo Conversion',
+      'Validacion de albumes',
+      'Validacion de usuarios',
+      'Prioridad de validacion',
+      'Rewards asociados',
+      'Visibilidad premium',
+      'Descuento minimo configurable 10%'
+    ],
+    priceDisplay: { usd: '71.99', uyu: '2990' }
+  }
+}
 
 export default function BusinessBilling() {
   const { location } = useOutletContext()
+  const { plans: dbPlans, userPlans, fetchPlans, loading } = useBusinessPlanStore()
+  const [showComparison, setShowComparison] = useState(false)
+
+  useEffect(() => {
+    fetchPlans()
+  }, [])
 
   if (!location) return null
 
-  const plans = [
-    {
-      id: 'gratis',
-      name: 'Gratis',
-      price: 'UYU 0',
-      stage: 'Existis',
-      subtitle: 'Entrada sin costo para figurar en el mapa.',
-      contact: { icon: 'block', label: 'Sin contacto directo', class: 'none' },
-      features: ['Aparecer en el mapa', 'Ficha basica', 'Direccion y horario', '0 fotos', 'Sin promos', 'Metricas minimas']
-    },
-    {
-      id: 'turbo',
-      name: 'Turbo',
-      price: 'UYU 690',
-      stage: 'Convertis',
-      subtitle: 'Escala visibilidad con herramientas para vender mejor.',
-      contact: { icon: 'phone_in_talk', label: 'Telefono visible', class: 'phone' },
-      features: ['Todo Gratis', '1 foto', '1 promo activa', 'Badge destacado', 'Telefono visible', 'Metricas basicas']
-    },
-    {
-      id: 'dominio',
-      name: 'Dominio',
-      price: 'UYU 1.490',
-      stage: 'Dominas',
-      subtitle: 'La capa mas fuerte para posicionarte y dominar tu zona.',
-      contact: { icon: 'chat', label: 'Boton directo a WhatsApp', class: 'whatsapp' },
-      features: ['Todo Turbo', '3 fotos', 'Logo visible', 'Multiples promos', 'Destaque en tu zona', 'Boton directo a WhatsApp', 'Metricas avanzadas', 'Prioridad alta en resultados']
-    },
-    {
-      id: 'legend',
-      name: 'Legend',
-      price: 'UYU 1.900',
-      stage: 'Referente',
-      subtitle: 'La capa m\u00e1s alta de autoridad, validaci\u00f3n y prestigio dentro de FigusUY.',
-      contact: { icon: 'workspace_premium', label: 'Tienda PartnerStore', class: 'legend' },
-      features: ['Todo Dominio', 'Badge Legend', 'Tienda PartnerStore', 'Validación de álbumes completos', 'Verificación de colecciones', 'Validación PartnerStore manual', 'Mayor autoridad y confianza', 'Tráfico físico por validación', 'Máxima prioridad visual']
-    }
-  ]
+  // Merge DB plans with metadata
+  const plans = dbPlans.map(dbPlan => {
+    const dbKey = dbPlan.plan_name
+    // Mapeo entre nombres internos de DB y llaves de PayPal / Metadata
+    const premiumKey = dbKey === 'turbo' ? 'radar' :
+                       dbKey === 'dominio' ? 'conversion' :
+                       dbKey === 'partner_store' ? 'partnerstore' : dbKey
 
-  const sortedPlans = [...plans].sort(
+    const meta = PLAN_METADATA[premiumKey] || PLAN_METADATA.gratis;
+
+    // Buscar el precio USD en los planes de PayPal (premium_plans)
+    const premiumPlan = userPlans?.find(up => up.plan_key === premiumKey)
+    const usdPrice = premiumPlan?.price || meta.priceDisplay?.usd
+
+    return {
+      ...meta,
+      priceDisplay: {
+        ...meta.priceDisplay,
+        usd: usdPrice
+      },
+      dbRules: dbPlan
+    }
+  })
+
+  const sortedPlans = plans.sort(
     (a, b) => BUSINESS_PLAN_ORDER.indexOf(a.id) - BUSINESS_PLAN_ORDER.indexOf(b.id)
   )
   const currentBusinessLevel = sortedPlans.findIndex(plan => plan.id === location.business_plan)
@@ -57,11 +114,7 @@ export default function BusinessBilling() {
     if (targetLevel === currentBusinessLevel) {
       return {
         label: 'Plan actual',
-        note: planId === 'legend'
-          ? 'Tu punto tiene el nivel mas alto de visibilidad y autoridad activa.'
-          : planId === 'dominio'
-            ? 'Tenes la maxima visibilidad activa.'
-            : 'Este es tu plan activo.',
+        note: 'Este es tu nivel activo dentro del circuito comercial de FigusUY.',
         tone: 'current',
         disabled: true
       }
@@ -70,11 +123,9 @@ export default function BusinessBilling() {
     if (targetLevel > currentBusinessLevel) {
       return {
         label: 'Mejorar plan',
-        note: planId === 'turbo'
-          ? 'Ideal para empezar a convertir mas visitas.'
-          : planId === 'legend'
-            ? 'No solo destacas. Te convertis en referencia.'
-            : 'Desbloquea mas alcance y visibilidad.',
+        note: targetLevel === sortedPlans.length - 1
+          ? 'Subi a validacion, rewards y autoridad premium.'
+          : 'Escala visibilidad, prioridad y conversion.',
         tone: 'upgrade',
         disabled: false
       }
@@ -82,7 +133,7 @@ export default function BusinessBilling() {
 
     return {
       label: 'Cambiar plan',
-      note: 'Ajusta tu plan segun lo que necesites.',
+      note: 'Reordena tu nivel comercial segun tu momento.',
       tone: 'change',
       disabled: false
     }
@@ -129,7 +180,7 @@ export default function BusinessBilling() {
           padding: 28px;
           display: flex;
           flex-direction: column;
-          min-height: 560px;
+          min-height: 590px;
           overflow: hidden;
         }
 
@@ -149,7 +200,10 @@ export default function BusinessBilling() {
         }
 
         .plan.dominio {
-          background: linear-gradient(135deg, #181818 0%, #101010 60%, rgba(255,90,0,.16) 100%);
+          background: linear-gradient(135deg, #181818 0%, #101010 60%, rgba(139,92,246,.16) 100%);
+        }
+        .plan.dominio:before {
+          background: #8b5cf6;
         }
 
         .plan.legend {
@@ -185,6 +239,11 @@ export default function BusinessBilling() {
           background: rgba(255,90,0,.1);
           border-color: rgba(255,90,0,.3);
         }
+        .plan.dominio .plan-icon {
+          background: rgba(139,92,246,.1);
+          border-color: rgba(139,92,246,.3);
+          color: #c4b5fd;
+        }
         .plan.legend .plan-icon {
           background: rgba(250,204,21,.1);
           border-color: rgba(250,204,21,.3);
@@ -202,7 +261,7 @@ export default function BusinessBilling() {
           font-size: .92rem;
           line-height: 1.45;
           margin-top: 9px;
-          min-height: 48px;
+          min-height: 70px;
         }
 
         .plan-price {
@@ -245,9 +304,11 @@ export default function BusinessBilling() {
           color: var(--green);
           font-weight: 900;
         }
-        .plan.turbo .check,
-        .plan.dominio .check {
+        .plan.turbo .check {
           color: var(--orange);
+        }
+        .plan.dominio .check {
+          color: #c4b5fd;
         }
         .plan.legend .check {
           color: var(--yellow);
@@ -302,6 +363,69 @@ export default function BusinessBilling() {
           min-height: 34px;
         }
 
+        .comparison-table-wrapper {
+          margin-top: 2rem;
+          padding: 2rem;
+          background: var(--panel);
+          border: 1px solid var(--line);
+          overflow-x: auto;
+          animation: slideDown .3s ease-out;
+        }
+
+        @keyframes slideDown {
+          from { opacity: 0; transform: translateY(-10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+
+        .comparison-table {
+          width: 100%;
+          border-collapse: collapse;
+          color: var(--text);
+          font-size: 0.9rem;
+        }
+
+        .comparison-table th, .comparison-table td {
+          padding: 1rem;
+          text-align: center;
+          border-bottom: 1px solid var(--line);
+        }
+
+        .comparison-table th {
+          font: italic 800 1.2rem 'Barlow Condensed';
+          text-transform: uppercase;
+          color: var(--muted2);
+        }
+
+        .comparison-table td:first-child, .comparison-table th:first-child {
+          text-align: left;
+          font-weight: 700;
+          color: var(--muted);
+          width: 30%;
+        }
+
+        .comparison-table .check { color: var(--green); }
+        .comparison-table .cross { color: var(--error); opacity: 0.5; }
+
+        .compare-toggle-btn {
+          margin-top: 2rem;
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          background: var(--panel2);
+          border: 1px solid var(--line);
+          color: var(--text);
+          padding: 0.75rem 1.5rem;
+          font: 900 1rem 'Barlow Condensed';
+          text-transform: uppercase;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .compare-toggle-btn:hover {
+          background: var(--line);
+          border-color: var(--orange);
+        }
+
         @media (max-width: 1180px) {
           .plans-grid {
             grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -329,79 +453,66 @@ export default function BusinessBilling() {
         <div>
           <div className="biz-page-kicker">/ plan actual</div>
           <h2>{getBusinessPlanLabel(location.business_plan)}</h2>
-          <p>Tu estado esta activo. Desde aca puedes leer el valor de cada plan con mas claridad y decidir si vale la pena escalar visibilidad, posicionamiento o autoridad.</p>
+          <p>
+            Esta escalera comercial ahora mide visibilidad, puntos sugeridos, capacidad promocional,
+            validacion y conversion. Desde aca puedes decidir cuanto peso comercial quieres ganar.
+          </p>
         </div>
-        <button className="biz-btn-secondary">Gestionar pago</button>
+        <button 
+          className="biz-btn-secondary"
+          onClick={() => alert('La gestión de pagos a través de la plataforma estará disponible próximamente. Por favor, contacta a soporte para cambios en tu suscripción.')}
+        >
+          Gestionar pago
+        </button>
       </section>
 
       <div className="biz-section-head" style={{ marginTop: '34px', marginBottom: '18px' }}>
         <div>
           <div className="biz-page-kicker">/ planes</div>
-          <h2 style={{ font: 'italic 900 3rem "Barlow Condensed"', textTransform: 'uppercase', lineHeight: '.9', marginTop: '4px' }}>Existi, converti, domina y valida</h2>
-          <p style={{ color: 'var(--muted)', fontSize: '.95rem', marginTop: '7px' }}>La progresion comercial va de presencia basica a autoridad real. Gratis te hace existir, Turbo te ayuda a vender, Dominio te posiciona y Legend te convierte en punto de referencia dentro del ecosistema.</p>
+          <h2 style={{ font: 'italic 900 3rem "Barlow Condensed"', textTransform: 'uppercase', lineHeight: '.9', marginTop: '4px' }}>
+            Visibilidad, conversion y autoridad
+          </h2>
+          <p style={{ color: 'var(--muted)', fontSize: '.95rem', marginTop: '7px' }}>
+            El valor comercial se mueve en cuatro pasos: Gratis te hace aparecer, Radar te da zona,
+            Conversion te ayuda a capitalizar intencion y Collector Hub te convierte en punto validado.
+          </p>
         </div>
       </div>
 
       <div className="plans-grid">
-        {plans.map((p) => {
-          const isActive = location.business_plan === p.id
-          const cta = getBusinessPlanCta(p.id)
+        {sortedPlans.map((plan) => {
+          const isActive = location.business_plan === plan.id
+          const cta = getBusinessPlanCta(plan.id)
 
           let planClass = 'plan'
-          if (p.id === 'turbo') planClass += ' turbo'
-          if (p.id === 'dominio') planClass += ' dominio'
-          if (p.id === 'legend') planClass += ' legend'
+          if (plan.id === 'turbo') planClass += ' turbo'
+          if (plan.id === 'dominio') planClass += ' dominio'
+          if (plan.id === 'legend') planClass += ' legend'
 
-          let iconName = 'storefront'
-          if (p.id === 'turbo') iconName = 'diamond'
-          if (p.id === 'dominio') iconName = 'rocket_launch'
-          if (p.id === 'legend') iconName = 'workspace_premium'
-
-          const contactBorder =
-            p.contact.class === 'whatsapp'
-              ? 'rgba(34,197,94,.3)'
-              : p.contact.class === 'phone'
-                ? 'rgba(255,90,0,.3)'
-                : p.contact.class === 'legend'
-                  ? 'rgba(250,204,21,.32)'
-                  : 'var(--line)'
-
-          const contactBackground =
-            p.contact.class === 'whatsapp'
-              ? 'rgba(34,197,94,.07)'
-              : p.contact.class === 'phone'
-                ? 'rgba(255,90,0,.07)'
-                : p.contact.class === 'legend'
-                  ? 'rgba(250,204,21,.08)'
-                  : 'rgba(255,255,255,.03)'
-
-          const contactColor =
-            p.contact.class === 'whatsapp'
-              ? 'var(--green)'
-              : p.contact.class === 'phone'
-                ? 'var(--orange)'
-                : p.contact.class === 'legend'
-                  ? 'var(--yellow)'
-                  : 'var(--muted2)'
+          let iconName = 'bolt'
+          if (plan.id === 'turbo') iconName = 'location_on'
+          if (plan.id === 'dominio') iconName = 'ads_click'
+          if (plan.id === 'legend') iconName = 'workspace_premium'
 
           return (
-            <article key={p.id} className={planClass}>
+            <article key={plan.id} className={planClass}>
               {isActive && <div className="plan-ribbon">Tu plan</div>}
-              {p.id === 'turbo' && !isActive && <div className="plan-ribbon">Mas popular</div>}
-              {p.id === 'legend' && !isActive && (
+              {plan.id === 'turbo' && !isActive && <div className="plan-ribbon">Mas visibilidad</div>}
+              {plan.id === 'legend' && !isActive && (
                 <div className="plan-ribbon" style={{ background: 'linear-gradient(90deg, var(--yellow), var(--orange))', color: '#111' }}>
-                  PartnerStore
+                  Validacion
                 </div>
               )}
 
               <div className="plan-icon">
                 <span className="material-symbols-outlined" style={{ fontSize: '1.8rem' }}>{iconName}</span>
               </div>
-              <h3 className="plan-name">{p.name}</h3>
+              <h3 className="plan-name">{plan.name}</h3>
               <p className="plan-concept">
-                <strong style={{ color: 'var(--text)', display: 'block', marginBottom: '4px' }}>{p.stage}</strong>
-                {p.subtitle}
+                <strong style={{ color: 'var(--text)', display: 'block', marginBottom: '4px' }}>{plan.stage}</strong>
+                {plan.subtitle}
               </p>
+
               <div
                 style={{
                   display: 'flex',
@@ -412,25 +523,42 @@ export default function BusinessBilling() {
                   font: "900 .78rem 'Barlow Condensed'",
                   letterSpacing: '.06em',
                   textTransform: 'uppercase',
-                  border: `1px solid ${contactBorder}`,
-                  background: contactBackground,
-                  color: contactColor
+                  border: '1px solid var(--line2)',
+                  background: 'rgba(255,255,255,.03)',
+                  color: 'var(--muted2)'
                 }}
               >
-                <span className="material-symbols-outlined" style={{ fontSize: '1.1rem' }}>{p.contact.icon}</span>
-                {p.contact.label}
+                <span className="material-symbols-outlined" style={{ fontSize: '1.1rem' }}>{plan.contact?.icon}</span>
+                {plan.contact?.label}
               </div>
 
-              <div className="plan-price">
-                <b>{p.price}</b>
-                <span>/mes</span>
+              <div className="plan-price" style={{ margin: '28px 0 22px', display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                {plan.id === 'gratis' ? (
+                  <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px' }}>
+                    <b style={{ font: 'italic 900 3.2rem "Barlow Condensed"', lineHeight: '.8', color: '#fff' }}>{plan.priceDisplay?.main}</b>
+                    <span style={{ color: 'var(--muted2)', fontSize: '.82rem', fontWeight: '800', marginBottom: '4px' }}>{plan.priceDisplay?.label}</span>
+                  </div>
+                ) : (
+                  <>
+                    <span style={{ fontSize: '.75rem', color: 'var(--muted)', fontWeight: '900', marginBottom: '4px', textTransform: 'uppercase' }}>USD</span>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                      <b style={{ font: 'italic 900 3.8rem "Barlow Condensed"', lineHeight: '.75', color: '#fff' }}>{plan.priceDisplay?.usd}</b>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginTop: '2px' }}>
+                        <span style={{ fontSize: '.78rem', color: 'var(--muted2)', fontWeight: '800', whiteSpace: 'nowrap' }}>
+                          â‰ˆ ${plan.dbRules?.monthly_price || plan.priceDisplay?.uyu} UYU APROX.
+                        </span>
+                        <span style={{ color: 'var(--muted2)', fontSize: '.78rem', fontWeight: '800' }}>/MES</span>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
 
               <div className="plan-features">
-                {p.features.map((f, i) => (
-                  <div key={i} className="feature">
-                    <span className="check">✓</span>
-                    <span>{f}</span>
+                {plan.features.map((feature) => (
+                  <div key={feature} className="feature">
+                    <span className="check">+</span>
+                    <span>{feature}</span>
                   </div>
                 ))}
               </div>
@@ -445,6 +573,83 @@ export default function BusinessBilling() {
           )
         })}
       </div>
+
+      <button 
+        className="compare-toggle-btn"
+        onClick={() => setShowComparison(!showComparison)}
+      >
+        <span className="material-symbols-outlined">
+          {showComparison ? 'keyboard_arrow_up' : 'compare_arrows'}
+        </span>
+        {showComparison ? 'Cerrar comparación' : 'Comparar planes'}
+      </button>
+
+      {showComparison && (
+        <div className="comparison-table-wrapper">
+          <table className="comparison-table">
+            <thead>
+              <tr>
+                <th>Funcionalidad</th>
+                {sortedPlans.map(p => <th key={p.id}>{p.name}</th>)}
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Fotos en local</td>
+                {sortedPlans.map(p => <td key={p.id}>{p.dbRules?.max_photos || 'âˆž'}</td>)}
+              </tr>
+              <tr>
+                <td>Promociones activas</td>
+                {sortedPlans.map(p => <td key={p.id}>{p.dbRules?.max_active_promos || 'Sin límite'}</td>)}
+              </tr>
+              <tr>
+                <td>Boost de visibilidad</td>
+                {sortedPlans.map(p => <td key={p.id}>+{((p.dbRules?.eligibility_boost || 0) * 100).toFixed(0)}%</td>)}
+              </tr>
+              <tr>
+                <td>Badge destacado</td>
+                {sortedPlans.map(p => (
+                  <td key={p.id}>
+                    <span className={`material-symbols-outlined ${p.dbRules?.can_have_featured_badge ? 'check' : 'cross'}`}>
+                      {p.dbRules?.can_have_featured_badge ? 'check_circle' : 'cancel'}
+                    </span>
+                  </td>
+                ))}
+              </tr>
+              <tr>
+                <td>CTA personalizado</td>
+                {sortedPlans.map(p => (
+                  <td key={p.id}>
+                    <span className={`material-symbols-outlined ${p.dbRules?.can_have_featured_cta ? 'check' : 'cross'}`}>
+                      {p.dbRules?.can_have_featured_cta ? 'check_circle' : 'cancel'}
+                    </span>
+                  </td>
+                ))}
+              </tr>
+              <tr>
+                <td>Métricas avanzadas</td>
+                {sortedPlans.map(p => (
+                  <td key={p.id}>
+                    <span className={`material-symbols-outlined ${p.dbRules?.can_have_advanced_metrics ? 'check' : 'cross'}`}>
+                      {p.dbRules?.can_have_advanced_metrics ? 'check_circle' : 'cancel'}
+                    </span>
+                  </td>
+                ))}
+              </tr>
+              <tr>
+                <td>Validación de álbumes</td>
+                {sortedPlans.map(p => (
+                  <td key={p.id}>
+                    <span className={`material-symbols-outlined ${p.id === 'partner_store' ? 'check' : 'cross'}`}>
+                      {p.id === 'partner_store' ? 'check_circle' : 'cancel'}
+                    </span>
+                  </td>
+                ))}
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   )
 }

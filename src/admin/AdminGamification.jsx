@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react'
+﻿import React, { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { LEVELS, LEVEL_ORDER, ACHIEVEMENTS, BADGES, REWARD_TYPES } from '../lib/gamification'
 import { useToast } from '../components/Toast'
 import ConfirmDialog from '../components/ConfirmDialog'
+import GamificationIcon from '../components/gamification/icons/GamificationIcon'
 
 export default function AdminGamification() {
   const [stats, setStats] = useState(null)
@@ -134,7 +135,7 @@ export default function AdminGamification() {
               <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 800 }}>Usuarios ({users.length})</h3>
               {filterLevel && (
                 <button onClick={() => setFilterLevel('')} style={{ fontSize: '0.75rem', background: '#f5f5f4', border: "1px solid var(--admin-line)", borderRadius: '0.5rem', padding: '0.25rem 0.5rem', cursor: 'pointer', fontWeight: 600 }}>
-                  Limpiar filtro ✕
+                  Limpiar filtro âœ•
                 </button>
               )}
             </div>
@@ -176,8 +177,8 @@ export default function AdminGamification() {
                           </div>
                         </td>
                         <td style={td}>
-                          <span style={{ padding: '0.2rem 0.5rem', borderRadius: '0.375rem', background: `${l.color}15`, color: l.color, fontWeight: 700, fontSize: '0.6875rem' }}>
-                            {l.icon} {l.name}
+                          <span style={{ padding: '0.2rem 0.5rem', borderRadius: '0.375rem', background: `${l.color}15`, color: l.color, fontWeight: 700, fontSize: '0.6875rem', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                            {l.iconKey ? <GamificationIcon icon={l.iconKey} size="sm" /> : l.icon} {l.name}
                           </span>
                         </td>
                         <td style={{ ...td, fontWeight: 800 }}>{u.streak_days}d</td>
@@ -222,7 +223,7 @@ export default function AdminGamification() {
                   <>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                       <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800 }}>Detalle de usuario</h2>
-                      <button onClick={() => { setSelectedUser(null); setUserDetail(null) }} style={{ background: 'none', border: 'none', fontSize: '1.25rem', cursor: 'pointer' }}>✕</button>
+                      <button onClick={() => { setSelectedUser(null); setUserDetail(null) }} style={{ background: 'none', border: 'none', fontSize: '1.25rem', cursor: 'pointer' }}>âœ•</button>
                     </div>
 
                     {/* Progress */}
@@ -233,7 +234,10 @@ export default function AdminGamification() {
                         { l: 'Días activos', v: userDetail.progress?.days_active || 0 },
                         { l: 'Cruces', v: userDetail.progress?.total_trades || 0 },
                         { l: 'Favoritos', v: userDetail.progress?.total_favorites || 0 },
-                        { l: 'Álbumes', v: userDetail.progress?.total_albums || 0 },
+                        { l: 'Ãlbumes', v: userDetail.progress?.total_albums || 0 },
+                        { l: 'Matches gen.', v: userDetail.progress?.total_matches_generated || 0 },
+                        { l: 'Curación', v: userDetail.progress?.total_curation_actions || 0 },
+                        { l: 'Impact Score', v: userDetail.progress?.impact_score || 0 },
                       ].map(s => (
                         <div key={s.l} style={{ padding: '0.625rem', borderRadius: '0.5rem', background: "var(--admin-panel2)", border: "1px solid var(--admin-line)", textAlign: 'center' }}>
                           <p style={{ fontSize: '1.125rem', fontWeight: 800, margin: 0 }}>{s.v}</p>
@@ -248,8 +252,8 @@ export default function AdminGamification() {
                       {(userDetail.achievements || []).map(a => {
                         const def = ACHIEVEMENTS[a.key] || { icon: '?', name: a.key }
                         return (
-                          <span key={a.key} style={{ padding: '0.25rem 0.5rem', borderRadius: '0.375rem', fontSize: '0.6875rem', fontWeight: 700, background: a.completed ? '#dcfce7' : '#f5f5f4', color: a.completed ? '#166534' : "var(--admin-muted)", border: `1px solid ${a.completed ? '#bbf7d0' : "var(--admin-line)"}` }} title={`${a.progress}/${a.target}`}>
-                            {def.icon} {def.name} {a.completed ? '✓' : `${a.progress}/${a.target}`}
+                          <span key={a.key} style={{ padding: '0.25rem 0.5rem', borderRadius: '0.375rem', fontSize: '0.6875rem', fontWeight: 700, background: a.completed ? '#dcfce7' : '#f5f5f4', color: a.completed ? '#166534' : "var(--admin-muted)", border: `1px solid ${a.completed ? '#bbf7d0' : "var(--admin-line)"}`, display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }} title={`${a.progress}/${a.target}`}>
+                            {def.iconKey ? <GamificationIcon icon={def.iconKey} size="sm" /> : def.icon} {def.name} {a.completed ? 'âœ“' : `${a.progress}/${a.target}`}
                           </span>
                         )
                       })}
@@ -295,12 +299,12 @@ export default function AdminGamification() {
           {/* Top Streaks */}
           {stats?.top_streaks && stats.top_streaks.length > 0 && (
             <div style={{ background: "var(--admin-panel2)", borderRadius: '0.75rem', border: "1px solid var(--admin-line)", padding: '1.25rem' }}>
-              <h3 style={{ margin: '0 0 0.75rem', fontSize: '1rem', fontWeight: 800 }}>🔥 Top rachas</h3>
+              <h3 style={{ margin: '0 0 0.75rem', fontSize: '1rem', fontWeight: 800 }}>ðŸ”¥ Top rachas</h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
                 {stats.top_streaks.map((ts, i) => (
                   <div key={ts.user_id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.5rem 0.75rem', borderRadius: '0.5rem', background: i < 3 ? '#fffbeb' : "var(--admin-panel2)" }}>
                     <span style={{ fontWeight: 700, fontSize: '0.8125rem' }}>
-                      {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`} {ts.name || 'Sin nombre'}
+                      {i === 0 ? 'ðŸ¥‡' : i === 1 ? 'ðŸ¥ˆ' : i === 2 ? 'ðŸ¥‰' : `${i + 1}.`} {ts.name || 'Sin nombre'}
                     </span>
                     <span style={{ fontWeight: 900, color: 'var(--color-primary)', fontSize: '0.875rem' }}>{ts.streak}d</span>
                   </div>

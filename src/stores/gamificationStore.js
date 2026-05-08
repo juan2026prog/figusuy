@@ -1,6 +1,6 @@
-import { create } from 'zustand'
+﻿import { create } from 'zustand'
 import { supabase } from '../lib/supabase'
-import { ACHIEVEMENTS, ACHIEVEMENT_REWARDS } from '../lib/gamification'
+import { ACHIEVEMENTS, ACHIEVEMENT_REWARDS, getXPForAction } from '../lib/gamification'
 import { canUnlockMilestone, canClaimReward } from '../lib/reputation'
 
 export const useGamificationStore = create((set, get) => ({
@@ -82,11 +82,19 @@ export const useGamificationStore = create((set, get) => ({
       // Update progress counters
       const counterMap = {
         trade: 'total_trades',
+        exchange_confirmed: 'completed_exchanges',
         chat: 'total_chats',
         favorite: 'total_favorites',
         album: 'total_albums',
         sticker_load: 'total_stickers_loaded',
         duplicate_load: 'total_duplicates_loaded',
+        // V2
+        approved_metadata: 'total_curation_actions',
+        approved_exchange_point: 'total_curation_actions',
+        approved_album_upload: 'total_curation_actions',
+        shared_match_closed: 'total_matches_generated',
+        point_activated: 'impact_score',
+        clinical_eye: 'total_curation_actions',
       }
 
       const column = counterMap[actionType]
@@ -96,16 +104,17 @@ export const useGamificationStore = create((set, get) => ({
         // Increment the specific counter
         const { data: currentProgress } = await supabase
           .from('user_progress')
-          .select(column)
+          .select(`${column}, reward_points_hidden`)
           .eq('user_id', userId)
           .single()
 
         if (currentProgress) {
+          const xpDelta = getXPForAction(actionType) || value
           await supabase
             .from('user_progress')
             .update({
               [column]: (currentProgress[column] || 0) + value,
-              reward_points_hidden: currentProgress.reward_points_hidden + value,
+              reward_points_hidden: (currentProgress.reward_points_hidden || 0) + xpDelta,
               updated_at: new Date().toISOString(),
             })
             .eq('user_id', userId)
@@ -129,13 +138,29 @@ export const useGamificationStore = create((set, get) => ({
   updateAchievements: async (userId, actionType, value) => {
     try {
       const achievementMapping = {
-        trade: ['first_trade', 'trades_3', 'trades_10', 'trades_25', 'trades_50', 'clean_trades_10'],
+        trade: ['first_trade', 'clean_trades_10'],
+        exchange_confirmed: ['exchange_confirmed', 'exchange_streak_3'],
         album: ['first_album'],
-        duplicate_load: ['duplicates_50', 'duplicates_100'],
-        favorite: ['first_favorite', 'favorites_5'],
-        fast_response: ['fast_responses_10'],
+        duplicate_load: ['archivist'],
+        favorite: [],
+        fast_response: [],
         page_complete: ['page_complete'],
         album_complete: ['album_complete'],
+        rating: ['first_rating', 'curator'],
+        confirm_exchange: ['confirm_exchange_action'],
+        profile_complete_action: [],
+        // V2 IMPACTO
+        external_match: ['good_movement'],
+        match_generated: ['network_engine'],
+        share_closure: ['connector_achievement'],
+        point_activation: ['local_impulse'],
+        liquidity_impact: ['real_liquidity'],
+        // V2 CURACIÓN
+        approved_exchange_point: ['curator_action'],
+        approved_album_upload: ['cataloger_achievement'],
+        approved_metadata: ['organized_achievement'],
+        report_valid: ['clinical_eye'],
+        useful_contribution: ['network_editor'],
       }
 
       const relevantKeys = achievementMapping[actionType] || []
@@ -157,7 +182,7 @@ export const useGamificationStore = create((set, get) => ({
             const rep = get().reputation
             const { canUnlock } = canUnlockMilestone(key, rep?.star_rating || 1)
             if (!canUnlock) {
-              // User doesn't have enough reputation — don't complete the milestone
+              // User doesn't have enough reputation â€” don't complete the milestone
               // Still update progress so they see they're close
               await supabase
                 .from('user_achievements')
@@ -203,7 +228,7 @@ export const useGamificationStore = create((set, get) => ({
     }
   },
 
-  // Check if profile is complete (for the profile_complete achievement)
+  // Check if profile is complete and re-evaluate level progression
   checkProfileComplete: async (userId, profile) => {
     if (!userId || !profile) return
     const isComplete = !!(
@@ -214,21 +239,8 @@ export const useGamificationStore = create((set, get) => ({
     )
 
     if (isComplete) {
-      const { data } = await supabase
-        .from('user_achievements')
-        .select('completed')
-        .eq('user_id', userId)
-        .eq('achievement_key', 'profile_complete')
-        .single()
-
-      if (data && !data.completed) {
-        await get().updateAchievements(userId, 'profile_complete_action', 1)
-      }
-
-      // Grant badge
-      await supabase
-        .from('user_badges')
-        .upsert({ user_id: userId, badge_key: 'perfil_completo' }, { onConflict: 'user_id,badge_key' })
+      await get().checkLevelUp(userId)
+      await get().fetchGamification(userId)
     }
   },
 

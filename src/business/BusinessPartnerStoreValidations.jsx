@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react'
+﻿import React, { useEffect, useMemo, useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { getPartnerStoreValidations, verifyAlbumAsPartnerStore } from '../lib/partnerStore'
 
@@ -35,7 +35,7 @@ export default function BusinessPartnerStoreValidations() {
 
   if (!location) return null
 
-  const isLegendPoint = location.business_plan === 'legend'
+  const isPartnerStorePoint = location.business_plan === 'legend' || location.business_plan === 'partner_store'
 
   const handleApprove = async (item) => {
     try {
@@ -50,12 +50,12 @@ export default function BusinessPartnerStoreValidations() {
     }
   }
 
-  if (!isLegendPoint) {
+  if (!isPartnerStorePoint) {
     return (
       <div className="biz-page">
         <div className="biz-empty-state">
-          <h2>Validaciones PartnerStore</h2>
-          <p>Este módulo solo se activa para puntos con plan Legend. Una Tienda PartnerStore convierte tu local en referencia para validar álbumes completos y verificar colecciones.</p>
+          <h2>Validaciones Collector Hub</h2>
+          <p>Este modulo solo se activa para puntos con plan Collector Hub. Una Tienda Collector Hub convierte tu local en referencia para validar albumes completos y verificar colecciones.</p>
         </div>
       </div>
     )
@@ -204,20 +204,20 @@ export default function BusinessPartnerStoreValidations() {
 
       <section className="legend-hero">
         <div className="legend-lead">
-          <div className="biz-page-kicker">/ tienda partnerstore</div>
+          <div className="biz-page-kicker">/ tienda collector hub</div>
           <h2>Autoridad, validación y prestigio real dentro de FigusUY.</h2>
-          <p>Desde este módulo puedes revisar álbumes completados y emitir Validación PartnerStore de forma manual. Eso convierte a tu local en referencia, genera confianza y atrae tráfico físico.</p>
+          <p>Desde este módulo puedes revisar álbumes completados y emitir Validación Collector Hub de forma manual. Eso convierte a tu local en referencia, genera confianza y atrae tráfico físico.</p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '.55rem', marginTop: '1rem' }}>
             <span className="biz-chip orange">Pendientes: {pendingItems.length}</span>
             <span className="biz-chip green">Validados: {verifiedItems.length}</span>
-            <span className="biz-chip blue">PartnerStore</span>
+            <span className="biz-chip blue">Collector Hub</span>
           </div>
         </div>
 
         <aside className="legend-side">
-          <div className="biz-page-kicker">/ qué valida partnerstore</div>
+          <div className="biz-page-kicker">/ qué valida collector hub</div>
           <h3>No solo destacás. Te convertís en referencia.</h3>
-          <p>Una Tienda PartnerStore puede validar álbumes completos, verificar colecciones terminadas y emitir Validación PartnerStore como sello de confianza.</p>
+          <p>Una Tienda Collector Hub puede validar álbumes completos, verificar colecciones terminadas y emitir Validación Collector Hub como sello de confianza.</p>
         </aside>
       </section>
 
@@ -232,7 +232,7 @@ export default function BusinessPartnerStoreValidations() {
 
         {pendingItems.length === 0 ? (
           <div className="biz-card">
-            <p className="biz-text-muted">No hay álbumes pendientes de Validación PartnerStore en este momento.</p>
+            <p className="biz-text-muted">No hay álbumes pendientes de Validación Collector Hub en este momento.</p>
           </div>
         ) : (
           <div className="legend-grid">
@@ -260,14 +260,14 @@ export default function BusinessPartnerStoreValidations() {
                     </div>
                     <textarea
                       className="legend-textarea"
-                      placeholder="Notas de validación PartnerStore (opcional)"
+                      placeholder="Notas de validación Collector Hub (opcional)"
                       value={notesByKey[item.validation_id] || ''}
                       onChange={(event) => setNotesByKey(prev => ({ ...prev, [item.validation_id]: event.target.value }))}
                     />
                     <div className="legend-actions">
                       <button className="biz-btn-primary" onClick={() => handleApprove(item)}>
                         <span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>verified</span>
-                        Aprobar Validación PartnerStore
+                        Aprobar Validación Collector Hub
                       </button>
                     </div>
                   </div>
@@ -289,7 +289,7 @@ export default function BusinessPartnerStoreValidations() {
 
         {verifiedItems.length === 0 ? (
           <div className="biz-card">
-            <p className="biz-text-muted">Todavía no emitiste ninguna Validación PartnerStore desde este punto.</p>
+            <p className="biz-text-muted">Todavía no emitiste ninguna Validación Collector Hub desde este punto.</p>
           </div>
         ) : (
           <div className="legend-grid">
@@ -298,7 +298,7 @@ export default function BusinessPartnerStoreValidations() {
                 <div className="legend-card-head">
                   <div>
                     <h3 className="legend-card-title">{item.album_name}</h3>
-                    <div className="legend-meta">{item.user_name} · PartnerStore Verified</div>
+                    <div className="legend-meta">{item.user_name} Â· Collector Hub Verified</div>
                   </div>
                   <span className="legend-chip" style={{ color: 'var(--green)', borderColor: 'rgba(34,197,94,.3)', background: 'rgba(34,197,94,.08)' }}>Validado</span>
                 </div>

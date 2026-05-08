@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react'
+﻿import React, { useEffect, useState, useRef, useCallback } from 'react'
+import whpIcon from '../components/WhpIcon.png'
 import { useOutletContext } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import UniversalAddressAutocomplete from '../components/UniversalAddressAutocomplete'
@@ -9,6 +10,10 @@ export default function BusinessProfile() {
   const [saving, setSaving] = useState(false)
   const [previewImages, setPreviewImages] = useState([])
   const toast = useToast()
+  const previewRef = useRef(null)
+  const scalerRef = useRef(null)
+  const [previewScale, setPreviewScale] = useState(0.38)
+  const [containerHeight, setContainerHeight] = useState('auto')
 
   if (!location) return null
 
@@ -26,8 +31,8 @@ export default function BusinessProfile() {
     zone: meta.zone || meta.neighborhood || '',
     allows_exchange: location.allows_exchange || false,
     sells_stickers: location.sells_stickers || false,
-    partner_benefit_title: meta.partner_benefit_title || (location.business_plan === 'legend' ? '10% OFF en sobres' : ''),
-    partner_benefit_desc: meta.partner_benefit_desc || (location.business_plan === 'legend' ? 'Válido para usuarios que completen y validen su álbum en tienda.' : '')
+    partner_benefit_title: meta.partner_benefit_title || ((location.business_plan === 'legend' || location.business_plan === 'partner_store') ? '10% OFF en sobres' : ''),
+    partner_benefit_desc: meta.partner_benefit_desc || ((location.business_plan === 'legend' || location.business_plan === 'partner_store') ? 'Válido para usuarios que completen y validen su álbum en tienda.' : '')
   })
 
   useEffect(() => {
@@ -35,6 +40,31 @@ export default function BusinessProfile() {
       fetchPreviewImages()
     }
   }, [location?.id])
+
+  // Dynamically compute scale and container height
+  useEffect(() => {
+    if (!previewRef.current) return
+
+    const updateDimensions = () => {
+      const containerWidth = previewRef.current?.clientWidth || 400
+      const cardInternalWidth = 1200
+      const newScale = Math.min(containerWidth / cardInternalWidth, 0.5)
+      setPreviewScale(newScale)
+
+      // After scale updates, measure internal card height
+      requestAnimationFrame(() => {
+        if (scalerRef.current) {
+          const internalHeight = scalerRef.current.scrollHeight
+          setContainerHeight(Math.ceil(internalHeight * newScale))
+        }
+      })
+    }
+
+    const observer = new ResizeObserver(() => updateDimensions())
+    observer.observe(previewRef.current)
+    updateDimensions()
+    return () => observer.disconnect()
+  }, [formData, previewImages])
 
   const fetchPreviewImages = async () => {
     const { data } = await supabase
@@ -84,8 +114,8 @@ export default function BusinessProfile() {
       type: formData.display_type === 'Punto de intercambio' ? 'safe_point' : 'store'
     }
 
-    if (location.business_plan === 'legend' && (!formData.partner_benefit_title.trim() || !formData.partner_benefit_desc.trim())) {
-      toast.error('Las Tiendas PartnerStore deben configurar un beneficio obligatorio.')
+    if ((location.business_plan === 'legend' || location.business_plan === 'partner_store') && (!formData.partner_benefit_title.trim() || !formData.partner_benefit_desc.trim())) {
+      toast.error('Las Tiendas Collector Hub deben configurar un beneficio obligatorio.')
       setSaving(false)
       return
     }
@@ -110,7 +140,7 @@ export default function BusinessProfile() {
     : { text: 'Tienda aliada', className: 'biz-chip green' }
 
   const locParts = [formData.zone, formData.department].filter(Boolean)
-  const locationStr = locParts.length > 0 ? locParts.join(' · ') : formData.address
+  const locationStr = locParts.length > 0 ? locParts.join(' Â· ') : formData.address
 
   return (
     <div className="biz-two-col">
@@ -119,7 +149,7 @@ export default function BusinessProfile() {
         .profile-preview-card {
           border: 1px solid var(--line);
           background: var(--panel);
-          padding: 1.35rem;
+          padding: 1rem;
         }
 
         .profile-form-card {
@@ -188,95 +218,48 @@ export default function BusinessProfile() {
           position: sticky;
           top: 1.5rem;
           display: grid;
-          gap: 1rem;
+          gap: 0;
         }
 
-        .profile-preview-card {
-          background:
-            linear-gradient(180deg, rgba(255, 90, 0, .08) 0%, rgba(255, 90, 0, 0) 100%),
-            var(--panel2);
-        }
-
-        .preview-store-card {
-          border: 1px solid var(--line);
-          background: #0d0d0d;
+        .preview-zoom-container {
+          width: 100%;
           overflow: hidden;
+          border: 1px solid rgba(255,255,255,0.08);
+          border-radius: 6px;
+          background: #0a0a0a;
+          position: relative;
+          /* height is set dynamically via JS */
         }
 
-        .preview-image {
-          width: 100%;
-          height: 210px;
-          object-fit: cover;
-          display: block;
-          background: #111;
+        .preview-scaler {
+          transform-origin: top left;
+          width: 1200px;
+          transform: scale(var(--preview-scale, 0.38));
         }
 
-        .preview-image-empty {
-          width: 100%;
-          height: 210px;
-          display: grid;
-          place-items: center;
-          background:
-            linear-gradient(135deg, rgba(255, 90, 0, .12) 0%, rgba(255, 90, 0, .03) 26%, transparent 50%),
-            #111;
-          color: var(--muted2);
-          font: italic 900 1.6rem 'Barlow Condensed';
-          text-transform: uppercase;
+        .preview-scaler .sf-point-card {
+          pointer-events: none;
+          cursor: default;
+          min-height: 0;
         }
 
-        .preview-body {
-          padding: 1rem;
-        }
-
-        .preview-store-card h3 {
-          margin: .6rem 0 0;
-          font: italic 900 1.9rem 'Barlow Condensed';
-          line-height: .9;
-          text-transform: uppercase;
-        }
-
-        .preview-store-card p {
-          margin-top: .5rem;
-          color: var(--muted);
-          line-height: 1.55;
-          font-size: .92rem;
-        }
-
-        .preview-meta {
+        .preview-label {
           display: flex;
-          flex-wrap: wrap;
-          gap: .55rem;
-          margin: 1rem 0;
-        }
-
-        .preview-actions {
-          display: grid;
-          grid-template-columns: repeat(3, minmax(0, 1fr));
-          gap: .55rem;
-        }
-
-        .preview-action {
-          padding: .72rem .6rem;
-          border: 1px solid var(--line2);
-          background: transparent;
-          color: #fff;
-          font: 900 .74rem 'Barlow Condensed';
-          letter-spacing: .08em;
+          align-items: center;
+          gap: 0.5rem;
+          padding: 0.6rem 1rem;
+          background: rgba(255,255,255,0.03);
+          border-top: 1px solid rgba(255,255,255,0.06);
+          font: 900 0.65rem 'Barlow Condensed';
           text-transform: uppercase;
-          text-align: center;
+          letter-spacing: 0.06em;
+          color: var(--muted2);
+        }
+        .preview-label .material-symbols-outlined {
+          font-size: 0.9rem;
+          color: var(--orange);
         }
 
-        .preview-action.primary {
-          background: var(--orange);
-          border-color: var(--orange);
-        }
-
-        @media (max-width: 900px) {
-          .profile-grid-2,
-          .preview-actions {
-            grid-template-columns: 1fr;
-          }
-        }
       `}</style>
 
       <div className="profile-form-card">
@@ -340,7 +323,7 @@ export default function BusinessProfile() {
               <input name="department" value={formData.department} onChange={handleChange} className="form-input" />
             </div>
             <div className="form-group">
-              <label className="form-label">Barrio o zona</label>
+              <label className="form-label">Barrio o radar</label>
               <input name="zone" value={formData.zone} onChange={handleChange} className="form-input" />
             </div>
           </div>
@@ -364,16 +347,16 @@ export default function BusinessProfile() {
             </label>
             <label className="form-checkbox-label">
               <input type="checkbox" name="sells_stickers" checked={formData.sells_stickers} onChange={handleChange} />
-              Vende figuritas o sobres oficiales.
+              Venta de Albumes y sobres
             </label>
           </div>
 
-          {location?.business_plan === 'legend' && (
+          {(location?.business_plan === 'legend' || location?.business_plan === 'partner_store') && (
             <>
               <div className="biz-section-head" style={{ marginTop: '1.25rem' }}>
                 <div>
                   <div className="biz-page-kicker">/ beneficio obligatorio</div>
-                  <h2 style={{ fontSize: '2rem' }}>Beneficio PartnerStore</h2>
+                  <h2 style={{ fontSize: '2rem' }}>Beneficio Collector Hub</h2>
                   <p>Es condición del plan ofrecer un beneficio mínimo a quienes validen su álbum en tu tienda.</p>
                 </div>
               </div>
@@ -399,37 +382,83 @@ export default function BusinessProfile() {
       <div className="preview-shell">
         <div className="profile-preview-card">
           <div className="biz-page-kicker">/ preview</div>
-          <h2 className="biz-card-title">Asi te ven en FigusUY</h2>
-          <p className="biz-card-copy">La vista previa te ayuda a ajustar tono, claridad y nivel de confianza antes de publicar cambios.</p>
-        </div>
+          <h2 className="biz-card-title" style={{ fontSize: '1.4rem', marginBottom: '0.25rem' }}>Así te ven en FigusUY</h2>
+          <p className="biz-card-copy" style={{ fontSize: '0.8rem', marginBottom: 0 }}>Vista previa en tiempo real de tu ficha en el mapa.</p>
 
-        <article className="preview-store-card">
-          {previewImages[0]?.image_url ? (
-            <img src={previewImages[0].image_url} alt={formData.name || 'Foto del local'} className="preview-image" />
-          ) : (
-            <div className="preview-image-empty">Sin foto principal</div>
-          )}
+          <div className="preview-zoom-container" ref={previewRef} style={{ height: typeof containerHeight === 'number' ? `${containerHeight + 60}px` : containerHeight, marginTop: '30px', paddingBottom: '30px' }}>
+            <div className="preview-scaler" ref={scalerRef} style={{ '--preview-scale': previewScale }}>
+              <article className={`sf-point-card sf-store ${location?.business_plan === 'dominio' ? 'sf-dominio' : ''} ${location?.business_plan === 'turbo' ? 'sf-turbo' : ''} ${(location?.business_plan === 'partner_store' || location?.business_plan === 'legend') ? 'sf-hub' : ''}`}>
+                <div className="sf-point-icon">
+                  <div className="sf-icon-box">
+                    <span className="material-symbols-outlined">storefront</span>
+                  </div>
+                </div>
 
-          <div className="preview-body">
-            <span className={badge.className}>{badge.text}</span>
-            <h3>{formData.name || 'Nombre del local'}</h3>
-            <p>{formData.display_type} · {locationStr || 'Direccion no definida'}</p>
-            <p>{formData.description || 'Descripcion de tu local...'}</p>
+                <div className="sf-point-body">
+                  <div className="sf-point-content-row">
+                    <div className="sf-point-info-col">
+                      <div className="sf-badges">
+                        <span className="sf-badge sf-store">{formData.allows_exchange ? 'ðŸ› Punto de intercambio' : 'ðŸ› Tienda aliada'}</span>
+                        <span className="sf-badge">âš¡ Activo ahora</span>
+                        {(location?.business_plan === 'partner_store' || location?.business_plan === 'legend') && <span className="sf-badge sf-premium-badge">â­ Punto Oficial</span>}
+                      </div>
 
-            <div className="preview-meta">
-              {formData.hours && <span className="biz-chip">{formData.hours}</span>}
-              {formData.whatsapp && <span className="biz-chip orange">WhatsApp</span>}
-              {formData.sells_stickers && <span className="biz-chip green">Sobres oficiales</span>}
-              {location?.business_plan === 'legend' && formData.partner_benefit_title && <span className="biz-chip" style={{ background: 'linear-gradient(90deg, var(--yellow), var(--orange))', color: '#111', fontWeight: 900 }}>🎁 {formData.partner_benefit_title}</span>}
-            </div>
+                      <h3 className="sf-point-name">{formData.name || 'Nombre del local'}</h3>
+                      <p className="sf-point-loc">{formData.display_type} Â· {locationStr || 'Dirección'}</p>
+                      <div className="sf-point-address">
+                        <span className="material-symbols-outlined">location_on</span> {formData.address || 'Dirección no definida'}
+                      </div>
+                      {formData.description && <p className="sf-point-desc">{formData.description}</p>}
+                    </div>
 
-            <div className="preview-actions">
-              {formData.whatsapp && <div className="preview-action primary">WhatsApp</div>}
-              <div className="preview-action">Como llegar</div>
-              <div className="preview-action">Ver detalle</div>
+                    <div className="sf-features-row">
+                      {formData.allows_exchange && (
+                        <div className="sf-feature-highlight">
+                          <span className="material-symbols-outlined sf-fh-icon">sync_alt</span>
+                          <strong>Intercambio</strong>
+                          <span className="sf-fh-sub">Punto seguro activo.</span>
+                        </div>
+                      )}
+                      {formData.sells_stickers && (
+                        <div className="sf-feature-highlight">
+                          <span className="material-symbols-outlined sf-fh-icon">shopping_basket</span>
+                          <strong>Venta Oficial</strong>
+                          <span className="sf-fh-sub">Sobres disponibles.</span>
+                        </div>
+                      )}
+                      {(location?.business_plan === 'partner_store' || location?.business_plan === 'legend') && formData.partner_benefit_title && (
+                        <div className="sf-feature-highlight" style={{ border: '1px solid rgba(250,204,21,.3)', background: 'rgba(250,204,21,.05)' }}>
+                          <span className="material-symbols-outlined sf-fh-icon" style={{ color: 'var(--yellow)' }}>redeem</span>
+                          <strong style={{ color: 'var(--yellow)' }}>{formData.partner_benefit_title}</strong>
+                          <span className="sf-fh-sub">{formData.partner_benefit_desc}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="sf-point-cover">
+                  {previewImages[0]?.image_url ? (
+                    <img src={previewImages[0].image_url} alt="Portada" />
+                  ) : (
+                    <div className="preview-image-empty" style={{ height: '100%', fontSize: '0.8rem' }}>Sin foto</div>
+                  )}
+                </div>
+
+                <div className="sf-point-actions">
+                  {formData.whatsapp && (
+                    <button className="sf-action sf-action-wa">
+                      <img src={whpIcon} alt="WhatsApp" style={{ width: '20px', height: '20px', verticalAlign: 'middle', marginRight: '6px' }} />
+                      WhatsApp
+                    </button>
+                  )}
+                  <button className="sf-action sf-action-llegar">Cómo llegar</button>
+                  <button className="sf-action sf-action-info">Info / Mapa</button>
+                </div>
+              </article>
             </div>
           </div>
-        </article>
+        </div>
       </div>
     </div>
   )

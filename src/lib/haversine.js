@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Calculate distance in km between two lat/lng coordinates using the Haversine formula
  */
 export function haversineDistance(lat1, lng1, lat2, lng2) {

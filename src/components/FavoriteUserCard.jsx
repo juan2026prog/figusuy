@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+﻿import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
 import { useAppStore } from '../stores/appStore'
@@ -86,7 +86,7 @@ export default function FavoriteUserCard({ favorite }) {
             </span>
           </div>
           <p style={{ fontSize: '0.75rem', color: isDark ? 'var(--color-text-secondary)' : 'var(--color-text-muted)', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-            {locationStr} · {lastActive || 'Recientemente'}
+            {locationStr} Â· {lastActive || 'Recientemente'}
           </p>
         </div>
       </div>

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Helper to securely and gracefully handle geolocation.
  * Resolves to { lat, lng } or throws a user-friendly string error.
  */

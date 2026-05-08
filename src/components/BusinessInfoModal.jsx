@@ -1,38 +1,61 @@
-import React, { useState } from 'react'
+﻿import React, { useState } from 'react'
 import BusinessPlansModal from './BusinessPlansModal'
+
+const PLAN_PREVIEW = [
+  {
+    name: 'Boost',
+    price: 'UYU 0',
+    accent: '#10b981',
+    description: 'Visibilidad basica, contacto y presencia en puntos sugeridos.'
+  },
+  {
+    name: 'Radar',
+    price: 'UYU 690/mes',
+    accent: 'var(--color-primary)',
+    description: 'Mas visibilidad local, promos destacadas y mejor mapa.'
+  },
+  {
+    name: 'Conversion',
+    price: 'UYU 1490/mes',
+    accent: '#8b5cf6',
+    description: 'Top CTA, prioridad comercial y lectura de intencion.'
+  },
+  {
+    name: 'PartnerStore',
+    price: 'UYU 1900/mes',
+    accent: '#f59e0b',
+    description: 'Validacion, badge oficial, rewards y visibilidad premium.'
+  }
+]
 
 export default function BusinessInfoModal({ isOpen, onClose }) {
   const [showPlansModal, setShowPlansModal] = useState(false)
   if (!isOpen) return null
 
-  const handleContact = () => {
-    window.open('https://wa.me/59899000000?text=Hola,%20me%20interesa%20un%20plan%20para%20mi%20local%20en%20FigusUY', '_blank')
-  }
-
   const faq = [
     {
-      q: "1. ¿Qué es FigusUY Negocios?",
-      a: "FigusUY Negocios es la versión para locales, kioscos, tiendas y espacios que quieren aparecer en FigusUY para que más personas los encuentren cuando buscan dónde comprar figuritas o coordinar intercambios cerca."
+      q: '1. Que es FigusUY Negocios?',
+      a: 'Es la capa comercial de FigusUY para locales, kioscos y puntos aliados que quieren captar trafico real de la comunidad.'
     },
     {
-      q: "2. ¿Mi local puede aparecer aunque no venda figuritas?",
-      a: "Sí. También podés sumarte como Punto Aliado si tenés un espacio seguro y visible donde las personas puedan coordinar intercambios, aunque no vendas figuritas directamente."
+      q: '2. Que valor nuevo genera hoy la plataforma?',
+      a: 'Ya no es solo compra o intercambio. FigusUY ahora canaliza puntos sugeridos por usuarios, visibilidad local, promos, validacion y conversion.'
     },
     {
-      q: "3. ¿Cuál es la diferencia entre Tienda y Punto Aliado?",
-      a: "Tienda aparece como lugar para comprar figuritas, sobres y productos relacionados. Punto Aliado aparece como lugar sugerido para coordinar intercambios en una zona segura y visible."
+      q: '3. Puedo sumarme aunque no venda figuritas?',
+      a: 'Si. Tambien podes operar como punto sugerido o aliado de intercambio si ofreces un espacio util, visible y confiable.'
     },
     {
-      q: "4. ¿Cómo hago para aparecer en FigusUY?",
-      a: "Solo tenés que enviar tu solicitud desde “Sumar mi local”, completar los datos básicos y esperar aprobación. Una vez aprobado, tu local podrá aparecer en el mapa, resultados y búsquedas cercanas."
+      q: '4. Para que sirven los planes?',
+      a: 'Escalan cuatro cosas concretas: visibilidad, promos, validacion y conversion. No compran el primer lugar, pero si mas capacidad comercial.'
     },
     {
-      q: "5. ¿Puedo editar mi local después de publicarlo?",
-      a: "Sí. Una vez aprobado, vas a poder acceder a tu panel para actualizar fotos, horarios, descripción, promociones y visibilidad de tu local."
+      q: '5. Que cambia con PartnerStore?',
+      a: 'Te convierte en punto de confianza para validar albumes y usuarios, sumar rewards asociados y operar con autoridad dentro del ecosistema.'
     },
     {
-      q: "6. ¿Tiene costo aparecer en FigusUY?",
-      a: "Podés empezar gratis con presencia básica. Después vas a poder elegir planes con más visibilidad, métricas, promociones activas y mejor posicionamiento dentro del mapa y resultados."
+      q: '6. Que tiene de especial sugerir puntos?',
+      a: 'Los usuarios ayudan a descubrir lugares utiles. Los negocios que entran bien posicionados capturan trafico, contexto y oportunidades de conversion.'
     }
   ]
 
@@ -42,14 +65,15 @@ export default function BusinessInfoModal({ isOpen, onClose }) {
         .business-modal {
           background: var(--color-bg);
           width: 100%;
-          max-width: 42rem;
+          max-width: 46rem;
           max-height: 90vh;
           border-radius: 4px;
           border: 1px solid var(--color-border);
           overflow: hidden;
           display: flex;
           flex-direction: column;
-          color: var(--color-text); animation: modal-up 0.3s ease-out;
+          color: var(--color-text);
+          animation: modal-up 0.3s ease-out;
         }
 
         .modal-content-scroll {
@@ -62,23 +86,18 @@ export default function BusinessInfoModal({ isOpen, onClose }) {
           background: var(--color-surface);
           border: 1px solid var(--color-border);
           border-radius: 4px;
-          padding: 1.5rem;
-          margin-bottom: 1rem;
-        }
-
-        .plan-mini-card.featured {
-          border-color: var(--color-primary);
-          background: linear-gradient(to bottom right, var(--color-surface), #43140722);
+          padding: 1.15rem 1.2rem;
+          margin-bottom: 0.8rem;
         }
 
         .faq-item {
-          margin-bottom: 1.5rem;
+          margin-bottom: 1.3rem;
         }
 
         .faq-q {
           font-weight: 800;
           color: var(--color-primary);
-          margin-bottom: 0.5rem;
+          margin-bottom: 0.45rem;
           font-size: 1rem;
         }
 
@@ -97,8 +116,12 @@ export default function BusinessInfoModal({ isOpen, onClose }) {
       <div className="business-modal">
         <div style={{ padding: '1.5rem 2rem', borderBottom: '1px solid var(--color-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 900, margin: 0 }}>FigusUY para Negocios</h2>
-            <p style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)', margin: 0 }}>Información y planes para locales</p>
+            <h2 style={{ fontSize: '1.5rem', fontWeight: 900, margin: 0, fontStyle: 'italic', textTransform: 'uppercase', fontFamily: "'Barlow Condensed', sans-serif" }}>
+              FigusUY para Negocios
+            </h2>
+            <p style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)', margin: 0 }}>
+              Informacion, valor y planes para locales, kioscos y puntos aliados
+            </p>
           </div>
           <button onClick={onClose} className="btn-icon">
             <span className="material-symbols-outlined">close</span>
@@ -106,38 +129,45 @@ export default function BusinessInfoModal({ isOpen, onClose }) {
         </div>
 
         <div className="modal-content-scroll">
-          <section style={{ marginBottom: '3rem' }}>
-            <h3 style={{ fontSize: '1.125rem', fontWeight: 800, marginBottom: '1.5rem', color: '#f8fafc' }}>Nuestros Planes</h3>
-            
-            <div className="plan-mini-card">
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                <span style={{ fontWeight: 900 }}>PLAN GRATIS</span>
-                <span style={{ fontWeight: 900, color: '#10b981' }}>$0</span>
-              </div>
-              <p style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)', marginBottom: '0' }}>Presencia básica en mapa y búsquedas, perfil con contacto y métricas básicas.</p>
+          <section style={{ marginBottom: '2rem' }}>
+            <div
+              style={{
+                background: 'linear-gradient(135deg, rgba(255,90,0,.12), rgba(255,90,0,.03))',
+                border: '1px solid rgba(255,90,0,.24)',
+                borderRadius: '1rem',
+                padding: '1rem 1.1rem',
+                marginBottom: '1.4rem'
+              }}
+            >
+              <strong style={{ display: 'block', marginBottom: '0.35rem' }}>
+                El negocio ahora captura mas que presencia.
+              </strong>
+              <span style={{ fontSize: '0.9rem', color: 'var(--color-text-secondary)' }}>
+                Gana visibilidad, recibe trafico desde puntos sugeridos, activa promos, valida y convierte mejor.
+              </span>
             </div>
 
-            <div className="plan-mini-card featured">
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                <span style={{ fontWeight: 900, color: 'var(--color-primary)' }}>PLAN TURBO ⚡</span>
-                <span style={{ fontWeight: 900, color: '#f8fafc' }}>$690/mes</span>
-              </div>
-              <p style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)', marginBottom: '0' }}>Etiqueta de Destacado, promociones activas y mayor visibilidad en tu zona.</p>
-            </div>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 900, marginBottom: '1rem', color: 'var(--color-text)', fontStyle: 'italic', textTransform: 'uppercase', fontFamily: "'Barlow Condensed', sans-serif" }}>
+              Vista rapida de planes
+            </h3>
 
-            <div className="plan-mini-card" style={{ borderColor: '#8b5cf6' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                <span style={{ fontWeight: 900, color: '#8b5cf6' }}>PLAN DOMINIO 🌟</span>
-                <span style={{ fontWeight: 900, color: '#f8fafc' }}>$1490/mes</span>
+            {PLAN_PREVIEW.map((plan) => (
+              <div key={plan.name} className="plan-mini-card" style={{ borderColor: plan.accent }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.35rem', gap: '0.8rem' }}>
+                  <span style={{ fontWeight: 900, color: plan.accent }}>{plan.name}</span>
+                  <span style={{ fontWeight: 900, color: 'var(--color-text-secondary)' }}>{plan.price}</span>
+                </div>
+                <p style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)', margin: 0 }}>{plan.description}</p>
               </div>
-              <p style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)', marginBottom: '0' }}>Máxima presencia contextual, múltiples promociones y estadísticas avanzadas.</p>
-            </div>
+            ))}
           </section>
 
           <section>
-            <h3 style={{ fontSize: '1.125rem', fontWeight: 800, marginBottom: '1.5rem', color: '#f8fafc' }}>FAQ — Negocios / Tiendas</h3>
-            {faq.map((item, i) => (
-              <div key={i} className="faq-item">
+            <h3 style={{ fontSize: '1.125rem', fontWeight: 800, marginBottom: '1.2rem', color: 'var(--color-text)' }}>
+              FAQ - Negocios
+            </h3>
+            {faq.map((item) => (
+              <div key={item.q} className="faq-item">
                 <div className="faq-q">{item.q}</div>
                 <div className="faq-a">{item.a}</div>
               </div>
@@ -155,7 +185,7 @@ export default function BusinessInfoModal({ isOpen, onClose }) {
         </div>
       </div>
 
-      <BusinessPlansModal 
+      <BusinessPlansModal
         isOpen={showPlansModal}
         onClose={() => setShowPlansModal(false)}
       />

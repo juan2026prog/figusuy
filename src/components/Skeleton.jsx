@@ -1,4 +1,4 @@
-import React from 'react'
+﻿import React from 'react'
 
 export function SkeletonLine({ width = '100%', height = '0.875rem', style }) {
   return (

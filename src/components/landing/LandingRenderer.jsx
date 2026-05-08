@@ -1,4 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react'
+﻿import React, { useEffect, useRef, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { getAnchorId, resolveUrl } from '../../lib/landingBuilder'
 
 export default function LandingRenderer({
@@ -12,7 +13,6 @@ export default function LandingRenderer({
 
   return (
     <div className={`fy-landing ${isMobile ? 'is-mobile' : ''}`}>
-      <style>{landingStyles}</style>
       {blocks.map((block) => (
         <TrackedBlock
           key={block.id || block.slug}
@@ -50,8 +50,13 @@ function TrackedBlock({ block, children, preview, onBlockVisible }) {
     return () => observer.disconnect()
   }, [block, onBlockVisible, preview])
 
+  const isNavbar = block.block_type === 'navbar'
   return (
-    <section ref={ref} id={getAnchorId(block)} className={`fy-block fy-${block.block_type}`}>
+    <section 
+      ref={ref} 
+      id={getAnchorId(block)} 
+      className={`fy-block fy-block-${block.block_type}`}
+    >
       {children}
     </section>
   )
@@ -82,6 +87,18 @@ function BlockRenderer({ block, preview, onCta }) {
       return <PlansBlock block={block} content={content} onCta={onCta} />
     case 'final_cta':
       return <FinalCtaBlock block={block} content={content} onCta={onCta} />
+    case 'influencer_program_hero':
+      return <InfluencerProgramHeroBlock block={block} content={content} onCta={onCta} />
+    case 'influencer_program_pillars':
+      return <InfluencerProgramPillarsBlock content={content} />
+    case 'influencer_program_tiers':
+      return <InfluencerProgramTiersBlock content={content} />
+    case 'influencer_program_steps':
+      return <InfluencerProgramStepsBlock content={content} />
+    case 'influencer_program_cta':
+      return <InfluencerProgramCtaBlock block={block} content={content} onCta={onCta} />
+    case 'faq':
+      return <FAQBlock content={content} />
     case 'footer':
       return <FooterBlock block={block} content={content} onCta={onCta} />
     default:
@@ -92,33 +109,65 @@ function BlockRenderer({ block, preview, onCta }) {
 function NavbarBlock({ block, content, preview, onCta }) {
   const [open, setOpen] = useState(false)
   const links = toItems(content.links)
+  const navigate = useNavigate()
+  
+  const handleLinkClick = (e, url) => {
+    if (url.startsWith('#') || url.includes('/#')) {
+      e.preventDefault()
+      const hash = url.includes('/#') ? url.split('/#')[1] : url.slice(1)
+      if (window.location.pathname === '/' || url.startsWith('#')) {
+        const target = document.getElementById(hash)
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth' })
+          setOpen(false)
+          return
+        }
+      }
+      navigate({ pathname: '/', hash: `#${hash}` })
+      return
+    }
+    
+    if (url.startsWith('/') && !url.startsWith('//')) {
+      e.preventDefault()
+      navigate(url)
+      setOpen(false)
+    }
+  }
+
   return (
-    <header
-      className="fy-navbar-shell"
-      style={{ position: content.sticky && !preview ? 'sticky' : 'relative', top: 0 }}
-    >
-      <div className="fy-shell fy-navbar" style={{ background: content.background || '#080808' }}>
-        <a href="/" className="fy-logo">
+    <header className="fy-navbar-shell" style={{ position: content.sticky ? 'sticky' : 'relative', top: 0, zIndex: 1000 }}>
+      <div className="fy-shell fy-navbar">
+        <Link to="/" className="fy-logo" onClick={() => setOpen(false)}>
           {content.logoUrl ? <img src={content.logoUrl} alt={content.logoText || 'FigusUY'} /> : null}
           <span>{content.logoText || 'FIGUS'}</span>
           <strong>{content.logoAccent || 'UY'}</strong>
-        </a>
+        </Link>
         <nav className="fy-navbar-links">
           {links.map((link) => (
-            <a key={`${block.slug}-${link.label}`} href={resolveUrl(link.url)}>{link.label}</a>
+            <a 
+              key={`${block.slug}-${link.label}`} 
+              href={resolveUrl(link.url)}
+              onClick={(e) => handleLinkClick(e, link.url)}
+            >
+              {link.label}
+            </a>
           ))}
         </nav>
         <div className="fy-navbar-actions">
           <CtaButton block={block} cta={content.cta} onCta={onCta} />
           <button type="button" className="fy-menu-btn" onClick={() => setOpen((value) => !value)}>
-            <span className="material-symbols-outlined">menu</span>
+            <span className="material-symbols-outlined">{open ? 'close' : 'menu'}</span>
           </button>
         </div>
       </div>
       {open ? (
         <div className="fy-mobile-drawer">
           {links.map((link) => (
-            <a key={`mobile-${link.label}`} href={resolveUrl(link.url)} onClick={() => setOpen(false)}>
+            <a 
+              key={`mobile-${link.label}`} 
+              href={resolveUrl(link.url)} 
+              onClick={(e) => handleLinkClick(e, link.url)}
+            >
               {link.label}
             </a>
           ))}
@@ -146,12 +195,12 @@ function HeroBlock({ block, content, onCta }) {
           <span className="fy-dot" />
           {content.eyebrow}
         </div>
-        <h1>
+        <h1 className={`fy-fit-title ${getTextFitClass(content.title, 'hero-title')}`}>
           {highlightedTitle.split('__MARK__').map((part, index) => (
             index % 2 === 1 ? <span key={`${part}-${index}`}>{part}</span> : part
           ))}
         </h1>
-        <p className="fy-copy-lg">{content.subtitle}</p>
+        <p className={`fy-copy-lg ${getTextFitClass(content.subtitle, 'hero-copy')}`}>{content.subtitle}</p>
         <div className="fy-actions">
           <CtaButton block={block} cta={content.primaryCta} onCta={onCta} />
           <CtaButton block={block} cta={content.secondaryCta} onCta={onCta} />
@@ -310,8 +359,8 @@ function PromoBlock({ block, content, onCta }) {
       <div className="fy-promo" style={{ '--promo-bg': content.background || '#111111' }}>
         <div className="fy-promo-copy">
           <div className="fy-kicker">{content.kicker}</div>
-          <h2>{content.title}</h2>
-          <p>{content.description}</p>
+          <h2 className={`fy-fit-title ${getTextFitClass(content.title, 'section-title')}`}>{content.title}</h2>
+          <p className={getTextFitClass(content.description, 'section-copy')}>{content.description}</p>
           <div className="fy-chip-row">
             {chips.map((chip, index) => (
               <Chip key={`${chip.label}-${index}`} chip={chip} />
@@ -358,8 +407,8 @@ function InfluencersBlock({ block, content, onCta }) {
         <div className="fy-split-media" style={{ backgroundImage: `url(${content.image || ''})` }} />
         <div className="fy-split-copy fy-panel fy-panel-glow">
           <div className="fy-kicker">{content.kicker}</div>
-          <h2>{content.title}</h2>
-          <p>{content.description}</p>
+          <h2 className={`fy-fit-title ${getTextFitClass(content.title, 'section-title')}`}>{content.title}</h2>
+          <p className={getTextFitClass(content.description, 'section-copy')}>{content.description}</p>
           <div className="fy-chip-row">
             {chips.map((chip, index) => (
               <Chip key={`${chip.label}-${index}`} chip={chip} />
@@ -408,25 +457,104 @@ function GamificationBlock({ content }) {
 }
 
 function PlansBlock({ block, content, onCta }) {
-  const plans = toItems(content.plans)
+  const isUserPlans = block.block_type === 'user_plans'
+  
+  // Official plans for the landing page to replace outdated database content
+  const officialUserPlans = [
+    {
+      name: 'Gratis',
+      subtitle: 'Coleccioná a tu ritmo y encontrá tus matches. La experiencia completa, sin barreras.',
+      price: '$0',
+      priceMeta: 'siempre',
+      icon: 'backpack',
+      badge: 'Usar',
+      benefits: ['Cargar figuritas sin límite', 'Ver todos tus matches', 'Chat ilimitado con matches', 'Completar tu álbum gratis'],
+      cta: { label: 'Empezar Gratis', url: '/login' }
+    },
+    {
+      name: 'Plus',
+      subtitle: 'Acelerá tus cambios. Encontrá lo que buscás cerca tuyo, rápido y sin perder tiempo.',
+      price: '2.49',
+      currency: 'USD',
+      priceMeta: 'â‰ˆ $99 UYU aprox.',
+      icon: 'diamond',
+      badge: 'Acelerador',
+      highlight: true,
+      benefits: ['Filtro de matches por distancia', 'Filtro por figurita específica', 'Doble check azul', 'Ver el estado "Última vez online"', 'Experiencia sin publicidad', 'Saber quién vio tu perfil', 'Badge Plus destacado'],
+      cta: { label: 'Probar 7 días', url: '/premium' }
+    },
+    {
+      name: 'Pro',
+      subtitle: 'Dominá el intercambio. Prioridad máxima y alertas para las figuritas más difíciles.',
+      price: '4.85',
+      currency: 'USD',
+      priceMeta: 'â‰ˆ $199 UYU aprox.',
+      icon: 'rocket_launch',
+      badge: 'Elite',
+      benefits: ['Todo lo incluido en Plus', 'Alertas "Radar" instantáneas de escasez', 'Aparecés primero en los matches de otros', 'Modo Fantasma (invisible)', 'Múltiples álbumes con analíticas', 'Soporte VIP y Badge Coleccionista'],
+      cta: { label: 'Elegir Pro', url: '/premium' }
+    }
+  ]
+
+  const plans = isUserPlans ? officialUserPlans : toItems(content.plans)
+
   return (
     <div className="fy-shell fy-section">
       <SectionHeading content={content} />
-      <div className="fy-card-grid fy-plan-grid">
+      <div className="plans" style={{ marginTop: '32px' }}>
         {plans.map((plan, index) => (
-          <article key={`${plan.name}-${index}`} className={`fy-plan-card ${plan.highlight ? 'is-highlight' : ''}`}>
-            <Chip chip={{ label: plan.badge, tone: plan.highlight ? 'orange' : 'neutral' }} />
-            <h3>{plan.name}</h3>
-            <div className="fy-price">{plan.price}</div>
-            <div className="fy-benefits">
+          <article key={`${plan.name}-${index}`} className={`plan ${plan.highlight ? 'recommended' : ''}`}>
+            {plan.highlight && plan.badge && <div className="plan-ribbon">{plan.badge}</div>}
+            <div className="plan-icon">
+              <span className="material-symbols-outlined" style={{ fontSize: '1.85rem' }}>
+                {plan.icon || 'stars'}
+              </span>
+            </div>
+            <div className="plan-meta">
+              <span className="plan-tag">{plan.badge || 'Plan'}</span>
+            </div>
+            <h3 className="plan-name">{plan.name}</h3>
+            <p className="plan-concept">{plan.subtitle}</p>
+            
+            <div className="price" style={{ margin: '28px 0 22px', display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+              {plan.price === '$0' ? (
+                <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px' }}>
+                  <b style={{ font: 'italic 900 3.2rem "Barlow Condensed"', lineHeight: '.8', color: '#fff' }}>$0</b>
+                  <span style={{ color: 'rgba(255,255,255,0.36)', fontSize: '.82rem', fontWeight: '800', marginBottom: '4px' }}>SIEMPRE</span>
+                </div>
+              ) : (
+                <>
+                  <span style={{ fontSize: '.75rem', color: 'rgba(255,255,255,0.5)', fontWeight: '900', marginBottom: '4px', textTransform: 'uppercase' }}>{plan.currency || 'USD'}</span>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                    <b style={{ font: 'italic 900 3.8rem "Barlow Condensed"', lineHeight: '.75', color: '#fff' }}>{plan.price}</b>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginTop: '4px' }}>
+                      <span style={{ fontSize: '.72rem', color: 'rgba(255,255,255,0.36)', fontWeight: '800', whiteSpace: 'nowrap', textTransform: 'uppercase' }}>
+                        {plan.priceMeta}
+                      </span>
+                      <span style={{ color: 'rgba(255,255,255,0.36)', fontSize: '.72rem', fontWeight: '800', textTransform: 'uppercase' }}>/MES</span>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+
+            <div className="features">
               {toItems(plan.benefits).map((benefit) => (
-                <div key={benefit} className="fy-benefit-line">
-                  <span className="material-symbols-outlined">arrow_forward</span>
-                  {benefit}
+                <div key={benefit} className="feature">
+                  <span className="check">âœ“</span>
+                  <span>{benefit}</span>
                 </div>
               ))}
             </div>
-            <CtaButton block={block} cta={plan.cta} onCta={onCta} ctaId={`plan-${plan.name}`} />
+            <div style={{ marginTop: 'auto', paddingTop: '24px' }}>
+              <CtaButton 
+                block={block} 
+                cta={plan.cta} 
+                onCta={onCta} 
+                ctaId={`plan-${plan.name}`} 
+                className={`btn ${plan.highlight ? 'orange' : 'secondary'} block`}
+              />
+            </div>
           </article>
         ))}
       </div>
@@ -434,13 +562,14 @@ function PlansBlock({ block, content, onCta }) {
   )
 }
 
+
 function FinalCtaBlock({ block, content, onCta }) {
   return (
     <div className="fy-shell fy-section">
       <div className="fy-final-cta" style={{ background: content.background || '#141414' }}>
         <div>
-          <h2>{content.title}</h2>
-          <p>{content.subtitle}</p>
+          <h2 className={`fy-fit-title ${getTextFitClass(content.title, 'section-title')}`}>{content.title}</h2>
+          <p className={getTextFitClass(content.subtitle, 'section-copy')}>{content.subtitle}</p>
           <div className="fy-actions">
             <CtaButton block={block} cta={content.cta} onCta={onCta} />
           </div>
@@ -451,45 +580,202 @@ function FinalCtaBlock({ block, content, onCta }) {
   )
 }
 
-function FooterBlock({ block, content, onCta }) {
-  const links = toItems(content.links)
-  const social = toItems(content.social)
+function InfluencerProgramHeroBlock({ block, content, onCta }) {
+  const accent = String(content.accentWord || '').trim()
+  const secondLine = String(content.titleLineTwo || '')
+  const marked = accent ? secondLine.replace(accent, `__MARK__${accent}__MARK__`) : secondLine
+
   return (
-    <footer className="fy-shell fy-footer">
-      <div className="fy-footer-brand">
-        <span>{content.logoText || 'FIGUS'}</span>
-        <strong>{content.logoAccent || 'UY'}</strong>
+    <div className="fy-program-hero">
+      <div className="fy-shell fy-program-hero-content">
+        <div className="fy-program-badge">{content.badge}</div>
+        <h1 className={`fy-program-title ${getTextFitClass(`${content.titleLineOne} ${content.titleLineTwo}`, 'program-hero-title')}`}>
+          <span>{content.titleLineOne}</span>
+          <span>
+            {marked.split('__MARK__').map((part, index) => (
+              index % 2 === 1 ? <em key={`${part}-${index}`}>{part}</em> : part
+            ))}
+          </span>
+        </h1>
+        <p className={`fy-program-subtitle ${getTextFitClass(content.subtitle, 'program-hero-copy')}`}>{content.subtitle}</p>
+        <div className="fy-actions fy-program-actions">
+          <CtaButton block={block} cta={content.primaryCta} onCta={onCta} className="fy-btn fy-btn-primary fy-btn-program" />
+          <CtaButton block={block} cta={content.secondaryCta} onCta={onCta} className="fy-btn fy-btn-ghost fy-btn-program-outline" />
+        </div>
       </div>
-      <div className="fy-footer-links">
-        {links.map((link) => (
-          <a key={link.label} href={resolveUrl(link.url)}>{link.label}</a>
+    </div>
+  )
+}
+
+function InfluencerProgramPillarsBlock({ content }) {
+  const items = toItems(content.items)
+  return (
+    <div className="fy-program-section fy-program-pillars">
+      <div className="fy-shell">
+        <SectionHeading content={content} variant="program" />
+        <div className="fy-program-pillar-grid">
+          {items.map((item, index) => (
+            <article key={`${item.title}-${index}`} className="fy-program-pillar-card">
+              <span className="fy-program-pillar-tag">{item.tag}</span>
+              <div className="fy-program-icon-box">
+                <span className="material-symbols-outlined fy-program-icon">{item.icon || 'stars'}</span>
+              </div>
+              <h3 className={getTextFitClass(item.title, 'card-title')}>{item.title}</h3>
+              <p className={getTextFitClass(item.description, 'card-copy')}>{item.description}</p>
+            </article>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function InfluencerProgramTiersBlock({ content }) {
+  const items = toItems(content.items)
+  return (
+    <div className="fy-program-section fy-program-tiers">
+      <div className="fy-shell">
+        <SectionHeading content={content} variant="program" />
+        <div className="fy-program-tier-grid">
+          {items.map((item, index) => (
+            <article key={`${item.name}-${index}`} className={`fy-program-tier-card ${item.isFeatured ? 'is-featured' : ''}`}>
+              <div className={getTextFitClass(item.name, 'tier-title')}>{item.name}</div>
+              <div className={`fy-program-tier-commission ${getTextFitClass(item.commissionLabel, 'card-copy')}`}>{item.commissionLabel}</div>
+              <div className="fy-program-tier-benefits">
+                {toItems(item.benefits).map((benefit) => (
+                  <div key={benefit} className={`fy-program-tier-benefit ${getTextFitClass(benefit, 'card-copy')}`}>{benefit}</div>
+                ))}
+              </div>
+            </article>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function InfluencerProgramStepsBlock({ content }) {
+  const items = toItems(content.items)
+  return (
+    <div className="fy-program-section fy-program-steps">
+      <div className="fy-shell fy-program-steps-shell">
+        <SectionHeading content={content} variant="program" />
+        <div className="fy-program-step-list">
+          {items.map((item, index) => (
+            <div key={`${item.title}-${index}`} className="fy-program-step-item">
+              <div className="fy-program-step-number">{item.number || `0${index + 1}`}</div>
+              <div className="fy-program-step-copy">
+                <h3 className={getTextFitClass(item.title, 'step-title')}>{item.title}</h3>
+                <p className={getTextFitClass(item.description, 'section-copy')}>{item.description}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function InfluencerProgramCtaBlock({ block, content, onCta }) {
+  return (
+    <div className="fy-program-section fy-program-final">
+      <div className="fy-shell fy-program-final-shell">
+        <div className="fy-program-final-bg">{content.backgroundWord}</div>
+        <div className="fy-program-final-content">
+          <SectionHeading content={content} variant="program" />
+          <div className="fy-actions fy-program-actions">
+            <CtaButton block={block} cta={content.cta} onCta={onCta} className="fy-btn fy-btn-primary fy-btn-program" />
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function FAQBlock({ content }) {
+  const items = toItems(content.items)
+  const [active, setActive] = useState(null)
+
+  return (
+    <div className="fy-shell fy-section">
+      <SectionHeading content={content} />
+      <div className="fy-faq-grid">
+        {items.map((item, index) => (
+          <div 
+            key={`${item.question}-${index}`} 
+            className={`fy-faq-item ${active === index ? 'is-active' : ''}`}
+            onClick={() => setActive(active === index ? null : index)}
+          >
+            <div className="fy-faq-q">
+              <span>{item.question}</span>
+              <span className="material-symbols-outlined">
+                {active === index ? 'remove' : 'add'}
+              </span>
+            </div>
+            <div className="fy-faq-a">
+              <p>{item.answer}</p>
+            </div>
+          </div>
         ))}
       </div>
-      <div className="fy-footer-social">
-        {social.map((social) => (
-          <a key={social.label} href={resolveUrl(social.url)} target="_blank" rel="noreferrer">{social.label}</a>
-        ))}
+    </div>
+  )
+}
+
+function FooterBlock({ block, content, onCta }) {
+  const social = toItems(content.social)
+  const links = toItems(content.links)
+  const navigate = useNavigate()
+
+  const handleLinkClick = (e, url) => {
+    if (url.startsWith('/') && !url.startsWith('//')) {
+      e.preventDefault()
+      navigate(url)
+    }
+  }
+
+  return (
+    <footer className="fy-footer-shell">
+      <div className="fy-shell fy-footer">
+        <div className="fy-footer-brand">
+          <Link to="/" className="fy-logo">
+            <span>{content.logoText || 'FIGUS'}</span>
+            <strong>{content.logoAccent || 'UY'}</strong>
+          </Link>
+          <p className="fy-legal-text">{content.legal || 'Â© 2026 FigusUY'}</p>
+        </div>
+        <div className="fy-footer-links">
+          {links.map((link) => (
+            <a 
+              key={`footer-${link.label}`} 
+              href={resolveUrl(link.url)}
+              onClick={(e) => handleLinkClick(e, link.url)}
+            >
+              {link.label}
+            </a>
+          ))}
+        </div>
       </div>
-      <div className="fy-footer-legal">{content.legal}</div>
-      <CtaButton block={block} cta={content.cta} onCta={onCta} />
     </footer>
   )
 }
 
-function SectionHeading({ content }) {
+function SectionHeading({ content, variant = 'default' }) {
+  const variantClass = variant === 'program' ? 'is-program' : ''
   return (
     <>
       {content.kicker ? <div className="fy-kicker">{content.kicker}</div> : null}
-      {content.title ? <h2>{content.title}</h2> : null}
-      {content.subtitle ? <p className="fy-section-copy">{content.subtitle}</p> : null}
+      {content.title ? <h2 className={`${variantClass} fy-fit-title ${getTextFitClass(content.title, 'section-title')}`}>{content.title}</h2> : null}
+      {content.subtitle ? <p className={`fy-section-copy ${variantClass} ${getTextFitClass(content.subtitle, 'section-copy')}`}>{content.subtitle}</p> : null}
     </>
   )
 }
 
-function CtaButton({ block, cta, onCta, ctaId }) {
+function CtaButton({ block, cta, onCta, ctaId, className }) {
   if (!cta?.label) return null
   const style = cta.style || 'primary'
-  const className = style === 'primary' ? 'fy-btn fy-btn-primary' : style === 'secondary' ? 'fy-btn fy-btn-secondary' : 'fy-btn fy-btn-ghost'
+  const baseClass = className || (style === 'primary' ? 'fy-btn fy-btn-primary' : style === 'secondary' ? 'fy-btn fy-btn-secondary' : 'fy-btn fy-btn-ghost')
+  const finalClass = `${baseClass} ${getTextFitClass(cta.label, 'button-label')}`
 
   const handleClick = (event) => {
     if (!onCta) return
@@ -498,11 +784,12 @@ function CtaButton({ block, cta, onCta, ctaId }) {
   }
 
   return (
-    <a href={resolveUrl(cta.url)} className={className} onClick={handleClick}>
+    <a href={resolveUrl(cta.url)} className={finalClass} onClick={handleClick}>
       {cta.label}
     </a>
   )
 }
+
 
 function Chip({ chip }) {
   return <span className={`fy-chip tone-${chip?.tone || 'neutral'}`}>{chip?.label}</span>
@@ -512,170 +799,25 @@ function toItems(value) {
   return Array.isArray(value) ? value : []
 }
 
-const landingStyles = `
-  .fy-landing {
-    color: #f5f5f5;
-    background:
-      radial-gradient(circle at 0% 0%, rgba(255, 90, 0, 0.18), transparent 24%),
-      radial-gradient(circle at 100% 20%, rgba(56, 189, 248, 0.12), transparent 18%),
-      linear-gradient(180deg, #060606 0%, #0b0b0b 100%);
-    font-family: 'Barlow', sans-serif;
-  }
-  .fy-landing * { box-sizing: border-box; }
-  .fy-landing a { color: inherit; text-decoration: none; }
-  .fy-block { border-bottom: 1px solid rgba(255,255,255,.08); }
-  .fy-shell { width: min(1280px, calc(100% - 48px)); margin: 0 auto; }
-  .fy-navbar-shell { z-index: 30; backdrop-filter: blur(14px); border-bottom: 1px solid rgba(255,255,255,.08); }
-  .fy-navbar { min-height: 72px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
-  .fy-logo { display: inline-flex; align-items: center; gap: 6px; font: italic 900 2rem 'Barlow Condensed', sans-serif; text-transform: uppercase; }
-  .fy-logo img { width: 36px; height: 36px; object-fit: cover; }
-  .fy-logo strong { color: #ff5a00; }
-  .fy-navbar-links { display: flex; gap: 24px; color: rgba(255,255,255,.74); font-size: .95rem; }
-  .fy-navbar-links a:hover { color: #fff; }
-  .fy-navbar-actions { display: flex; align-items: center; gap: 12px; }
-  .fy-menu-btn { display: none; background: transparent; border: 1px solid rgba(255,255,255,.16); color: #fff; width: 42px; height: 42px; }
-  .fy-mobile-drawer { display: none; }
-  .fy-kicker { color: #ff5a00; font: 900 .74rem 'Barlow Condensed', sans-serif; letter-spacing: .16em; text-transform: uppercase; }
-  .fy-hero {
-    padding: 64px 0 40px;
-    display: grid;
-    grid-template-columns: minmax(0, 1.02fr) minmax(420px, .98fr);
-    gap: 32px;
-    align-items: center;
-  }
-  .fy-hero-copy { max-width: 640px; }
-  .fy-hero-copy h1, .fy-section h2, .fy-promo h2, .fy-final-cta h2, .fy-split h2 {
-    margin: 14px 0 0;
-    font: italic 900 clamp(3rem, 9vw, 7.2rem) 'Barlow Condensed', sans-serif;
-    line-height: .85;
-    text-transform: uppercase;
-    letter-spacing: -.04em;
-  }
-  .fy-hero-copy h1 span { color: #ff5a00; }
-  .fy-copy-lg, .fy-section-copy, .fy-promo p, .fy-final-cta p, .fy-split p {
-    color: rgba(255,255,255,.72);
-    font-size: 1.02rem;
-    line-height: 1.7;
-    max-width: 720px;
-    margin-top: 14px;
-  }
-  .fy-pill { display: inline-flex; align-items: center; gap: 10px; padding: 8px 12px; border: 1px solid rgba(255,90,0,.26); background: rgba(255,90,0,.08); font: 900 .76rem 'Barlow Condensed', sans-serif; letter-spacing: .08em; text-transform: uppercase; color: #ff8a4c; }
-  .fy-dot { width: 8px; height: 8px; border-radius: 999px; background: #22c55e; box-shadow: 0 0 0 6px rgba(34,197,94,.14); }
-  .fy-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 22px; }
-  .fy-btn { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 12px 18px; border: 1px solid rgba(255,255,255,.12); font: 900 .9rem 'Barlow Condensed', sans-serif; text-transform: uppercase; letter-spacing: .08em; transition: transform .2s ease, border-color .2s ease, background .2s ease; }
-  .fy-btn:hover { transform: translateY(-1px); }
-  .fy-btn-primary { background: #ff5a00; border-color: #ff5a00; color: #fff; box-shadow: 0 18px 40px rgba(255,90,0,.18); }
-  .fy-btn-secondary { background: rgba(255,255,255,.06); color: #fff; }
-  .fy-btn-ghost { background: transparent; color: rgba(255,255,255,.78); }
-  .fy-stat-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 24px; }
-  .fy-stat-card, .fy-panel, .fy-cover-card, .fy-editorial-card, .fy-gamify-card, .fy-plan-card, .fy-activity-item {
-    border: 1px solid rgba(255,255,255,.08);
-    background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
-  }
-  .fy-stat-card { padding: 14px; }
-  .fy-stat-card strong { display: block; font: italic 900 2rem 'Barlow Condensed', sans-serif; }
-  .fy-stat-card span { display: block; margin-top: 4px; color: rgba(255,255,255,.58); font: 900 .7rem 'Barlow Condensed', sans-serif; letter-spacing: .08em; text-transform: uppercase; }
-  .fy-hero-side { display: grid; gap: 16px; width: min(100%, 520px); justify-self: end; }
-  .fy-live-card { padding: 18px; border: 1px solid rgba(255,90,0,.2); background: linear-gradient(135deg, rgba(255,90,0,.1), rgba(255,255,255,.03)); box-shadow: 0 20px 50px rgba(255,90,0,.08); }
-  .fy-live-card h3, .fy-editorial-copy h3, .fy-mini-card h3, .fy-gamify-copy h3, .fy-plan-card h3, .fy-carousel-copy h3 {
-    margin-top: 10px;
-    font: italic 900 2rem 'Barlow Condensed', sans-serif;
-    line-height: .9;
-    text-transform: uppercase;
-  }
-  .fy-live-card p, .fy-feed-item p, .fy-mini-card p, .fy-editorial-copy p, .fy-gamify-copy p, .fy-plan-card p, .fy-carousel-copy p, .fy-activity-item p { color: rgba(255,255,255,.68); }
-  .fy-chip-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
-  .fy-chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 9px; border: 1px solid rgba(255,255,255,.12); font: 900 .66rem 'Barlow Condensed', sans-serif; letter-spacing: .08em; text-transform: uppercase; }
-  .tone-orange { color: #ff8a4c; border-color: rgba(255,90,0,.3); background: rgba(255,90,0,.12); }
-  .tone-green { color: #72f0a1; border-color: rgba(34,197,94,.3); background: rgba(34,197,94,.1); }
-  .tone-blue { color: #8bd6ff; border-color: rgba(56,189,248,.3); background: rgba(56,189,248,.1); }
-  .tone-yellow { color: #ffe06f; border-color: rgba(250,204,21,.3); background: rgba(250,204,21,.1); }
-  .tone-neutral { color: rgba(255,255,255,.7); border-color: rgba(255,255,255,.12); background: rgba(255,255,255,.04); }
-  .fy-feed { display: grid; gap: 10px; margin-top: 14px; }
-  .fy-feed-item { display: flex; justify-content: space-between; gap: 12px; align-items: start; padding: 12px; background: rgba(0,0,0,.22); border: 1px solid rgba(255,255,255,.08); }
-  .fy-feed-item b { display: block; color: #fff; font: 900 .82rem 'Barlow Condensed', sans-serif; text-transform: uppercase; letter-spacing: .08em; }
-  .fy-feed-item span { color: rgba(255,255,255,.42); font: 900 .66rem 'Barlow Condensed', sans-serif; text-transform: uppercase; white-space: nowrap; }
-  .fy-wall { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-  .fy-wall-card { min-height: 116px; display: flex; flex-direction: column; justify-content: space-between; padding: 14px; }
-  .fy-wall-card strong { font: italic 900 2.1rem 'Barlow Condensed', sans-serif; }
-  .fy-wall-card span { font: 900 .74rem 'Barlow Condensed', sans-serif; text-transform: uppercase; letter-spacing: .08em; }
-  .fy-section { padding: 34px 0; }
-  .fy-section h2, .fy-promo h2, .fy-final-cta h2, .fy-split h2 { font-size: clamp(2.4rem, 6vw, 4.8rem); }
-  .fy-now-grid, .fy-split, .fy-carousel, .fy-promo, .fy-final-cta { display: grid; gap: 18px; }
-  .fy-now-grid, .fy-carousel, .fy-promo, .fy-final-cta { grid-template-columns: 1.1fr .9fr; }
-  .fy-panel { padding: 18px; }
-  .fy-panel-glow { background: linear-gradient(135deg, rgba(255,90,0,.08), rgba(255,255,255,.02)); }
-  .fy-stack { display: grid; gap: 14px; }
-  .fy-mini-top { display: flex; justify-content: flex-start; }
-  .fy-activity-strip { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-top: 18px; }
-  .fy-activity-item { padding: 16px; }
-  .fy-activity-item strong { display: block; font: 900 .9rem 'Barlow Condensed', sans-serif; letter-spacing: .08em; text-transform: uppercase; }
-  .fy-activity-item span { display: block; margin-top: 10px; color: rgba(255,255,255,.42); font: 900 .7rem 'Barlow Condensed', sans-serif; text-transform: uppercase; }
-  .fy-carousel-main, .fy-split-media, .fy-promo-media, .fy-final-media, .fy-editorial-media {
-    min-height: 320px;
-    background-position: center;
-    background-size: cover;
-    position: relative;
-    overflow: hidden;
-  }
-  .fy-carousel-main { display: flex; align-items: end; padding: 24px; border: 1px solid rgba(255,90,0,.2); }
-  .fy-overlay { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,.12), rgba(0,0,0,.74)); }
-  .fy-carousel-copy { position: relative; z-index: 1; }
-  .fy-carousel-rail { display: grid; gap: 10px; }
-  .fy-cover-card { padding: 10px; display: grid; grid-template-columns: 84px 1fr; gap: 12px; text-align: left; cursor: pointer; }
-  .fy-cover-card.is-active { border-color: rgba(255,90,0,.34); background: rgba(255,90,0,.08); }
-  .fy-cover-image { background-position: center; background-size: cover; min-height: 104px; }
-  .fy-cover-meta strong { display: block; font: italic 900 1.45rem 'Barlow Condensed', sans-serif; line-height: .9; text-transform: uppercase; }
-  .fy-cover-meta span { display: block; margin-top: 8px; color: rgba(255,255,255,.6); font: 900 .72rem 'Barlow Condensed', sans-serif; letter-spacing: .08em; text-transform: uppercase; }
-  .fy-promo { background: linear-gradient(135deg, var(--promo-bg, #111111), #0d0d0d); padding: 20px; align-items: center; }
-  .fy-promo-media { min-height: 300px; border: 1px solid rgba(255,255,255,.08); }
-  .fy-card-grid { display: grid; gap: 16px; margin-top: 20px; }
-  .fy-steps-grid { grid-template-columns: repeat(3, 1fr); }
-  .fy-quad-grid { grid-template-columns: repeat(4, 1fr); }
-  .fy-editorial-card, .fy-gamify-card { overflow: hidden; }
-  .fy-editorial-copy, .fy-gamify-copy { padding: 16px; }
-  .fy-step-index, .fy-price { color: #ff8a4c; font: 900 .78rem 'Barlow Condensed', sans-serif; letter-spacing: .1em; text-transform: uppercase; }
-  .fy-split { grid-template-columns: 1fr 1fr; align-items: stretch; }
-  .fy-split-copy { padding: 28px; display: flex; flex-direction: column; justify-content: center; }
-  .fy-benefits { display: grid; gap: 10px; margin-top: 18px; }
-  .fy-benefit-line { display: inline-flex; gap: 10px; align-items: center; color: rgba(255,255,255,.84); font-weight: 600; }
-  .fy-benefit-line .material-symbols-outlined { color: #ff8a4c; font-size: 1rem; }
-  .fy-gamify-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-  .fy-gamify-top .material-symbols-outlined { color: #ff8a4c; }
-  .fy-plan-grid { grid-template-columns: repeat(3, 1fr); }
-  .fy-plan-card { padding: 18px; display: flex; flex-direction: column; min-height: 100%; }
-  .fy-plan-card.is-highlight { border-color: rgba(255,90,0,.32); background: linear-gradient(180deg, rgba(255,90,0,.1), rgba(255,255,255,.03)); }
-  .fy-price { font-size: 3rem; margin-top: 12px; }
-  .fy-final-cta { padding: 24px; align-items: center; }
-  .fy-footer { display: grid; grid-template-columns: 1fr auto auto; gap: 16px; align-items: center; padding: 28px 0; }
-  .fy-footer-brand { display: inline-flex; gap: 6px; font: italic 900 2rem 'Barlow Condensed', sans-serif; text-transform: uppercase; }
-  .fy-footer-brand strong { color: #ff5a00; }
-  .fy-footer-links, .fy-footer-social { display: flex; gap: 16px; flex-wrap: wrap; color: rgba(255,255,255,.62); }
-  .fy-footer-legal { grid-column: 1 / -1; color: rgba(255,255,255,.45); font-size: .86rem; }
-  @media (max-width: 980px) {
-    .fy-shell { width: min(1280px, calc(100% - 28px)); }
-    .fy-navbar-links { display: none; }
-    .fy-menu-btn { display: inline-grid; place-items: center; }
-    .fy-mobile-drawer { display: grid; gap: 10px; padding: 14px 16px 18px; background: #090909; }
-    .fy-hero, .fy-now-grid, .fy-carousel, .fy-promo, .fy-split, .fy-final-cta { grid-template-columns: 1fr; }
-    .fy-hero { padding-top: 40px; gap: 22px; }
-    .fy-hero-copy, .fy-hero-side { max-width: none; width: 100%; justify-self: stretch; }
-    .fy-steps-grid, .fy-quad-grid, .fy-plan-grid, .fy-activity-strip, .fy-stat-row { grid-template-columns: 1fr; }
-    .fy-footer { grid-template-columns: 1fr; }
-  }
-  .fy-landing.is-mobile .fy-shell { width: calc(100% - 20px); }
-  .fy-landing.is-mobile .fy-navbar-links { display: none; }
-  .fy-landing.is-mobile .fy-menu-btn { display: inline-grid; place-items: center; }
-  .fy-landing.is-mobile .fy-hero,
-  .fy-landing.is-mobile .fy-now-grid,
-  .fy-landing.is-mobile .fy-carousel,
-  .fy-landing.is-mobile .fy-promo,
-  .fy-landing.is-mobile .fy-split,
-  .fy-landing.is-mobile .fy-final-cta,
-  .fy-landing.is-mobile .fy-steps-grid,
-  .fy-landing.is-mobile .fy-quad-grid,
-  .fy-landing.is-mobile .fy-plan-grid,
-  .fy-landing.is-mobile .fy-activity-strip,
-  .fy-landing.is-mobile .fy-stat-row,
-  .fy-landing.is-mobile .fy-footer { grid-template-columns: 1fr; }
-`
+function getTextFitClass(value, preset = 'default') {
+  const length = String(value || '').trim().length
+  const thresholds = FIT_THRESHOLDS[preset] || FIT_THRESHOLDS.default
+  if (length >= thresholds.long) return 'is-fit-long'
+  if (length >= thresholds.medium) return 'is-fit-medium'
+  return 'is-fit-short'
+}
+
+const FIT_THRESHOLDS = {
+  default: { medium: 45, long: 80 },
+  'hero-title': { medium: 22, long: 34 },
+  'hero-copy': { medium: 100, long: 145 },
+  'section-title': { medium: 28, long: 44 },
+  'section-copy': { medium: 110, long: 160 },
+  'button-label': { medium: 16, long: 22 },
+  'program-hero-title': { medium: 24, long: 34 },
+  'program-hero-copy': { medium: 100, long: 150 },
+  'card-title': { medium: 18, long: 28 },
+  'card-copy': { medium: 80, long: 130 },
+  'tier-title': { medium: 12, long: 18 },
+  'step-title': { medium: 14, long: 22 },
+}

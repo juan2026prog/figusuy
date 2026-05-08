@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+﻿import React, { useEffect, useState } from 'react'
 import { useAdminStore } from '../stores/adminStore'
 import { useAuthStore } from '../stores/authStore'
 import { validateAlgorithmConfigValue, formatScore, getScoreColor, buildScoreBreakdown } from '../lib/ranking'
@@ -105,14 +105,14 @@ export default function AdminAlgorithm() {
       {recalcResult && (
         <div style={{ ...card, marginBottom: '1rem', background: "rgba(16, 185, 129, 0.1)", border: '1px solid #a7f3d0' }}>
           <p style={{ fontSize: '0.875rem', fontWeight: 700, color: '#047857', margin: 0 }}>
-            ✅ Recalculación completa — {recalcResult.users_scored} usuarios, {recalcResult.businesses_scored} negocios actualizados.
+            âœ… Recalculación completa â€” {recalcResult.users_scored} usuarios, {recalcResult.businesses_scored} negocios actualizados.
           </p>
         </div>
       )}
 
       {warning && (
         <div style={{ ...card, marginBottom: '1rem', background: "rgba(245, 158, 11, 0.1)", border: '1px solid #fcd34d' }}>
-          <p style={{ fontSize: '0.875rem', fontWeight: 700, color: '#92400e', margin: 0 }}>⚠️ {warning}</p>
+          <p style={{ fontSize: '0.875rem', fontWeight: 700, color: '#92400e', margin: 0 }}>âš ï¸ {warning}</p>
         </div>
       )}
 
@@ -146,9 +146,9 @@ export default function AdminAlgorithm() {
                                 onKeyDown={e => e.key === 'Enter' && handleSave(config.config_key)}
                                 style={{ width: '8rem', padding: '0.375rem 0.75rem', borderRadius: '0.375rem', border: '1px solid var(--color-text-secondary)', fontSize: '0.8125rem', fontWeight: 700 }} />
                               <button onClick={() => handleSave(config.config_key)} disabled={saving} style={{ padding: '0.375rem 0.625rem', borderRadius: '0.375rem', background: '#10b981', color: 'white', border: 'none', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}>
-                                {saving ? '...' : '✓'}
+                                {saving ? '...' : 'âœ“'}
                               </button>
-                              <button onClick={() => setEditingKey(null)} style={{ padding: '0.375rem 0.625rem', borderRadius: '0.375rem', background: "var(--admin-panel2)", color: "var(--admin-muted2)", border: 'none', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}>✕</button>
+                              <button onClick={() => setEditingKey(null)} style={{ padding: '0.375rem 0.625rem', borderRadius: '0.375rem', background: "var(--admin-panel2)", color: "var(--admin-muted2)", border: 'none', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}>âœ•</button>
                             </>
                           ) : (
                             <>
@@ -156,7 +156,7 @@ export default function AdminAlgorithm() {
                                 {rawValue.replace(/"/g, '')}
                               </code>
                               <button onClick={() => { setEditingKey(config.config_key); setEditValue(rawValue.replace(/"/g, '')); setWarning('') }}
-                                style={{ padding: '0.25rem 0.5rem', borderRadius: '0.375rem', background: "rgba(249, 115, 22, 0.1)", color: 'var(--color-primary)', border: 'none', fontSize: '0.6875rem', fontWeight: 700, cursor: 'pointer' }}>✏️</button>
+                                style={{ padding: '0.25rem 0.5rem', borderRadius: '0.375rem', background: "rgba(249, 115, 22, 0.1)", color: 'var(--color-primary)', border: 'none', fontSize: '0.6875rem', fontWeight: 700, cursor: 'pointer' }}>âœï¸</button>
                             </>
                           )}
                         </div>
@@ -191,7 +191,7 @@ export default function AdminAlgorithm() {
                         <span style={{ fontSize: '1rem', fontWeight: 900, color: "var(--admin-muted)", width: '1.5rem' }}>#{i + 1}</span>
                         <div>
                           <p style={{ fontWeight: 800, fontSize: '0.875rem', margin: 0 }}>{r.user?.name || 'Sin nombre'}</p>
-                          <p style={{ fontSize: '0.6875rem', color: "var(--admin-muted2)", margin: 0 }}>{r.user?.email} · {r.user?.plan_name || 'gratis'}</p>
+                          <p style={{ fontSize: '0.6875rem', color: "var(--admin-muted2)", margin: 0 }}>{r.user?.email} Â· {r.user?.plan_name || 'gratis'}</p>
                         </div>
                       </div>
                       <div style={{ textAlign: 'right' }}>
@@ -208,7 +208,7 @@ export default function AdminAlgorithm() {
                       </div>
                     )}
                     {r.penalties && Object.keys(r.penalties).length > 0 && (
-                      <p style={{ fontSize: '0.625rem', color: '#ef4444', marginTop: '0.375rem', fontWeight: 600 }}>⚠️ Penalizaciones: {Object.keys(r.penalties).join(', ')}</p>
+                      <p style={{ fontSize: '0.625rem', color: '#ef4444', marginTop: '0.375rem', fontWeight: 600 }}>âš ï¸ Penalizaciones: {Object.keys(r.penalties).join(', ')}</p>
                     )}
                   </div>
                 )
@@ -238,8 +238,8 @@ export default function AdminAlgorithm() {
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                         <span style={{ fontSize: '1rem', fontWeight: 900, color: "var(--admin-muted)", width: '1.5rem' }}>#{i + 1}</span>
                         <div>
-                          <p style={{ fontWeight: 800, fontSize: '0.875rem', margin: 0 }}>{r.location?.name || '—'}</p>
-                          <p style={{ fontSize: '0.6875rem', color: "var(--admin-muted2)", margin: 0 }}>{r.location?.business_plan || 'gratis'} · {r.location?.type}</p>
+                          <p style={{ fontWeight: 800, fontSize: '0.875rem', margin: 0 }}>{r.location?.name || 'â€”'}</p>
+                          <p style={{ fontSize: '0.6875rem', color: "var(--admin-muted2)", margin: 0 }}>{r.location?.business_plan || 'gratis'} Â· {r.location?.type}</p>
                         </div>
                       </div>
                       <div style={{ textAlign: 'right' }}>
@@ -257,7 +257,7 @@ export default function AdminAlgorithm() {
                       </div>
                     )}
                     {r.penalties && Object.keys(r.penalties).length > 0 && (
-                      <p style={{ fontSize: '0.625rem', color: '#ef4444', marginTop: '0.375rem', fontWeight: 600 }}>⚠️ Penalizaciones: {Object.keys(r.penalties).join(', ')}</p>
+                      <p style={{ fontSize: '0.625rem', color: '#ef4444', marginTop: '0.375rem', fontWeight: 600 }}>âš ï¸ Penalizaciones: {Object.keys(r.penalties).join(', ')}</p>
                     )}
                   </div>
                 )
@@ -283,19 +283,19 @@ export default function AdminAlgorithm() {
             </p>
           </div>
           <div style={card}>
-            <h4 style={{ fontWeight: 800, marginBottom: '0.75rem' }}>📊 Fórmula de Usuario</h4>
+            <h4 style={{ fontWeight: 800, marginBottom: '0.75rem' }}>ðŸ“Š Fórmula de Usuario</h4>
             <code style={{ display: 'block', background: "var(--admin-panel2)", padding: '1rem', borderRadius: '0.5rem', fontSize: '0.8125rem', lineHeight: 2, color: "#f5f5f5" }}>
-              final_user_rank = (relevance × 0.40) + (trust × 0.20) + (activity × 0.15) + (quality × 0.15) + (profile × 0.10) × limited_boost
+              final_user_rank = (relevance Ã— 0.40) + (trust Ã— 0.20) + (activity Ã— 0.15) + (quality Ã— 0.15) + (profile Ã— 0.10) Ã— limited_boost
             </code>
           </div>
           <div style={card}>
-            <h4 style={{ fontWeight: 800, marginBottom: '0.75rem' }}>🏪 Fórmula de Negocio</h4>
+            <h4 style={{ fontWeight: 800, marginBottom: '0.75rem' }}>ðŸª Fórmula de Negocio</h4>
             <code style={{ display: 'block', background: "var(--admin-panel2)", padding: '1rem', borderRadius: '0.5rem', fontSize: '0.8125rem', lineHeight: 2, color: "#f5f5f5" }}>
-              final_business_rank = (relevance × 0.35) + (engagement × 0.20) + (trust × 0.20) + (profile × 0.15) + (activity × 0.05) × limited_plan_boost
+              final_business_rank = (relevance Ã— 0.35) + (engagement Ã— 0.20) + (trust Ã— 0.20) + (profile Ã— 0.15) + (activity Ã— 0.05) Ã— limited_plan_boost
             </code>
           </div>
           <div style={{ ...card, background: "rgba(249, 115, 22, 0.1)", border: '1px solid #ffedd5' }}>
-            <h4 style={{ fontWeight: 800, color: '#9a3412', marginBottom: '0.5rem' }}>⚠️ Límites de Boost</h4>
+            <h4 style={{ fontWeight: 800, color: '#9a3412', marginBottom: '0.5rem' }}>âš ï¸ Límites de Boost</h4>
             <ul style={{ fontSize: '0.875rem', color: '#c2410c', lineHeight: 1.8, paddingLeft: '1.25rem', margin: 0 }}>
               <li><strong>premium_boost</strong> no puede superar <strong>1.20x</strong></li>
               <li><strong>sponsor_boost</strong> no puede superar <strong>1.15x</strong></li>

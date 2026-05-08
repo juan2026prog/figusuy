@@ -1,4 +1,4 @@
-import { useFeatureFlagStore } from '../stores/featureFlagStore'
+﻿import { useFeatureFlagStore } from '../stores/featureFlagStore'
 
 /**
  * React hook to check if a feature is enabled.

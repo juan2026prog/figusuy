@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Utility for tracking Meta Pixel events
  */
 export const trackEvent = (eventName, data = {}) => {

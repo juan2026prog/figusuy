@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+﻿import React, { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { ONBOARDING_STEPS, ACTIVATION_DEFINITION } from '../lib/growthEngine'
 
@@ -53,9 +53,9 @@ export default function AdminOnboarding() {
   ]
 
   const timeMetrics = [
-    { label: 'Tiempo a primer match', value: stats?.avgTimeToMatch || '—', icon: 'timer' },
-    { label: 'Tiempo a primer chat', value: stats?.avgTimeToChat || '—', icon: 'chat' },
-    { label: 'Tiempo a primer cruce', value: stats?.avgTimeToTrade || '—', icon: 'handshake' },
+    { label: 'Tiempo a primer match', value: stats?.avgTimeToMatch || 'â€”', icon: 'timer' },
+    { label: 'Tiempo a primer chat', value: stats?.avgTimeToChat || 'â€”', icon: 'chat' },
+    { label: 'Tiempo a primer cruce', value: stats?.avgTimeToTrade || 'â€”', icon: 'handshake' },
   ]
 
   return (

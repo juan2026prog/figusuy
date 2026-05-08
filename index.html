@@ -17,6 +17,26 @@
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet" />
     <title>FigusUy — Intercambiá Figuritas</title>
 
+    <script>
+      (function() {
+        // Landing pages are always dark to match the premium aesthetic
+        const isLandingPath = window.location.pathname === '/' || window.location.pathname.startsWith('/p/');
+        const theme = localStorage.getItem('theme');
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        
+        // If it's landing or user prefers dark, use dark theme
+        const isDark = isLandingPath || theme === 'dark' || (!theme && prefersDark);
+        
+        if (isDark) {
+          document.documentElement.classList.add('dark');
+          document.documentElement.style.backgroundColor = '#060606';
+        } else {
+          document.documentElement.classList.remove('dark');
+          document.documentElement.style.backgroundColor = '#f6f3ee';
+        }
+      })();
+    </script>
+
     <!-- Meta Pixel Code -->
     <script>
       !function(f,b,e,v,n,t,s)

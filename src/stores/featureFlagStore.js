@@ -1,13 +1,17 @@
-import { create } from 'zustand'
+﻿import { create } from 'zustand'
 import { supabase } from '../lib/supabase'
+
+const FLAG_CACHE_TTL_MS = 60_000
+let flagsFetchPromise = null
+let flagsStatusPromise = null
 
 /**
  * Feature Flag Store
  * 
  * Provides:
- * - isFeatureEnabled(key) → boolean (frontend gating)
- * - fetchFlags() → load all flags from DB
- * - fetchFlagsStatus(userId) → bulk-check via RPC
+ * - isFeatureEnabled(key) â†’ boolean (frontend gating)
+ * - fetchFlags() â†’ load all flags from DB
+ * - fetchFlagsStatus(userId) â†’ bulk-check via RPC
  * - Admin CRUD operations for God Admin panel
  * - Emergency kill/restore
  * - Audit log
@@ -19,6 +23,8 @@ export const useFeatureFlagStore = create((set, get) => ({
   auditLog: [],
   loading: false,
   lastFetch: null,
+  rpcUnavailable: true,
+  lastStatusUserKey: null,
 
   // ========== FRONTEND HELPERS ==========
 
@@ -51,20 +57,38 @@ export const useFeatureFlagStore = create((set, get) => ({
    * Fetch all feature flags from database.
    * Used for both admin management and frontend gating.
    */
-  fetchFlags: async () => {
-    set({ loading: true })
-    const { data, error } = await supabase
-      .from('feature_flags')
-      .select('*')
-      .order('scope')
-      .order('name')
-
-    if (!error) {
-      set({ flags: data || [], lastFetch: Date.now(), loading: false })
-    } else {
-      console.error('Error fetching feature flags:', error)
-      set({ loading: false })
+  fetchFlags: async (options = {}) => {
+    const { force = false } = options
+    const { lastFetch, flags } = get()
+    if (!force && lastFetch && flags.length > 0 && Date.now() - lastFetch < FLAG_CACHE_TTL_MS) {
+      return flags
     }
+    if (flagsFetchPromise) return flagsFetchPromise
+
+    set({ loading: true })
+    flagsFetchPromise = (async () => {
+      try {
+        const { data, error } = await supabase
+          .from('feature_flags')
+          .select('*')
+          .order('scope')
+          .order('name')
+
+        if (!error) {
+          const nextFlags = data || []
+          set({ flags: nextFlags, lastFetch: Date.now(), loading: false })
+          return nextFlags
+        }
+
+        console.error('Error fetching feature flags:', error)
+        set({ loading: false })
+        return get().flags
+      } finally {
+        flagsFetchPromise = null
+      }
+    })()
+
+    return flagsFetchPromise
   },
 
   /**
@@ -72,13 +96,49 @@ export const useFeatureFlagStore = create((set, get) => ({
    * This checks all gating conditions server-side.
    */
   fetchFlagsStatus: async (userId = null) => {
-    const { data, error } = await supabase.rpc('get_feature_flags_status', {
-      p_user_id: userId
-    })
-
-    if (!error && data) {
-      set({ flagsStatus: data })
+    const userKey = userId || 'anonymous'
+    if (get().lastStatusUserKey === userKey && Object.keys(get().flagsStatus || {}).length > 0) {
+      return get().flagsStatus
     }
+
+    if (get().rpcUnavailable) {
+      const flags = get().flags || []
+      const fallbackStatus = Object.fromEntries(
+        flags.map((flag) => [flag.feature_key, !flag.kill_switch && !!flag.is_enabled])
+      )
+      set({ flagsStatus: fallbackStatus, lastStatusUserKey: userKey })
+      return
+    }
+
+    if (flagsStatusPromise) return flagsStatusPromise
+
+    flagsStatusPromise = (async () => {
+      try {
+        const { data, error } = await supabase.rpc('get_feature_flags_status', {
+          p_user_id: userId
+        })
+
+        if (!error && data) {
+          set({ flagsStatus: data, lastStatusUserKey: userKey })
+          return data
+        }
+
+        if (error) {
+          const flags = get().flags || []
+          const fallbackStatus = Object.fromEntries(
+            flags.map((flag) => [flag.feature_key, !flag.kill_switch && !!flag.is_enabled])
+          )
+          set({ flagsStatus: fallbackStatus, rpcUnavailable: true, lastStatusUserKey: userKey })
+          return fallbackStatus
+        }
+
+        return get().flagsStatus
+      } finally {
+        flagsStatusPromise = null
+      }
+    })()
+
+    return flagsStatusPromise
   },
 
   /**

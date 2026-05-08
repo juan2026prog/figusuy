@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+﻿import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAppStore } from '../stores/appStore'
 import { useAuthStore } from '../stores/authStore'
@@ -27,12 +27,12 @@ export default function PremiumCTA({ variant = 'inline' }) {
         <div className="deco-circle deco-circle-amber-sm" style={{ right: '2rem', bottom: '-0.5rem', width: '3rem', height: '3rem' }} />
 
         <div style={{ position: 'relative', zIndex: 1 }}>
-          <span className="block text-3xl mb-sm">🚀</span>
+          <span className="block text-3xl mb-sm">ðŸš€</span>
           <h3 className="text-lg font-bold mb-xs">
-            Acelerá tu búsqueda
+            Anda mas rapido
           </h3>
           <p className="text-sm mb-lg leading-relaxed" style={{ opacity: 0.85 }}>
-            Usá filtros de distancia, detectá si leen tus mensajes y encontrá figuritas más rápido con Plus.
+            Suma prioridad, visibilidad, alertas e inteligencia para mover tus intercambios con menos friccion.
           </p>
 
           {/* Social proof */}
@@ -43,7 +43,7 @@ export default function PremiumCTA({ variant = 'inline' }) {
           )}
 
           <button className="btn btn-premium w-full" onClick={() => navigate('/premium')}>
-            ⭐ Desbloquear Premium
+            Ver planes
           </button>
         </div>
       </div>
@@ -60,13 +60,13 @@ export default function PremiumCTA({ variant = 'inline' }) {
         background: 'linear-gradient(135deg, #fef3c7, #fde68a)',
         border: '1px solid #fcd34d',
       }}>
-      <span className="text-xl">🚀</span>
+      <span className="text-xl">ðŸš€</span>
       <div style={{ flex: 1 }}>
         <p className="text-sm font-bold" style={{ color: '#92400e' }}>
-          Acelerá tu búsqueda
+          Anda mas rapido
         </p>
         <p className="text-xs" style={{ color: '#a16207' }}>
-          Filtros de distancia y más →
+          Prioridad, radar y mas ->
         </p>
       </div>
     </div>

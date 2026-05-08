@@ -1,4 +1,4 @@
-import { create } from 'zustand'
+﻿import { create } from 'zustand'
 import { supabase } from '../lib/supabase'
 
 export const useFavoritesStore = create((set, get) => ({

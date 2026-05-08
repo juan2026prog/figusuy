@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FigusUy · Guía de Íconos y Badges</title>
+  <style>
+    :root{
+      --bg:#05070b;
+      --panel:#090d14;
+      --panel2:#0d121b;
+      --line:rgba(255,255,255,.12);
+      --text:#f8fafc;
+      --muted:#a8b3c4;
+      --orange:#ff6a00;
+      --slate:#64748B;
+      --blue:#3B82F6;
+      --violet:#8B5CF6;
+      --green:#22C55E;
+      --amber:#F59E0B;
+      --turquoise:#14B8A6;
+      --red:#EF4444;
+      --emerald:#10B981;
+      --gold:#FFD700;
+    }
+
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(255,106,0,.12), transparent 28%),
+        radial-gradient(circle at 85% 12%, rgba(59,130,246,.10), transparent 24%),
+        linear-gradient(180deg,#05070b,#030407 75%);
+      color:var(--text);
+      min-height:100vh;
+      padding:24px;
+    }
+
+    .guide{
+      max-width:1560px;
+      margin:0 auto;
+      display:grid;
+      grid-template-columns:1fr 1fr 1fr;
+      gap:14px;
+    }
+
+    .panel{
+      background:linear-gradient(180deg,rgba(13,18,27,.92),rgba(5,7,11,.96));
+      border:1px solid var(--line);
+      border-radius:10px;
+      box-shadow:0 0 0 1px rgba(255,255,255,.02) inset, 0 24px 70px rgba(0,0,0,.42);
+      overflow:hidden;
+    }
+
+    .panel-title{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      color:var(--orange);
+      text-transform:uppercase;
+      letter-spacing:.02em;
+      font-weight:900;
+      font-size:20px;
+      padding:18px 22px 12px;
+    }
+
+    .section-mark svg{width:28px;height:28px;filter:drop-shadow(0 0 10px rgba(255,106,0,.55))}
+
+    table{width:100%;border-collapse:collapse;margin:0 12px 12px;width:calc(100% - 24px);overflow:hidden;border-radius:8px}
+    th,td{border:1px solid rgba(255,255,255,.10);padding:12px 14px;vertical-align:middle;background:rgba(255,255,255,.018)}
+    th{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:#e5e7eb;background:rgba(255,255,255,.035)}
+    td{font-size:15px;color:#e5e7eb;line-height:1.35}
+    .name{font-weight:900;text-transform:uppercase;letter-spacing:.03em;color:#f9fafb}
+    .small{font-size:13px;color:var(--muted)}
+    .color{font-weight:800}
+    .icon-cell{width:104px;text-align:center}
+    .wide{grid-column:1 / -1}
+    .two{grid-column:span 2}
+    .center-note{
+      margin:12px;
+      padding:24px;
+      text-align:center;
+      border:1px solid rgba(255,106,0,.45);
+      border-radius:8px;
+      background:linear-gradient(180deg,rgba(255,106,0,.08),rgba(0,0,0,.18));
+      box-shadow:0 0 28px rgba(255,106,0,.10) inset;
+      font-weight:900;
+      letter-spacing:.03em;
+    }
+    .palette{display:flex;flex-wrap:wrap;gap:18px;padding:18px 22px 22px}
+    .swatch{display:flex;align-items:center;gap:10px;min-width:120px}
+    .box{width:28px;height:28px;border-radius:5px;box-shadow:0 0 14px currentColor}
+
+    .badge-icon{--c:#FFD700;--c2:#fff1a5;width:72px;height:72px;display:inline-block;filter:drop-shadow(0 0 12px color-mix(in srgb, var(--c) 52%, transparent))}
+    .badge-icon.sm{width:32px;height:32px}
+    .badge-icon.md{width:56px;height:56px}
+    .badge-icon.lg{width:92px;height:92px}
+    .badge-icon svg{width:100%;height:100%;overflow:visible}
+    .stroke{stroke:var(--c);stroke-width:3;stroke-linecap:round;stroke-linejoin:round;fill:none;filter:url(#softGlow)}
+    .thin{stroke:var(--c2);stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round;fill:none;opacity:.85}
+    .fill{fill:url(#badgeFill)}
+    .core{fill:var(--c);filter:url(#innerGlow)}
+    .dark-fill{fill:rgba(0,0,0,.36)}
+    .ribbon{fill:rgba(0,0,0,.58);stroke:var(--c);stroke-width:2;filter:url(#softGlow)}
+    .label{font-family:Inter,Arial,sans-serif;font-size:9px;font-weight:900;letter-spacing:.7px;fill:var(--c2)}
+
+    @media(max-width:1100px){.guide{grid-template-columns:1fr}.two{grid-column:span 1}}
+  </style>
+</head>
+<body>
+  <svg width="0" height="0" style="position:absolute">
+    <defs>
+      <filter id="softGlow" x="-80%" y="-80%" width="260%" height="260%">
+        <feGaussianBlur stdDeviation="2.6" result="blur"/>
+        <feColorMatrix in="blur" type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 .9 0" result="glow"/>
+        <feMerge><feMergeNode in="glow"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+      <filter id="innerGlow" x="-60%" y="-60%" width="220%" height="220%">
+        <feGaussianBlur stdDeviation="1.2" result="b"/>
+        <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+      <linearGradient id="badgeFill" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="var(--c2)" stop-opacity=".28"/>
+        <stop offset=".52" stop-color="var(--c)" stop-opacity=".13"/>
+        <stop offset="1" stop-color="#000" stop-opacity=".38"/>
+      </linearGradient>
+      <radialGradient id="metal" cx="35%" cy="25%" r="70%">
+        <stop offset="0" stop-color="#fff" stop-opacity=".62"/>
+        <stop offset=".28" stop-color="var(--c2)" stop-opacity=".28"/>
+        <stop offset="1" stop-color="#020617" stop-opacity=".92"/>
+      </radialGradient>
+    </defs>
+  </svg>
+
+  <script>
+    const ICONS = {
+      UserLevelExplorerIcon:{color:'#64748B', svg:`<circle cx="50" cy="50" r="35" class="fill stroke"/><circle cx="50" cy="50" r="25" class="thin"/><path d="M50 17v7M50 76v7M17 50h7M76 50h7" class="thin"/><path d="M42 58l11-27 5 20-27 17z" fill="url(#metal)" stroke="var(--c2)" stroke-width="2"/><circle cx="50" cy="50" r="4" class="core"/>`},
+      UserLevelCollectorIcon:{color:'#3B82F6', svg:`<path d="M15 28c11-7 23-7 35 0v50c-12-7-24-7-35 0z" class="fill stroke"/><path d="M50 28c12-7 24-7 35 0v50c-11-7-23-7-35 0z" class="fill stroke"/><path d="M25 38c7-2 13-1 18 2M25 50c7-2 13-1 18 2M57 40c7-3 13-3 20-1M57 52c7-3 13-3 20-1" class="thin"/>`},
+      UserLevelTraderIcon:{color:'#8B5CF6', svg:`<path d="M50 10l34 13v22c0 22-13 35-34 45-21-10-34-23-34-45V23z" class="fill stroke"/><path d="M32 55l11-12 10 10 8-8 10 10" class="thin"/><path d="M29 51l9 9c3 3 7 3 10 0l2-2 2 2c3 3 7 3 10 0l9-9" class="stroke"/>`},
+      UserLevelReferentIcon:{color:'#F59E0B', svg:`<circle cx="50" cy="50" r="35" class="fill stroke"/><path d="M50 22l8 18 20 2-15 13 5 20-18-10-18 10 5-20-15-13 20-2z" class="core" stroke="var(--c2)" stroke-width="2"/>`},
+      BadgeActiveIcon:{color:'#22C55E', svg:`<path d="M50 8l34 13v22c0 22-13 36-34 47-21-11-34-25-34-47V21z" class="fill stroke"/><path d="M54 21L34 54h15l-4 25 22-38H52z" class="core" stroke="var(--c2)" stroke-width="2"/>`},
+      BadgeTrustedIcon:{color:'#3B82F6', svg:`<path d="M50 8l34 13v22c0 22-13 36-34 47-21-11-34-25-34-47V21z" class="fill stroke"/><path d="M31 51l12 12 27-29" class="stroke" style="stroke-width:7"/>`},
+      BadgeTopTradeIcon:{color:'#8B5CF6', svg:`<path d="M50 8l34 13v22c0 22-13 36-34 47-21-11-34-25-34-47V21z" class="fill stroke"/><path d="M29 50l11-10 11 10M71 50L60 40 49 50" class="thin"/><path d="M31 58c8 9 16 9 24 0 6 7 13 7 20 0" class="stroke"/><path d="M33 39c8-7 15-7 22 0M67 39c-8-7-15-7-22 0" class="thin"/>`},
+      BadgePartnerVerifiedIcon:{color:'#14B8A6', svg:`<path d="M50 8l34 13v22c0 22-13 36-34 47-21-11-34-25-34-47V21z" class="fill stroke"/><path d="M30 52l13 13 29-32" class="stroke" style="stroke-width:7"/><circle cx="50" cy="50" r="31" class="thin"/>`},
+      BadgeImpactHighIcon:{color:'#EF4444', svg:`<path d="M50 8l34 13v22c0 22-13 36-34 47-21-11-34-25-34-47V21z" class="fill stroke"/><path d="M51 77c-14-6-19-17-14-29 3-8 11-12 11-25 12 9 18 18 14 29 5-3 8-8 9-14 8 18-1 34-20 39z" class="core" stroke="var(--c2)" stroke-width="2"/>`},
+      BadgeCollectorHubFriendlyIcon:{color:'#10B981', svg:`<path d="M50 8l34 13v22c0 22-13 36-34 47-21-11-34-25-34-47V21z" class="fill stroke"/><path d="M28 43h44l-4-14H32zM32 43v27h36V43" class="thin"/><path d="M36 70V54h13v16M56 55h8v8h-8z" class="stroke"/><path d="M28 43c4 8 10 8 14 0 4 8 10 8 14 0 4 8 10 8 16 0" class="core"/>`},
+      FoundingMemberIcon:{color:'#FFD700', svg:`<path d="M50 7l35 14v24c0 21-13 34-35 45-22-11-35-24-35-45V21z" class="fill stroke"/><path d="M25 61h50l-5-30-12 13-8-20-8 20-12-13z" class="core" stroke="var(--c2)" stroke-width="2"/><path d="M18 67h64l-6 13H24z" class="ribbon"/><text x="50" y="76" text-anchor="middle" class="label">FOUNDING</text><text x="50" y="87" text-anchor="middle" class="label">MEMBER</text>`},
+      PlanFreeBoostIcon:{color:'#64748B', svg:`<path d="M50 90s28-29 28-52A28 28 0 1022 38c0 23 28 52 28 52z" class="fill stroke"/><circle cx="50" cy="38" r="12" fill="url(#metal)" stroke="var(--c2)" stroke-width="2"/>`},
+      PlanRadarTurboIcon:{color:'#3B82F6', svg:`<circle cx="50" cy="50" r="38" class="fill stroke"/><circle cx="50" cy="50" r="25" class="thin"/><circle cx="50" cy="50" r="10" class="thin"/><path d="M50 50l26-26" class="stroke"/><path d="M50 12v10M50 78v10M12 50h10M78 50h10" class="thin"/><path d="M68 18h15v15" class="stroke"/>`},
+      PlanConversionDominioIcon:{color:'#8B5CF6', svg:`<path d="M30 70l-12 12 4-20M43 78l-8 14 1-22" class="stroke"/><path d="M35 63C41 34 58 17 83 14c-2 25-19 42-48 48z" class="fill stroke"/><circle cx="64" cy="34" r="9" fill="url(#metal)" stroke="var(--c2)" stroke-width="2"/><path d="M35 63l-18 4 15-18M55 43l-22 22" class="thin"/>`},
+      CollectorHubIcon:{color:'#FFD700', svg:`<path d="M50 7l35 14v24c0 21-13 34-35 45-22-11-35-24-35-45V21z" class="fill stroke"/><path d="M24 63h52l-5-31-13 13-8-22-8 22-13-13z" class="core" stroke="var(--c2)" stroke-width="2"/><circle cx="50" cy="76" r="3" class="core"/>`},
+      FoundingHubIcon:{color:'#FFD700', svg:`<path d="M50 7l35 14v24c0 21-13 34-35 45-22-11-35-24-35-45V21z" class="fill stroke"/><path d="M24 43h52L50 23zM29 47h42M33 47v22M45 47v22M57 47v22M69 47v22M27 70h46" class="stroke"/><path d="M18 72h64l-6 14H24z" class="ribbon"/><text x="50" y="82" text-anchor="middle" class="label">FOUNDING HUB</text>`},
+      LegendaryCollectorHubIcon:{color:'#FFD700', svg:`<path d="M50 5l36 14v24c0 22-12 36-36 48-24-12-36-26-36-48V19z" class="fill stroke"/><path d="M50 13l4 8 9 1-7 6 2 9-8-5-8 5 2-9-7-6 9-1z" class="core"/><path d="M24 61h52l-5-31-13 13-8-22-8 22-13-13z" class="core" stroke="var(--c2)" stroke-width="2"/><path d="M14 67h72l-7 15H21z" class="ribbon"/><text x="50" y="78" text-anchor="middle" class="label">LEGENDARY</text><path d="M50 91l-5-7h10z" class="core"/>`}
+    };
+
+    function badgeIcon(key, size='md'){
+      const item = ICONS[key];
+      return `<span class="badge-icon ${size}" style="--c:${item.color};--c2:${tint(item.color)}"><svg viewBox="0 0 100 100" role="img" aria-label="${key}">${item.svg}</svg></span>`;
+    }
+    function tint(hex){
+      const clean=hex.replace('#','');
+      const r=parseInt(clean.slice(0,2),16),g=parseInt(clean.slice(2,4),16),b=parseInt(clean.slice(4,6),16);
+      return `rgb(${Math.min(255,r+85)},${Math.min(255,g+85)},${Math.min(255,b+85)})`;
+    }
+    function mark(kind){
+      const map={user:'<path d="M12 24a12 12 0 1124 0v4H12zM4 58c2-14 14-22 26-22s24 8 26 22" fill="currentColor"/>',badge:'<path d="M32 4l24 10v17c0 17-10 27-24 35C18 58 8 48 8 31V14z" fill="none" stroke="currentColor" stroke-width="5"/><path d="M32 19l4 8 9 1-6 6 2 9-9-5-9 5 2-9-6-6 9-1z" fill="currentColor"/>',crown:'<path d="M10 48h44l-4-24-11 10-7-17-7 17-11-10z" fill="currentColor"/><path d="M14 54h36v8H14z" fill="currentColor"/>',shop:'<path d="M10 26h44l-5-14H15zM14 31v29h36V31" fill="none" stroke="currentColor" stroke-width="5"/><path d="M10 26c3 8 9 8 13 0 4 8 10 8 14 0 4 8 10 8 17 0" fill="currentColor"/>',hub:'<path d="M8 30h48L32 11zM12 36h40M16 36v22M28 36v22M40 36v22M52 36v22M10 60h44" fill="none" stroke="currentColor" stroke-width="5"/>',cup:'<path d="M21 13h22v9c0 13-6 21-11 24-5-3-11-11-11-24z" fill="currentColor"/><path d="M21 21H11c0 9 4 14 11 15M43 21h10c0 9-4 14-11 15" fill="none" stroke="currentColor" stroke-width="5"/><path d="M26 48h12v10h10v6H16v-6h10z" fill="currentColor"/>',palette:'<circle cx="32" cy="32" r="24" fill="none" stroke="currentColor" stroke-width="5"/><circle cx="22" cy="24" r="4" fill="currentColor"/><circle cx="34" cy="19" r="4" fill="currentColor"/><circle cx="44" cy="30" r="4" fill="currentColor"/>',star:'<path d="M32 8l6 13 14 2-10 10 3 14-13-7-13 7 3-14-10-10 14-2z" fill="currentColor"/>'};
+      return `<span class="section-mark" style="color:var(--orange)"><svg viewBox="0 0 64 64">${map[kind]}</svg></span>`;
+    }
+  </script>
+
+  <main class="guide">
+    <section class="panel">
+      <div class="panel-title"><script>document.write(mark('user'))</script>Niveles de usuario</div>
+      <table>
+        <thead><tr><th>Icono</th><th>Nombre</th><th>Para qué es / significado</th><th>Color / estilo</th><th>Dónde se muestra</th></tr></thead>
+        <tbody>
+          <tr><td class="icon-cell"><script>document.write(badgeIcon('UserLevelExplorerIcon','md'))</script></td><td class="name">Explorador</td><td>Entró al sistema y comenzó a mover su álbum.</td><td class="color" style="color:#64748B">Slate #64748B</td><td>Perfil, cards, dashboard</td></tr>
+          <tr><td class="icon-cell"><script>document.write(badgeIcon('UserLevelCollectorIcon','md'))</script></td><td class="name">Coleccionista</td><td>Su colección ya genera valor para otros.</td><td class="color" style="color:#3B82F6">Azul #3B82F6</td><td>Perfil, listados</td></tr>
+          <tr><td class="icon-cell"><script>document.write(badgeIcon('UserLevelTraderIcon','md'))</script></td><td class="name">Intercambiador</td><td>Concreta intercambios reales y activa la comunidad.</td><td class="color" style="color:#8B5CF6">Violeta #8B5CF6</td><td>Perfil, matches, mapa</td></tr>
+          <tr><td class="icon-cell"><script>document.write(badgeIcon('UserLevelReferentIcon','md'))</script></td><td class="name">Referente</td><td>Su actividad mejora confianza, movimiento y comunidad.</td><td class="color" style="color:#F59E0B">Ámbar #F59E0B</td><td>Perfil destacado, rankings</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="panel">
+      <div class="panel-title"><script>document.write(mark('badge'))</script>Badges principales</div>
+      <table>
+        <thead><tr><th>Icono</th><th>Nombre</th><th>Para qué es / significado</th><th>Color / estilo</th><th>Dónde se muestra</th></tr></thead>
+        <tbody>
+          <tr><td class="icon-cell"><script>document.write(badgeIcon('BadgeActiveIcon','md'))</script></td><td class="name">Activo</td><td>Usuario con actividad sostenida y útil.</td><td class="color" style="color:#22C55E">Verde #22C55E</td><td>Perfil, cards</td></tr>
+          <tr><td><script>document.write(badgeIcon('BadgeTrustedIcon','md'))</script></td><td class="name">Confiable</td><td>Genera confianza y cierra buenos intercambios.</td><td class="color" style="color:#3B82F6">Azul #3B82F6</td><td>Perfil, chat, mapa</td></tr>
+          <tr><td><script>document.write(badgeIcon('BadgeTopTradeIcon','md'))</script></td><td class="name">Top Cruce</td><td>Genera intercambios de alto impacto dentro de la comunidad.</td><td class="color" style="color:#8B5CF6">Violeta / Ámbar</td><td>Matches, perfil</td></tr>
+          <tr><td><script>document.write(badgeIcon('BadgePartnerVerifiedIcon','md'))</script></td><td class="name">Partner Verificado</td><td>Validado oficialmente dentro del circuito Collector Hub / Partners.</td><td class="color" style="color:#14B8A6">Turquesa #14B8A6</td><td>Perfil, negocios, dashboards</td></tr>
+          <tr><td><script>document.write(badgeIcon('BadgeImpactHighIcon','md'))</script></td><td class="name">Impacto Alto</td><td>Genera movimiento importante dentro de la red.</td><td class="color" style="color:#EF4444">Rojo #EF4444</td><td>Perfil, ranking, campañas</td></tr>
+          <tr><td><script>document.write(badgeIcon('BadgeCollectorHubFriendlyIcon','md'))</script></td><td class="name">Collector Hub Friendly</td><td>Usuario muy activo dentro del circuito de locales y puntos oficiales.</td><td class="color" style="color:#10B981">Esmeralda #10B981</td><td>Perfil, mapa, puntos oficiales</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="panel">
+      <div class="panel-title"><script>document.write(mark('shop'))</script>Sistema de negocios / lugares</div>
+      <table>
+        <thead><tr><th>Icono</th><th>Nombre</th><th>Tipo</th><th>Para qué es</th><th>Color</th><th>Dónde se muestra</th></tr></thead>
+        <tbody>
+          <tr><td><script>document.write(badgeIcon('PlanFreeBoostIcon','md'))</script></td><td class="name">Plan Gratis (Boost)</td><td>Plan</td><td>Nivel básico de presencia dentro del ecosistema.</td><td class="color" style="color:#64748B">Slate</td><td>Mapa, ficha de negocio</td></tr>
+          <tr><td><script>document.write(badgeIcon('PlanRadarTurboIcon','md'))</script></td><td class="name">Plan Radar (Turbo)</td><td>Plan</td><td>Mayor visibilidad y herramientas adicionales.</td><td class="color" style="color:#3B82F6">Azul</td><td>Mapa, listados, dashboard</td></tr>
+          <tr><td><script>document.write(badgeIcon('PlanConversionDominioIcon','md'))</script></td><td class="name">Plan Conversion (Dominio)</td><td>Plan</td><td>Orientado a capitalizar intención y actividad de coleccionistas.</td><td class="color" style="color:#8B5CF6">Violeta</td><td>Ficha premium, campañas</td></tr>
+          <tr><td><script>document.write(badgeIcon('CollectorHubIcon','md'))</script></td><td class="name">Collector Hub</td><td>Plan oficial</td><td>El máximo nivel oficial. Valida álbumes, entrega rewards y tiene visibilidad máxima.</td><td class="color" style="color:#FFD700">Dorado</td><td>Mapa, perfil, dashboard</td></tr>
+          <tr><td><script>document.write(badgeIcon('FoundingHubIcon','md'))</script></td><td class="name">Founding Hub</td><td>Badge fundadores</td><td>Otorgado a las primeras 25 tiendas / lugares fundadores.</td><td class="color" style="color:#FFD700">Dorado</td><td>Ficha de negocio, mapa, home</td></tr>
+          <tr><td><script>document.write(badgeIcon('LegendaryCollectorHubIcon','md'))</script></td><td class="name">Sello Legendario</td><td>Sello premium</td><td>Reservado para Collector Hubs destacados. Representa confianza, actividad sostenida y aporte real.</td><td class="color" style="color:#FFD700">Dorado intenso</td><td>Collector Hub destacado, campañas</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="panel two">
+      <div class="panel-title"><script>document.write(mark('cup'))</script>Hitos históricos</div>
+      <table>
+        <thead><tr><th>Icono</th><th>Nombre</th><th>Tipo</th><th>Para qué es</th><th>Color</th><th>Dónde se muestra</th></tr></thead>
+        <tbody>
+          <tr><td><script>document.write(badgeIcon('FoundingMemberIcon','lg'))</script></td><td class="name">Founding Member</td><td>Histórico</td><td>Otorgado a los primeros usuarios históricos de FigusUy. Limitado, permanente y numerado.</td><td class="color" style="color:#FFD700">Dorado #FFD700</td><td>Perfil, comunidad, rankings</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="panel">
+      <div class="panel-title"><script>document.write(mark('hub'))</script>Founding Hub</div>
+      <table>
+        <thead><tr><th>Icono</th><th>Nombre</th><th>Tipo</th><th>Para qué es</th><th>Dónde se muestra</th></tr></thead>
+        <tbody>
+          <tr><td><script>document.write(badgeIcon('FoundingHubIcon','lg'))</script></td><td class="name">Founding Hub</td><td>Fundadores</td><td>Primeras 25 tiendas / lugares fundadores. Badge exclusivo, permanente y muy visible.</td><td>Mapa, home, ficha de negocio</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="panel wide">
+      <div class="panel-title"><script>document.write(mark('palette'))</script>Guía rápida de colores</div>
+      <div class="palette">
+        <div class="swatch"><span class="box" style="background:#3B82F6;color:#3B82F6"></span><div>Azul<br><span class="small">#3B82F6</span></div></div>
+        <div class="swatch"><span class="box" style="background:#8B5CF6;color:#8B5CF6"></span><div>Violeta<br><span class="small">#8B5CF6</span></div></div>
+        <div class="swatch"><span class="box" style="background:#22C55E;color:#22C55E"></span><div>Verde<br><span class="small">#22C55E</span></div></div>
+        <div class="swatch"><span class="box" style="background:#F59E0B;color:#F59E0B"></span><div>Ámbar<br><span class="small">#F59E0B</span></div></div>
+        <div class="swatch"><span class="box" style="background:#14B8A6;color:#14B8A6"></span><div>Turquesa<br><span class="small">#14B8A6</span></div></div>
+        <div class="swatch"><span class="box" style="background:#EF4444;color:#EF4444"></span><div>Rojo<br><span class="small">#EF4444</span></div></div>
+        <div class="swatch"><span class="box" style="background:#10B981;color:#10B981"></span><div>Esmeralda<br><span class="small">#10B981</span></div></div>
+        <div class="swatch"><span class="box" style="background:#64748B;color:#64748B"></span><div>Slate<br><span class="small">#64748B</span></div></div>
+        <div class="swatch"><span class="box" style="background:#FFD700;color:#FFD700"></span><div>Dorado<br><span class="small">#FFD700</span></div></div>
+      </div>
+    </section>
+
+    <section class="panel wide">
+      <div class="center-note">★ TODO EL SISTEMA BUSCA PREMIAR:<br><br>ACTIVIDAD REAL · CONFIANZA · INTERCAMBIOS · COMUNIDAD · IMPACTO</div>
+    </section>
+  </main>
+</body>
+</html>

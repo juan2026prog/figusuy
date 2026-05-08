@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react'
+﻿import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
+import { useLogoutStore } from '../stores/logoutStore'
 import { useAppStore } from '../stores/appStore'
 import { useGamificationStore } from '../stores/gamificationStore'
 import { supabase } from '../lib/supabase'
@@ -15,17 +16,17 @@ import ProfileGamification from '../components/ProfileGamification'
 import ReputationStars from '../components/ReputationStars'
 import { LEVELS } from '../lib/gamification'
 import { getStarLevel } from '../lib/reputation'
+import GamificationIcon from '../components/gamification/icons/GamificationIcon'
 
 export default function ProfilePage() {
   const navigate = useNavigate()
   const { profile, user, signOut, updateProfile } = useAuthStore()
-  const { userAlbums, missingStickers, duplicateStickers, matches } = useAppStore()
   const { favorites, fetchFavorites } = useFavoritesStore()
   const { isPremium, planName } = usePremiumAccess()
   const { progress, reputation, initialize: initGamification } = useGamificationStore()
   const toast = useToast()
 
-  const [showSignOutConfirm, setShowSignOutConfirm] = useState(false)
+  const { openConfirm } = useLogoutStore()
   const [locationName, setLocationName] = useState(profile?.city || '')
   const [displayName, setDisplayName] = useState(profile?.name || '')
   const [notifEnabled, setNotifEnabled] = useState(true)
@@ -36,19 +37,29 @@ export default function ProfilePage() {
   const initial = profile?.name?.[0]?.toUpperCase() || '?'
   const name = profile?.name || 'Usuario'
 
+  const { albums, fetchAlbums, selectAlbum, fetchUserAlbums, userAlbums, missingStickers, duplicateStickers, ownedStickers, matches, selectedAlbum } = useAppStore()
+  const [username, setUsername] = useState(profile?.username || '')
+  const [profileVisibility, setProfileVisibility] = useState(profile?.profile_visibility || 'public')
+  const [showAlbumPicker, setShowAlbumPicker] = useState(false)
+  const [selectedAlbumId, setSelectedAlbumId] = useState(null)
+  const [addingAlbum, setAddingAlbum] = useState(false)
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false)
+  const [editingAlbumPrivacy, setEditingAlbumPrivacy] = useState(null)
+
   useEffect(() => {
     // Only set initial values once or if they are empty
     if (profile) {
       if (!displayName) setDisplayName(profile.name || '');
       if (!locationName) setLocationName(profile.city || '');
+      if (!username) setUsername(profile.username || '');
+      if (!profileVisibility) setProfileVisibility(profile.profile_visibility || 'public');
       
-      // Check if user has admin role
-      supabase.from('user_roles').select('role').eq('user_id', profile.id).maybeSingle()
-        .then(({ data }) => {
-          if (data?.role && data.role !== 'user') setIsAdmin(true)
-        })
+      // Check if user has admin role â€” usar profile.role del authStore (ya fue cargado)
+      const adminRoles = ['god_admin', 'admin', 'moderator', 'support', 'comercial', 'analista']
+      if (profile.role && adminRoles.includes(profile.role)) setIsAdmin(true)
       fetchFavorites(profile.id)
-      useAppStore.getState().fetchUserAlbums(profile.id)
+      fetchUserAlbums(profile.id)
+      fetchAlbums() // Fetch all available albums
       initGamification(profile.id)
     }
   }, [profile?.id]) // Depend on ID to re-run only when user changes
@@ -57,10 +68,32 @@ export default function ProfilePage() {
     if (!profile?.id) return
     setSaving(true)
     try {
-      await updateProfile({ city: locationName, name: displayName })
+      await updateProfile({ city: locationName, name: displayName, username, profile_visibility: profileVisibility })
       toast.success('Perfil actualizado correctamente')
     } catch (err) { toast.error('Error al guardar: ' + err.message) }
     setSaving(false)
+  }
+
+  const handleAddAlbum = async () => {
+    if (!selectedAlbumId) {
+      toast.error('Selecciona un álbum primero')
+      return
+    }
+    const albumToAdd = albums.find(a => a.id === selectedAlbumId)
+    if (!albumToAdd) return
+
+    setAddingAlbum(true)
+    try {
+      const { error } = await selectAlbum(albumToAdd, profile.id)
+      if (error) throw error
+      toast.success('Ãlbum agregado correctamente')
+      setShowAlbumPicker(false)
+      setSelectedAlbumId(null)
+    } catch (err) {
+      toast.error('Error al agregar álbum: ' + err.message)
+    } finally {
+      setAddingAlbum(false)
+    }
   }
 
   const handleAvatarUpload = async (e) => {
@@ -82,179 +115,53 @@ export default function ProfilePage() {
     }
   }
 
-  const handleSignOut = async () => { setShowSignOutConfirm(false); await signOut(); navigate('/login') }
+  const handleSignOut = () => openConfirm()
 
-  const mainAlbumData = userAlbums[0]
+  const handleSavePrivacy = async () => {
+    if (!editingAlbumPrivacy) return
+    setSaving(true)
+    try {
+      const { error } = await supabase.from('user_albums').update({
+        visibility: editingAlbumPrivacy.visibility,
+        show_progress: editingAlbumPrivacy.show_progress,
+        show_missing: editingAlbumPrivacy.show_missing,
+        show_repeated: editingAlbumPrivacy.show_repeated
+      }).eq('user_id', profile.id).eq('album_id', editingAlbumPrivacy.album_id)
+      
+      if (error) throw error
+      toast.success('Privacidad del álbum guardada')
+      setShowPrivacyModal(false)
+      fetchUserAlbums(profile.id)
+    } catch (err) {
+      toast.error('Error al guardar: ' + err.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  // Find the selected album in userAlbums, or fallback to the first one
+  const mainAlbumData = userAlbums.find(ua => ua.album_id === selectedAlbum?.id) || userAlbums[0]
   const mainAlbum = mainAlbumData?.album
-  const missingCount = mainAlbumData?.missingCount || 0
-  const duplicateCount = mainAlbumData?.duplicateCount || 0
-  const ownedCount = mainAlbumData?.ownedCount || 0
+  const isSelected = mainAlbumData?.album_id === selectedAlbum?.id
+  
+  const missingCount = isSelected ? missingStickers.length : (mainAlbumData?.missingCount || 0)
+  const duplicateCount = isSelected ? duplicateStickers.length : (mainAlbumData?.duplicateCount || 0)
+  const ownedCount = isSelected ? ownedStickers.length : (mainAlbumData?.ownedCount || 0)
   const progressPercent = mainAlbum?.total_stickers && mainAlbum.total_stickers > 0 
     ? Math.round((ownedCount / mainAlbum.total_stickers) * 100) 
     : 0
-
   return (
     <div className="profile-final-root">
-      <style>{`
-        .profile-final-root {
-          --bg: #0b0b0b;
-          --panel: #121212;
-          --panel2: #181818;
-          --panel3: #202020;
-          --line: rgba(255,255,255,.08);
-          --line2: rgba(255,255,255,.14);
-          --text: #f5f5f5;
-          --muted: rgba(245,245,245,.54);
-          --muted2: rgba(245,245,245,.34);
-          --orange: #ff5a00;
-          --orange2: #cc4800;
-          --green: #22c55e;
-          --red: #ef4444;
-          --gold: #facc15;
-          
-          font-family: 'Barlow', sans-serif;
-          background: var(--bg);
-          color: var(--text);
-          min-height: 100vh;
-        }
-
-        .profile-final-root * { box-sizing: border-box; }
-        .profile-final-root button, .profile-final-root input { font-family: inherit; }
-
-        .profile-final-root .topbar {
-          min-height: 82px; display: flex; align-items: center; justify-content: space-between;
-          gap: 18px; padding: 14px 22px; border-bottom: 1px solid var(--line);
-          background: #0b0b0b; position: sticky; top: 0; z-index: 20;
-        }
-        .profile-final-root .top-kicker { font: 900 .72rem 'Barlow Condensed'; letter-spacing: .16em; text-transform: uppercase; color: var(--orange); }
-        .profile-final-root .top-title { font: italic 900 2.45rem 'Barlow Condensed'; text-transform: uppercase; line-height: .9; margin-top: 3px; }
-        .profile-final-root .top-actions { display: flex; gap: 10px; align-items: center; }
-        .profile-final-root .btn { border: 1px solid var(--line2); background: transparent; color: #fff; padding: .85rem 1.15rem; font: 900 .88rem 'Barlow Condensed'; letter-spacing: .08em; text-transform: uppercase; cursor: pointer; }
-        .profile-final-root .btn:hover { border-color: var(--orange); color: var(--orange); }
-        .profile-final-root .btn.orange { background: var(--orange); border-color: var(--orange); color: #fff; }
-        .profile-final-root .btn.orange:hover { background: var(--orange2); border-color: var(--orange2); }
-        .profile-final-root .btn.block { width: 100%; }
-
-        .profile-final-root .wrap { max-width: 1480px; margin: 0 auto; padding: 28px 22px 72px; }
-
-        .profile-final-root .profile-grid { display: grid; grid-template-columns: 380px 1fr; gap: 22px; align-items: start; }
-
-        .profile-final-root .card { background: var(--panel); border: 1px solid var(--line); position: relative; overflow: hidden; }
-        .profile-final-root .card-head { padding: 22px 24px; border-bottom: 1px solid var(--line); background: var(--panel2); }
-        .profile-final-root .kicker { font: 900 .7rem 'Barlow Condensed'; letter-spacing: .16em; text-transform: uppercase; color: var(--orange); }
-        .profile-final-root h2 { font: italic 900 2.35rem 'Barlow Condensed'; text-transform: uppercase; line-height: .9; margin-top: 5px; margin-bottom: 0; }
-        .profile-final-root .muted { color: var(--muted); font-size: .95rem; line-height: 1.55; }
-
-        .profile-final-root .identity-card { padding: 24px; }
-        .profile-final-root .avatar-box { width: 108px; height: 108px; background: var(--orange); display: grid; place-items: center; font: 900 3rem 'Barlow Condensed'; margin-bottom: 22px; position: relative; overflow: hidden; }
-        .profile-final-root .avatar-box img { width: 100%; height: 100%; object-fit: cover; display: block; }
-        .profile-final-root .avatar-edit { position: absolute; right: 0; bottom: 0; background: #0b0b0b; color: #fff; border: 1px solid var(--line2); width: 34px; height: 34px; display: grid; place-items: center; font-size: 15px; cursor: pointer; }
-        .profile-final-root .avatar-edit input { display: none; }
-        .profile-final-root .profile-name { font: italic 900 2.6rem 'Barlow Condensed'; text-transform: uppercase; line-height: .9; margin-bottom: 8px; }
-        .profile-final-root .profile-meta { color: var(--muted); font-size: 1rem; margin-bottom: 16px; }
-        .profile-final-root .badges { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 22px; }
-        .profile-final-root .badge { border: 1px solid var(--line2); padding: 6px 9px; font: 900 .72rem 'Barlow Condensed'; letter-spacing: .08em; text-transform: uppercase; color: #fff; background: #0d0d0d; }
-        .profile-final-root .badge.green { border-color: rgba(34,197,94,.35); color: var(--green); background: rgba(34,197,94,.07); }
-        .profile-final-root .badge.orange { border-color: rgba(255,90,0,.4); color: var(--orange); background: rgba(255,90,0,.09); }
-
-        .profile-final-root .main-stack { display: grid; gap: 22px; }
-        .profile-final-root .progress-card { display: grid; grid-template-columns: 1fr 260px; gap: 0; }
-        .profile-final-root .progress-main { padding: 28px; border-right: 1px solid var(--line); }
-        .profile-final-root .progress-row { display: flex; justify-content: space-between; gap: 18px; align-items: flex-start; margin-bottom: 24px; }
-        .profile-final-root .level-title { font: italic 900 3.2rem 'Barlow Condensed'; line-height: .88; text-transform: uppercase; margin: 0; }
-        .profile-final-root .level-desc { color: var(--muted); margin-top: 8px; font-size: 1rem; }
-        .profile-final-root .big-percent { font: italic 900 2.8rem 'Barlow Condensed'; color: var(--orange); line-height: 1; }
-        .profile-final-root .bar { height: 22px; background: #090909; border: 1px solid var(--line2); position: relative; overflow: hidden; }
-        .profile-final-root .bar-fill { height: 100%; background: var(--orange); width: 0%; transition: width 0.3s ease; }
-        .profile-final-root .bar:before, .profile-final-root .bar:after { content: ""; position: absolute; top: 0; bottom: 0; width: 1px; background: rgba(255,255,255,.42); }
-        .profile-final-root .bar:before { left: 50%; } .profile-final-root .bar:after { left: 75%; }
-        .profile-final-root .profile-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--line); margin-top: 26px; }
-        .profile-final-root .pstat { background: var(--panel); padding: 22px; }
-        .profile-final-root .pstat b { display: block; font: italic 900 2.7rem 'Barlow Condensed'; line-height: .9; }
-        .profile-final-root .pstat span { font: 900 .78rem 'Barlow Condensed'; letter-spacing: .08em; text-transform: uppercase; color: var(--muted2); }
-        .profile-final-root .pstat.green b { color: var(--green); }
-        .profile-final-root .plan-block { background: var(--orange); display: flex; flex-direction: column; justify-content: center; padding: 28px; color: #fff; }
-        .profile-final-root .plan-block b { font: italic 900 3.25rem 'Barlow Condensed'; line-height: .85; text-transform: uppercase; margin: 0; }
-        .profile-final-root .plan-block span { font: 900 .85rem 'Barlow Condensed'; letter-spacing: .08em; text-transform: uppercase; color: rgba(255,255,255,.62); margin-top: 8px; }
-
-        .profile-final-root .album-section .card-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; }
-        .profile-final-root .album-row { display: grid; grid-template-columns: 150px 1fr auto; gap: 24px; align-items: center; padding: 28px 28px; background: #0f0f0f; border-bottom: 1px solid var(--line); }
-        .profile-final-root .album-cover { aspect-ratio: 3/4; background: linear-gradient(135deg, #222, #111); border: 1px solid var(--line2); display: grid; place-items: center; text-align: center; min-height: 190px; overflow: hidden; }
-        .profile-final-root .album-cover img { width: 100%; height: 100%; object-fit: cover; }
-        .profile-final-root .album-cover b { font: italic 900 2.7rem 'Barlow Condensed'; color: var(--orange); }
-        .profile-final-root .album-cover span { font: 900 .56rem 'Barlow Condensed'; letter-spacing: .12em; text-transform: uppercase; color: var(--muted2); display: block; }
-        .profile-final-root .album-title { font: 900 2.35rem 'Barlow Condensed'; line-height: .95; text-transform: uppercase; }
-        .profile-final-root .album-sub { color: var(--muted); font-size: 1rem; margin-top: 5px; }
-        .profile-final-root .album-progress-meta { display: flex; justify-content: space-between; font: 900 .78rem 'Barlow Condensed'; letter-spacing: .08em; text-transform: uppercase; color: var(--muted2); margin: 20px 0 8px; }
-        .profile-final-root .album-progress-meta b { color: var(--orange); }
-        .profile-final-root .album-actions { display: grid; gap: 9px; min-width: 170px; }
-
-        .profile-final-root .content-grid { display: grid; grid-template-columns: 1fr 330px; gap: 22px; margin-top: 22px; }
-        .profile-final-root .side-stack { display: grid; gap: 22px; }
-        .profile-final-root .side-card { padding: 22px; background: var(--panel); border: 1px solid var(--line); }
-        .profile-final-root .side-title { font: italic 900 1.75rem 'Barlow Condensed'; text-transform: uppercase; line-height: .9; margin-bottom: 12px; margin-top: 0; }
-        .profile-final-root .premium-card { background: var(--orange); border-color: var(--orange2); color: #fff; }
-        .profile-final-root .premium-card .muted { color: rgba(255,255,255,.78); }
-        .profile-final-root .premium-card .btn { background: #fff; color: var(--orange); border-color: #fff; margin-top: 18px; }
-        .profile-final-root .premium-card .btn:hover { background: #0b0b0b; color: #fff; border-color: #0b0b0b; }
-        .profile-final-root .trust-row, .profile-final-root .settings-row, .profile-final-root .quick-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--line); gap: 12px; }
-        .profile-final-root .trust-row:last-child, .profile-final-root .quick-row:last-child { border-bottom: 0; }
-        .profile-final-root .trust-row span, .profile-final-root .settings-row span, .profile-final-root .quick-row span, .profile-final-root .quick-row button { color: var(--muted); font-size: .9rem; }
-        .profile-final-root .trust-row b, .profile-final-root .quick-row b { font: 900 1rem 'Barlow Condensed'; letter-spacing: .04em; }
-        .profile-final-root .business-box { border: 1px solid rgba(255,90,0,.25); background: rgba(255,90,0,.07); padding: 15px; margin-top: 12px; }
-        .profile-final-root .input { width: 100%; height: 42px; border: 1px solid var(--line2); background: #0b0b0b; color: #fff; padding: 0 12px; font-weight: 700; outline: none; margin-top: 8px; }
-        .profile-final-root .input:focus { border-color: var(--orange); }
-        .profile-final-root .switch { width: 48px; height: 24px; background: var(--orange); position: relative; cursor: pointer; border-radius: 12px; }
-        .profile-final-root .switch.off { background: var(--line2); }
-        .profile-final-root .switch:after { content: ""; position: absolute; right: 4px; top: 4px; width: 16px; height: 16px; background: #fff; transition: 0.2s; border-radius: 50%; }
-        .profile-final-root .switch.off:after { right: 28px; }
-        .profile-final-root .danger { color: #f87171!important; } .profile-final-root .admin { color: var(--orange)!important; } .profile-final-root .business { color: var(--green)!important; }
-        
-        .profile-final-root .quick-row button {
-          background: none; border: none; font: inherit; cursor: pointer; padding: 0; text-align: left; width: 100%; display: block; font-weight: 700;
-        }
-
-        .profile-final-root .favorites-gamification { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; margin-top: 22px; }
-        .profile-final-root .mini-card { padding: 22px; background: var(--panel); border: 1px solid var(--line); }
-        .profile-final-root .mini-card h3 { font: italic 900 1.75rem 'Barlow Condensed'; text-transform: uppercase; line-height: .9; margin-bottom: 0; margin-top: 0; }
-        .profile-final-root .mini-card p { color: var(--muted); margin-top: 8px; font-size: .92rem; }
-        .profile-final-root .avatar-loading-overlay { position: absolute; inset: 0; background: rgba(11,11,11,0.7); display: grid; place-items: center; z-index: 10; }
-        .profile-final-root .material-symbols-outlined.animate-spin { animation: spin 1s linear infinite; }
-        @keyframes spin { 100% { transform: rotate(360deg); } }
-
-        @media(max-width: 1100px) {
-          .profile-final-root .profile-grid, .profile-final-root .content-grid { grid-template-columns: 1fr; }
-          .profile-final-root .progress-card { grid-template-columns: 1fr; }
-          .profile-final-root .plan-block { min-height: 150px; }
-          .profile-final-root .progress-main { border-right: 0; border-bottom: 1px solid var(--line); }
-          .profile-final-root .album-row { grid-template-columns: 110px 1fr; }
-          .profile-final-root .album-actions { grid-column: 1/-1; grid-template-columns: 1fr 1fr; }
-          .profile-final-root .top-actions { display: none; }
-        }
-        @media(max-width: 700px) {
-          .profile-final-root .wrap { padding: 16px 12px 64px; }
-          .profile-final-root .topbar { align-items: flex-start; }
-          .profile-final-root .top-title { font-size: 2rem; }
-          .profile-final-root .profile-grid { gap: 14px; }
-          .profile-final-root .profile-stats { grid-template-columns: 1fr; }
-          .profile-final-root .album-row { grid-template-columns: 1fr; }
-          .profile-final-root .album-cover { width: 130px; min-height: auto; }
-          .profile-final-root .favorites-gamification { grid-template-columns: 1fr; }
-          .profile-final-root .progress-row { display: block; }
-          .profile-final-root .big-percent { margin-top: 14px; }
-          .profile-final-root .album-actions { grid-template-columns: 1fr; }
-          .profile-final-root .btn { width: 100%; }
-        }
-      `}</style>
 
       <header className="topbar">
         <div>
-          <div className="top-kicker">Usuario</div>
+          <div className="top-kicker">{user?.role === 'admin' ? 'ADMINISTRADOR' : 'USUARIO'}</div>
           <div className="top-title">Mi perfil</div>
         </div>
         <div className="top-actions">
-          <button className="btn" onClick={() => navigate('/album')}>Cambiar álbum</button>
-          <button className="btn orange" onClick={() => navigate('/matches')}>Ver cruces</button>
+          <button className="btn desktop-only" onClick={() => navigate('/album')}>Cambiar álbum</button>
+          <button className="btn orange desktop-only" onClick={() => navigate('/matches')}>Ver cruces</button>
+          <button className="btn red logout-btn-top" onClick={() => openConfirm()}>SALIR</button>
         </div>
       </header>
 
@@ -273,17 +180,25 @@ export default function ProfilePage() {
                 initial
               )}
               <label className="avatar-edit">
-                📷
+                ðŸ“·
                 <input type="file" hidden accept="image/*" onChange={handleAvatarUpload} disabled={uploadingAvatar} />
               </label>
             </div>
             <div className="profile-name">{name}</div>
-            <div className="profile-meta">{locationName || profile?.department || 'Sin ubicación'} · Activo hoy</div>
+            <div className="profile-meta">{locationName || profile?.department || 'Sin ubicación'} Â· Activo hoy</div>
             <div className="badges">
-              {isPremium && <span className="badge orange">💎 {planName === 'gratis' ? 'Premium' : planName}</span>}
+              {isPremium && <span className="badge orange">ðŸ’Ž {planName === 'gratis' ? 'Premium' : planName}</span>}
               {profile?.is_verified && <span className="badge green">Confiable</span>}
               {mainAlbum && <span className="badge">{mainAlbum.name}</span>}
             </div>
+            {profile?.username && (
+              <div style={{ marginBottom: '12px' }}>
+                <button className="btn" style={{ width: '100%', justifyContent: 'center' }} onClick={() => navigate(`/u/${profile.username}`)}>
+                  <span className="material-symbols-outlined">public</span>
+                  Ver Perfil Público
+                </button>
+              </div>
+            )}
             <div style={{ marginBottom: '18px', display: 'flex', alignItems: 'center', gap: '10px' }}>
               <ReputationStars stars={reputation?.star_rating || 1} size="md" showLabel />
               {progress?.level && (
@@ -297,8 +212,11 @@ export default function ProfilePage() {
                   border: `1px solid ${LEVELS[progress.level]?.color || 'var(--line)'}40`,
                   background: `${LEVELS[progress.level]?.color || '#fff'}10`,
                   padding: '4px 8px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px'
                 }}>
-                  {LEVELS[progress.level]?.icon} {LEVELS[progress.level]?.name || progress.level}
+                  {LEVELS[progress.level]?.iconKey ? <GamificationIcon icon={LEVELS[progress.level].iconKey} size="sm" /> : LEVELS[progress.level]?.icon} {LEVELS[progress.level]?.name || progress.level}
                 </span>
               )}
             </div>
@@ -322,9 +240,16 @@ export default function ProfilePage() {
                 <div className="pstat"><b>{matches?.length || 0}</b><span>Cruces</span></div>
               </div>
             </div>
-            <div className="plan-block">
-              <b>{isPremium ? (planName === 'gratis' ? 'Premium' : planName) : 'Gratis'}</b>
-              <span>Plan activo</span>
+            <div className="plan-block" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'center' }}>
+              <b style={{ fontSize: '1.8rem', lineHeight: '1.1' }}>{isPremium ? (planName === 'gratis' ? 'PLUS' : planName.toUpperCase()) : 'GRATIS'}</b>
+              <span style={{ fontWeight: 'bold' }}>Plan activo</span>
+              
+              <p className="muted" style={{ margin: '16px 0', fontSize: '0.9rem', color: 'rgba(255,255,255,0.9)', lineHeight: 1.4 }}>
+                {isPremium ? `Disfrutás de todos los beneficios de ${planName === 'gratis' ? 'Plus' : planName}.` : 'Subí a Premium para ver intercambios ilimitados y chatear sin restricciones.'}
+              </p>
+              <button className="btn" style={{ background: '#fff', color: '#ff5a00', width: '100%', marginTop: 'auto', fontWeight: 'bold' }} onClick={() => navigate('/premium')}>
+                {isPremium ? 'GESTIONAR SUSCRIPCIÓN' : 'MEJORAR A PRO'}
+              </button>
             </div>
           </section>
         </section>
@@ -364,8 +289,15 @@ export default function ProfilePage() {
                       </div>
                       <div className="bar"><div className="bar-fill" style={{ width: `${progress}%` }}></div></div>
                     </div>
-                    <div className="album-actions">
-                      <button className="btn orange" onClick={() => navigate(`/album/${ua.album_id}`)}>Abrir álbum</button>
+                    <div className="album-actions" style={{ display: 'flex', gap: '0.5rem', flexDirection: 'column' }}>
+                      <button className="btn orange" onClick={async () => {
+                        await useAppStore.getState().selectAlbum(ua.album, profile?.id);
+                        navigate('/album');
+                      }}>Abrir álbum</button>
+                      <button className="btn" onClick={() => {
+                        setEditingAlbumPrivacy(ua)
+                        setShowPrivacyModal(true)
+                      }}>Privacidad</button>
                     </div>
                   </article>
                 )
@@ -381,7 +313,7 @@ export default function ProfilePage() {
                     <div className="album-sub">Sumá otra colección para seguir intercambiando.</div>
                   </div>
                   <div className="album-actions">
-                    <button className="btn" onClick={() => navigate('/album')}>Agregar</button>
+                    <button className="btn" onClick={() => setShowAlbumPicker(true)}>Agregar</button>
                   </div>
                 </article>
               )}
@@ -395,29 +327,24 @@ export default function ProfilePage() {
                 <button className="btn" style={{ marginTop: '16px' }} onClick={() => navigate('/favorites')}>Ver favoritos</button>
               </div>
               <div className="mini-card" style={{ padding: '22px' }}>
+                <h3 style={{ marginBottom: '16px' }}>Nivel y Progreso</h3>
                 <ProfileGamification />
               </div>
             </div>
           </div>
 
           <aside className="side-stack">
-            <section className="side-card premium-card">
-              <div className="side-title">{isPremium ? (planName === 'gratis' ? 'Premium' : planName) : 'Plan Gratuito'}</div>
-              <p className="muted">
-                {isPremium ? `Disfrutás de todos los beneficios de ${planName === 'gratis' ? 'Premium' : planName}.` : 'Subí a Premium para ver intercambios ilimitados y chatear sin restricciones.'}
-              </p>
-              <button className="btn block" onClick={() => navigate('/premium')}>
-                {isPremium ? 'Gestionar suscripción' : 'Mejorar a Pro'}
-              </button>
-            </section>
+
 
             <section className="side-card">
               <div className="side-title">Reputación</div>
               <div style={{ marginBottom: '14px' }}>
                 <ReputationStars stars={reputation?.star_rating || 1} size="lg" showLabel />
               </div>
-              <div className="trust-row"><span>Intercambios</span><b>{profile?.total_trades || 0} exitosos</b></div>
-              <div className="trust-row"><span>Miembro desde</span><b>{profile?.created_at ? new Date(profile.created_at).toLocaleDateString('es-UY', { month: 'short', year: 'numeric' }) : '—'}</b></div>
+              <div className="trust-row"><span>Intercambios</span><b>{progress?.completed_exchanges || profile?.completed_exchanges || 0} confirmados</b></div>
+              <div className="trust-row"><span>Tasa de cierre</span><b>{Math.round(progress?.completion_rate || profile?.completion_rate || 0)}%</b></div>
+              <div className="trust-row"><span>Confiabilidad</span><b>{Math.round(progress?.reliability_score || profile?.reliability_score || 0)}/100</b></div>
+              <div className="trust-row"><span>Miembro desde</span><b>{profile?.created_at ? new Date(profile.created_at).toLocaleDateString('es-UY', { month: 'short', year: 'numeric' }) : 'â€”'}</b></div>
               <div className="trust-row"><span>Nivel de confianza</span><b style={{ color: getStarLevel(reputation?.star_rating || 1).color }}>{getStarLevel(reputation?.star_rating || 1).label}</b></div>
             </section>
 
@@ -452,7 +379,17 @@ export default function ProfilePage() {
               <label className="kicker" style={{ display: 'block', marginTop: '12px' }}>Nombre</label>
               <input className="input" value={displayName} onChange={e => setDisplayName(e.target.value)} placeholder="Ej: Juan Pérez" />
               
-              <div className="settings-row">
+              <label className="kicker" style={{ display: 'block', marginTop: '12px' }}>Nombre de usuario (público)</label>
+              <input className="input" value={username} onChange={e => setUsername(e.target.value)} placeholder="Ej: juanperez123" />
+
+              <label className="kicker" style={{ display: 'block', marginTop: '12px' }}>Visibilidad del perfil</label>
+              <select className="input" value={profileVisibility} onChange={e => setProfileVisibility(e.target.value)}>
+                <option value="public">Público (Todos)</option>
+                <option value="matches">Solo Matches (Quienes cruzan conmigo)</option>
+                <option value="private">Privado (Nadie)</option>
+              </select>
+              
+              <div className="settings-row" style={{ marginTop: '16px' }}>
                 <span>Notificaciones</span>
                 <div className={`switch ${notifEnabled ? '' : 'off'}`} onClick={() => setNotifEnabled(!notifEnabled)}></div>
               </div>
@@ -467,43 +404,124 @@ export default function ProfilePage() {
             </section>
 
             <section className="side-card">
-              {isAdmin && (
-                <div className="quick-row">
-                  <button className="admin" onClick={() => navigate('/admin')}>🔐 Panel de Administración</button>
-                </div>
-              )}
-              {canAccessBusinessDashboard(profile) && (
-                <div className="quick-row">
-                  <button className="business" onClick={() => navigate('/business')}>🏪 FigusUY Negocios</button>
-                </div>
-              )}
-              <div className="quick-row">
-                <button onClick={() => setShowAlphaModal(true)}>🧪 Ver aviso Alpha</button>
-              </div>
-              <div className="quick-row">
-                <button className="danger" onClick={() => setShowSignOutConfirm(true)}>↩ Cerrar sesión</button>
+              <div className="side-title">Programa de Referidos</div>
+              <p className="muted" style={{ marginBottom: '12px' }}>Invitá a tus amigos y ganá días Premium gratis.</p>
+              <div className="business-box">
+                <button className="btn block" style={{ background: '#10b981', color: 'white', fontWeight: 'bold' }} onClick={() => navigate('/referidos')}>
+                  <span className="material-symbols-outlined">group_add</span>
+                  Invitar amigos
+                </button>
               </div>
             </section>
+
+            {(isAdmin || canAccessBusinessDashboard(profile)) && (
+              <section className="side-card">
+                <div className="side-title">Accesos Rápidos</div>
+                {isAdmin && (
+                  <div className="quick-row">
+                    <button className="admin" onClick={() => navigate('/admin')}>ðŸ” Panel de Administración</button>
+                  </div>
+                )}
+                {canAccessBusinessDashboard(profile) && (
+                  <div className="quick-row">
+                    <button className="business" onClick={() => navigate('/business')}>ðŸª FigusUY Negocios</button>
+                  </div>
+                )}
+              </section>
+            )}
           </aside>
         </section>
       </main>
 
-      <ConfirmDialog 
-        isOpen={showSignOutConfirm} 
-        title="Cerrar sesión" 
-        message="¿Seguro que querés salir? No te pierdas los nuevos intercambios." 
-        confirmText="Salir" 
-        cancelText="Cancelar" 
-        onConfirm={handleSignOut} 
-        onCancel={() => setShowSignOutConfirm(false)} 
-        variant="danger" 
-      />
+      {/* Album Picker Modal */}
+      {showAlbumPicker && (
+        <div className="album-modal-overlay" onClick={() => setShowAlbumPicker(false)}>
+          <div className="album-modal" onClick={e => e.stopPropagation()}>
+            <div className="album-modal-header">
+              <div className="kicker">Colecciones disponibles</div>
+              <h2 style={{ fontSize: '1.8rem' }}>Elegir álbum</h2>
+            </div>
+            <div className="album-modal-body">
+              {albums.filter(a => !userAlbums.some(ua => ua.album_id === a.id)).length === 0 ? (
+                <p className="muted">No hay más álbumes disponibles para agregar.</p>
+              ) : (
+                albums.filter(a => !userAlbums.some(ua => ua.album_id === a.id)).map(a => (
+                  <div 
+                    key={a.id} 
+                    className={`album-option ${selectedAlbumId === a.id ? 'selected' : ''}`}
+                    onClick={() => setSelectedAlbumId(a.id)}
+                  >
+                    <div className="album-option-cover">
+                      {(a.cover_url || a.images?.[0]) && <img src={a.cover_url || a.images?.[0]} alt={a.name} />}
+                    </div>
+                    <div className="album-option-info">
+                      <div className="album-option-title">{a.name}</div>
+                      <div className="album-option-sub">{a.editorial} Â· {a.year}</div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+            <div className="album-modal-footer">
+              <button className="btn" onClick={() => { setShowAlbumPicker(false); setSelectedAlbumId(null); }}>Cerrar</button>
+              <button 
+                className="btn orange" 
+                disabled={!selectedAlbumId || addingAlbum}
+                onClick={handleAddAlbum}
+              >
+                {addingAlbum ? 'Agregando...' : 'Agregar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showAlphaModal && (
         <AlphaWelcomeModal
           forceOpen={true}
           onClose={() => setShowAlphaModal(false)}
         />
+      )}
+
+      {/* Album Privacy Modal */}
+      {showPrivacyModal && editingAlbumPrivacy && (
+        <div className="album-modal-overlay" onClick={() => setShowPrivacyModal(false)}>
+          <div className="album-modal" onClick={e => e.stopPropagation()}>
+            <div className="album-modal-header">
+              <div className="kicker">Privacidad de la Colección</div>
+              <h2 style={{ fontSize: '1.5rem' }}>{editingAlbumPrivacy.album.name}</h2>
+            </div>
+            <div className="album-modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div>
+                <label className="kicker" style={{ display: 'block', marginBottom: '8px' }}>Visibilidad</label>
+                <select className="input" value={editingAlbumPrivacy.visibility || 'public'} onChange={e => setEditingAlbumPrivacy({...editingAlbumPrivacy, visibility: e.target.value})}>
+                  <option value="public">Público (Todos)</option>
+                  <option value="matches">Solo Matches</option>
+                  <option value="private">Privado</option>
+                </select>
+              </div>
+              
+              <div className="settings-row" style={{ padding: '0.5rem 0' }}>
+                <span>Mostrar Faltantes</span>
+                <div className={`switch ${editingAlbumPrivacy.show_missing ? '' : 'off'}`} onClick={() => setEditingAlbumPrivacy({...editingAlbumPrivacy, show_missing: !editingAlbumPrivacy.show_missing})}></div>
+              </div>
+              
+              <div className="settings-row" style={{ padding: '0.5rem 0' }}>
+                <span>Mostrar Repetidas</span>
+                <div className={`switch ${editingAlbumPrivacy.show_repeated ? '' : 'off'}`} onClick={() => setEditingAlbumPrivacy({...editingAlbumPrivacy, show_repeated: !editingAlbumPrivacy.show_repeated})}></div>
+              </div>
+
+              <div className="settings-row" style={{ padding: '0.5rem 0' }}>
+                <span>Mostrar Progreso</span>
+                <div className={`switch ${editingAlbumPrivacy.show_progress ? '' : 'off'}`} onClick={() => setEditingAlbumPrivacy({...editingAlbumPrivacy, show_progress: !editingAlbumPrivacy.show_progress})}></div>
+              </div>
+            </div>
+            <div className="album-modal-footer">
+              <button className="btn" onClick={() => setShowPrivacyModal(false)}>Cancelar</button>
+              <button className="btn orange" onClick={handleSavePrivacy} disabled={saving}>Guardar Privacidad</button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

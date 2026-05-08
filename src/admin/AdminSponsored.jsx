@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useToast } from '../components/Toast';
 
@@ -74,8 +74,23 @@ export default function AdminSponsored() {
   };
 
   const toggleActive = async (id, currentStatus) => {
-    await supabase.from('sponsored_placements').update({ is_active: !currentStatus }).eq('id', id);
-    fetchData();
+    const { error } = await supabase.from('sponsored_placements').update({ is_active: !currentStatus }).eq('id', id);
+    if (error) {
+      toast.error('Error al actualizar estado');
+    } else {
+      fetchData();
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (window.confirm("¿Estás seguro de que deseas eliminar esta promo definitivamente?")) {
+      const { error } = await supabase.from('sponsored_placements').delete().eq('id', id);
+      if (error) {
+        toast.error("Error al eliminar");
+      } else {
+        fetchData();
+      }
+    }
   };
 
   return (
@@ -111,7 +126,7 @@ export default function AdminSponsored() {
             
             {(formData.placement_type === 'album_contextual') && (
               <div className="form-group">
-                <label className="form-label">Álbum Relacionado</label>
+                <label className="form-label">Ãlbum Relacionado</label>
                 <select className="input" value={formData.album_id} onChange={e => setFormData({...formData, album_id: e.target.value})}>
                   <option value="">Ninguno</option>
                   {albums.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
@@ -173,15 +188,23 @@ export default function AdminSponsored() {
               <div>
                 <h3 className="font-bold">{p.title}</h3>
                 <p className="text-sm text-secondary">{p.placement_type} | Expira: {p.ends_at ? new Date(p.ends_at).toLocaleDateString() : 'Nunca'}</p>
-                <p className="text-xs text-muted">Álbum ID: {p.album_id || 'N/A'}</p>
+                <p className="text-xs text-muted">Ãlbum ID: {p.album_id || 'N/A'}</p>
               </div>
-              <div>
+              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                 <button 
                   className={`btn ${p.is_active ? 'btn-danger' : 'btn-success'}`}
                   style={{ backgroundColor: p.is_active ? 'var(--color-danger)' : 'var(--color-success)', color: 'white' }}
                   onClick={() => toggleActive(p.id, p.is_active)}
                 >
                   {p.is_active ? 'Desactivar' : 'Activar'}
+                </button>
+                <button
+                  className="btn"
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0.5rem', backgroundColor: 'transparent', border: '1px solid var(--color-danger)', color: 'var(--color-danger)', borderRadius: '0.375rem', cursor: 'pointer' }}
+                  onClick={() => handleDelete(p.id)}
+                  title="Eliminar definitivamente"
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: '1.25rem' }}>delete</span>
                 </button>
               </div>
             </div>

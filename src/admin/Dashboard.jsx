@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+﻿import React, { useEffect } from 'react'
 import { useAdminStore } from '../stores/adminStore'
 import { useNavigate } from 'react-router-dom'
 
@@ -26,10 +26,10 @@ export default function AdminDashboard() {
   const quickActions = [
     { label: 'Revisar reportes', path: '/admin/reports', icon: 'gavel', tone: 'red' },
     { label: 'Aprobar locales', path: '/admin/location-requests', icon: 'fact_check', tone: 'yellow' },
-    { label: 'Crear promo', path: '/admin/promos', icon: 'add_alert', tone: 'orange' },
+    { label: 'Crear promo', path: '/admin/sponsored', icon: 'add_alert', tone: 'orange' },
     { label: 'Nuevo album', path: '/admin/albums', icon: 'library_add', tone: 'blue' },
     { label: 'Enviar push', path: '/admin/notifications', icon: 'send', tone: 'blue' },
-    { label: 'Gestionar afiliados', path: '/admin/affiliates', icon: 'campaign', tone: 'orange' },
+    { label: 'Gestionar afiliados', path: '/admin/influencers', icon: 'campaign', tone: 'orange' },
     { label: 'Ajustar algoritmo', path: '/admin/algorithm', icon: 'tune', tone: 'yellow' },
   ]
 

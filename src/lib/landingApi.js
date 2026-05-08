@@ -1,7 +1,7 @@
-import { supabase } from './supabase'
+﻿import { supabase } from './supabase'
 import {
-  LANDING_DEFAULT_BLOCKS,
   LANDING_PAGE_KEY,
+  getDefaultBlocksForPage,
   cloneBlockContent,
   createEmptyBlock,
 } from './landingBuilder'
@@ -10,13 +10,13 @@ let missingPublicLandingRpc = false
 let missingLandingEventsTable = false
 let missingLandingBlocksTable = false
 
-export async function ensureLandingSeeded() {
+export async function ensureLandingSeeded(pageKey = LANDING_PAGE_KEY) {
   if (missingLandingBlocksTable) return
 
   const { data, error } = await supabase
     .from('landing_blocks')
     .select('id')
-    .eq('page_key', LANDING_PAGE_KEY)
+    .eq('page_key', pageKey)
     .limit(1)
 
   if (isMissingRelationError(error, 'landing_blocks')) {
@@ -26,7 +26,7 @@ export async function ensureLandingSeeded() {
   if (error) throw error
   if (data?.length) return
 
-  const payload = LANDING_DEFAULT_BLOCKS.map((block) => ({
+  const payload = getDefaultBlocksForPage(pageKey).map((block) => ({
     ...block,
     draft_content: cloneBlockContent(block.draft_content),
     published_content: cloneBlockContent(block.published_content),
@@ -40,15 +40,15 @@ export async function ensureLandingSeeded() {
   if (insertError) throw insertError
 }
 
-export async function fetchLandingBlocks({ mode = 'published' } = {}) {
+export async function fetchLandingBlocks({ mode = 'published', pageKey = LANDING_PAGE_KEY } = {}) {
   if (mode === 'draft') {
-    await ensureLandingSeeded()
+    await ensureLandingSeeded(pageKey)
     if (missingLandingBlocksTable) return []
 
     const { data, error } = await supabase
       .from('landing_blocks')
       .select('*')
-      .eq('page_key', LANDING_PAGE_KEY)
+      .eq('page_key', pageKey)
       .order('draft_order', { ascending: true })
 
     if (isMissingRelationError(error, 'landing_blocks')) {
@@ -62,7 +62,7 @@ export async function fetchLandingBlocks({ mode = 'published' } = {}) {
   if (missingPublicLandingRpc) return []
 
   const { data, error } = await supabase.rpc('get_public_landing_blocks', {
-    target_page_key: LANDING_PAGE_KEY,
+    target_page_key: pageKey,
   })
 
   if (isMissingRpcError(error, 'get_public_landing_blocks')) {
@@ -73,13 +73,13 @@ export async function fetchLandingBlocks({ mode = 'published' } = {}) {
   return data || []
 }
 
-export async function fetchLandingEvents() {
+export async function fetchLandingEvents({ pageKey = LANDING_PAGE_KEY } = {}) {
   if (missingLandingEventsTable) return []
 
   const { data, error } = await supabase
     .from('landing_block_events')
     .select('*')
-    .eq('page_key', LANDING_PAGE_KEY)
+    .eq('page_key', pageKey)
     .order('created_at', { ascending: false })
     .limit(1000)
 
@@ -113,8 +113,8 @@ export async function saveDraftBlock(block) {
   if (error) throw error
 }
 
-export async function createLandingBlock(type, order) {
-  const block = createEmptyBlock(type)
+export async function createLandingBlock(type, order, pageKey = LANDING_PAGE_KEY) {
+  const block = createEmptyBlock(type, pageKey)
   const payload = {
     ...block,
     draft_order: order,
@@ -133,7 +133,7 @@ export async function createLandingBlock(type, order) {
 
 export async function duplicateLandingBlock(block, order) {
   const payload = {
-    page_key: LANDING_PAGE_KEY,
+    page_key: block.page_key || LANDING_PAGE_KEY,
     block_type: block.block_type,
     internal_title: `${block.internal_title} copia`,
     slug: `${block.slug}-${Math.random().toString(36).slice(2, 6)}`,
@@ -194,12 +194,12 @@ export async function publishLandingDraft(blocks) {
   }
 }
 
-export async function trackLandingEvent({ blockSlug, blockType, eventType, ctaId = null, metadata = {} }) {
+export async function trackLandingEvent({ pageKey = LANDING_PAGE_KEY, blockSlug, blockType, eventType, ctaId = null, metadata = {} }) {
   if (missingLandingEventsTable) return
 
   const sessionKey = getLandingSessionKey()
   const { error } = await supabase.from('landing_block_events').insert({
-    page_key: LANDING_PAGE_KEY,
+    page_key: pageKey,
     block_slug: blockSlug,
     block_type: blockType,
     event_type: eventType,

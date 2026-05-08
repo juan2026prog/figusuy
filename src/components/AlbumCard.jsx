@@ -1,4 +1,4 @@
-import React from 'react'
+﻿import React from 'react'
 import { useThemeStore } from '../stores/themeStore'
 
 export default function AlbumCard({ album, progress, onClick, isSelected }) {
@@ -45,7 +45,7 @@ export default function AlbumCard({ album, progress, onClick, isSelected }) {
       <div style={iconStyle}>
         {coverImage ? (
           <img src={coverImage} alt={album.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-        ) : '⚽'}
+        ) : 'âš½'}
       </div>
 
       <div style={{ flex: 1, minWidth: 0 }}>
@@ -53,7 +53,7 @@ export default function AlbumCard({ album, progress, onClick, isSelected }) {
           {album.name}
         </h3>
         <p style={{ fontSize: '0.8125rem', color: isDark ? 'var(--color-text-secondary)' : 'var(--color-text-muted)' }}>
-          {album.total_stickers} figuritas • {album.year}
+          {album.total_stickers} figuritas â€¢ {album.year}
         </p>
 
         {/* Progress bar */}

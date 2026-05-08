@@ -1,4 +1,4 @@
-import { create } from 'zustand'
+﻿import { create } from 'zustand'
 import { supabase } from '../lib/supabase'
 import { findMatches } from '../lib/matching'
 
@@ -39,22 +39,12 @@ export const useAppStore = create((set, get) => ({
       .select('*, album:albums(*)')
       .eq('user_id', userId)
 
-    const albumsWithProgress = await Promise.all(
-      (data || []).map(async (ua) => {
-        const [missingRes, ownedRes, duplicateRes] = await Promise.all([
-          supabase.from('stickers_missing').select('*', { count: 'exact', head: true }).eq('user_id', userId).eq('album_id', ua.album_id),
-          supabase.from('stickers_owned').select('*', { count: 'exact', head: true }).eq('user_id', userId).eq('album_id', ua.album_id),
-          supabase.from('stickers_duplicate').select('*', { count: 'exact', head: true }).eq('user_id', userId).eq('album_id', ua.album_id)
-        ])
-
-        return { 
-          ...ua, 
-          missingCount: missingRes.count || 0,
-          ownedCount: ownedRes.count || 0,
-          duplicateCount: duplicateRes.count || 0
-        }
-      })
-    )
+    const albumsWithProgress = (data || []).map((ua) => ({
+      ...ua,
+      missingCount: 0,
+      ownedCount: 0,
+      duplicateCount: 0
+    }))
 
     set({ userAlbums: albumsWithProgress })
 
@@ -68,18 +58,22 @@ export const useAppStore = create((set, get) => ({
     set({ selectedAlbum: album, loading: true })
 
     if (userId) {
-      const { error } = await supabase
-        .from('user_albums')
-        .upsert(
-          { user_id: userId, album_id: album.id },
-          { onConflict: 'user_id,album_id' }
-        )
+      const isAlreadyActive = get().userAlbums.some(ua => ua.album_id === album.id)
       
-      if (error) {
-        set({ loading: false })
-        return { error }
+      if (!isAlreadyActive) {
+        const { error } = await supabase
+          .from('user_albums')
+          .upsert(
+            { user_id: userId, album_id: album.id },
+            { onConflict: 'user_id,album_id' }
+          )
+        
+        if (error) {
+          set({ loading: false })
+          return { error }
+        }
+        await get().fetchUserAlbums(userId)
       }
-      await get().fetchUserAlbums(userId)
     }
 
     await get().fetchStickers(userId, album.id)

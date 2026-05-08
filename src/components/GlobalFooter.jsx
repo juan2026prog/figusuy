@@ -1,16 +1,13 @@
-import React, { useEffect } from 'react'
+﻿import React, { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useBrandingStore } from '../stores/brandingStore'
 
 export default function GlobalFooter() {
-  const { settings, footerPages, fetchFooterPages, fetchSettings } = useBrandingStore()
+  const { settings, footerPages, fetchFooterPages } = useBrandingStore()
 
   useEffect(() => {
-    fetchFooterPages()
-    if (!settings.footer_text) {
-      fetchSettings()
-    }
-  }, [])
+    void fetchFooterPages()
+  }, [fetchFooterPages])
 
   if (!settings.footer_enabled) return null
 
@@ -78,7 +75,7 @@ export default function GlobalFooter() {
           fontSize: '0.8rem',
           textAlign: 'center'
         }}>
-          {settings.footer_text || '© 2026 FigusUY. Todos los derechos reservados.'}
+          {settings.footer_text || 'Â© 2026 FigusUY. Todos los derechos reservados.'}
         </div>
       </div>
     </footer>

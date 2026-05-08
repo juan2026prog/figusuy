@@ -1,148 +1,156 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { getUserLocation, watchUserLocation, getAddressFromCoords, URUGUAY_DEPARTMENTS } from '../utils/location';
-import { supabase } from '../lib/supabase';
-import { useAuthStore } from '../stores/authStore';
-import UniversalAddressAutocomplete from './UniversalAddressAutocomplete';
+﻿import React, { useEffect, useRef, useState } from 'react'
+import { getAddressFromCoords, getUserLocation, watchUserLocation } from '../utils/location'
+import { useAuthStore } from '../stores/authStore'
+import UniversalAddressAutocomplete from './UniversalAddressAutocomplete'
+
+const isProfilePlanConstraintError = (error) => {
+  const message = String(error?.message || '').toLowerCase()
+  return error?.code === '23514' || message.includes('plan_name_check')
+}
+
+const getLocationErrorMessage = (error, fallback) => {
+  if (typeof error === 'string') return error
+  if (isProfilePlanConstraintError(error)) {
+    return 'No se pudo guardar tu ubicacion porque tu plan del perfil esta desalineado. Recarga la pagina y guarda tu perfil una vez.'
+  }
+  return fallback
+}
 
 export default function LocationSelector({ onLocationSaved, className = '' }) {
-  const { profile, updateProfile } = useAuthStore();
-  const [isGPSActive, setIsGPSActive] = useState(profile?.location_source === 'gps');
-  const [mode, setMode] = useState(profile?.location_source === 'gps' ? 'gps_active' : 'manual'); 
-  const [errorMsg, setErrorMsg] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [isWatching, setIsWatching] = useState(false);
-  
-  const [department, setDepartment] = useState(profile?.department || '');
-  const [neighborhood, setNeighborhood] = useState(profile?.neighborhood || '');
-  const [detectedArea, setDetectedArea] = useState(null);
+  const { profile, updateProfile } = useAuthStore()
+  const [isGPSActive, setIsGPSActive] = useState(profile?.location_source === 'gps')
+  const [errorMsg, setErrorMsg] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [department, setDepartment] = useState(profile?.department || '')
+  const [neighborhood, setNeighborhood] = useState(profile?.neighborhood || '')
+  const [detectedArea, setDetectedArea] = useState(null)
 
-  const lastUpdateRef = useRef(0);
-  const isUpdatingRef = useRef(false);
+  const lastUpdateRef = useRef(0)
+  const isUpdatingRef = useRef(false)
+  const lastFeedbackRef = useRef(0)
 
-  // Load profile state on mount
   useEffect(() => {
-    if (profile) {
-      // Only set from profile if we are NOT currently in the middle of a manual change
-      if (!loading) {
-        setIsGPSActive(profile.location_source === 'gps');
-        setDepartment(profile.department || '');
-        setNeighborhood(profile.neighborhood || '');
-      }
-    }
-  }, [profile, loading]);
+    if (!profile || loading) return
+    setIsGPSActive(profile.location_source === 'gps')
+    setDepartment(profile.department || '')
+    setNeighborhood(profile.neighborhood || '')
+  }, [profile, loading])
 
-  // Real-time tracking when GPS is active
   useEffect(() => {
-    let watchId = null;
+    let watchId = null
 
     if (isGPSActive) {
-      setIsWatching(true);
       watchId = watchUserLocation(
         async (coords) => {
-          // Throttle: only update every 30 seconds or if it's the first update
-          const now = Date.now();
-          if (now - lastUpdateRef.current < 30000 && lastUpdateRef.current !== 0) return;
-          if (isUpdatingRef.current) return;
+          const now = Date.now()
+          if (now - lastUpdateRef.current < 30000 && lastUpdateRef.current !== 0) return
+          if (isUpdatingRef.current) return
 
-          isUpdatingRef.current = true;
+          isUpdatingRef.current = true
           try {
-            const address = await getAddressFromCoords(coords.lat, coords.lng);
+            const address = await getAddressFromCoords(coords.lat, coords.lng)
             const updateData = {
               lat: coords.lat,
               lng: coords.lng,
               location_source: 'gps',
               department: address?.department || '',
               city: address?.city || '',
-              neighborhood: address?.neighborhood || ''
-            };
-            
-            await saveLocationToDB(updateData);
-            setDetectedArea(address);
-            lastUpdateRef.current = now;
-            if (onLocationSaved) onLocationSaved(updateData);
+              neighborhood: address?.neighborhood || '',
+            }
+
+            await saveLocationToDB(updateData)
+            setDetectedArea(address)
+            lastUpdateRef.current = now
           } catch (err) {
-            console.error('Update during watch error:', err);
+            console.error('Update during watch error:', err)
+            setErrorMsg(getLocationErrorMessage(err, 'No se pudo actualizar tu ubicacion automaticamente.'))
           } finally {
-            isUpdatingRef.current = false;
+            isUpdatingRef.current = false
           }
         },
         (err) => {
-          console.error('Watch Error:', err);
-          // Don't show error if it's just a timeout and we already have some data
-          if (err.code === 3 && (detectedArea || profile?.lat)) return;
-          setErrorMsg('Error al rastrear ubicación. Verificá los permisos de tu celular.');
+          console.error('Watch Error:', err)
+          if (err.code === 3 && (detectedArea || profile?.lat)) return
+          setErrorMsg('Error al rastrear ubicacion. Verifica permisos y configuracion del perfil.')
         }
-      );
+      )
     } else {
-      setIsWatching(false);
+      lastUpdateRef.current = 0
+      isUpdatingRef.current = false
     }
 
     return () => {
-      if (watchId !== null) navigator.geolocation.clearWatch(watchId);
-    };
-  }, [isGPSActive, onLocationSaved]);
+      if (watchId !== null && navigator.geolocation) navigator.geolocation.clearWatch(watchId)
+    }
+  }, [isGPSActive, onLocationSaved, profile?.lat, detectedArea])
 
   const saveLocationToDB = async (data) => {
-    if (!profile?.id) return;
-    try {
-      const payload = {
-        ...data,
-        location_updated_at: new Date().toISOString()
-      };
-      // Note: updateProfile already calls Supabase update
-      await updateProfile(payload);
-    } catch (err) {
-      console.error('Error saving location:', err);
-      throw err;
+    if (!profile?.id) return
+    const payload = {
+      ...data,
+      location_updated_at: new Date().toISOString(),
     }
-  };
+    await updateProfile(payload)
+  }
+
+  const notifyLocationSaved = (data) => {
+    if (!onLocationSaved) return
+    const now = Date.now()
+    if (now - lastFeedbackRef.current < 1500) return
+    lastFeedbackRef.current = now
+    onLocationSaved(data)
+  }
 
   const handleToggleGPS = async (e) => {
-    const active = e.target.checked;
-    setIsGPSActive(active);
-    setErrorMsg('');
+    const active = e.target.checked
+    setIsGPSActive(active)
+    setErrorMsg('')
 
     if (active) {
-      setLoading(true);
+      setLoading(true)
       try {
-        const coords = await getUserLocation();
-        const address = await getAddressFromCoords(coords.lat, coords.lng);
-        
+        const coords = await getUserLocation()
+        const address = await getAddressFromCoords(coords.lat, coords.lng)
         const updateData = {
           lat: coords.lat,
           lng: coords.lng,
           location_source: 'gps',
           department: address?.department || '',
           city: address?.city || '',
-          neighborhood: address?.neighborhood || ''
-        };
+          neighborhood: address?.neighborhood || '',
+        }
 
-        await saveLocationToDB(updateData);
-        setDetectedArea(address);
-        setMode('gps_active');
-        lastUpdateRef.current = Date.now();
-        if (onLocationSaved) onLocationSaved(updateData);
+        await saveLocationToDB(updateData)
+        setDetectedArea(address)
+        lastUpdateRef.current = Date.now()
+        notifyLocationSaved(updateData)
       } catch (err) {
-        console.error('GPS Activation Error:', err);
-        setErrorMsg(typeof err === 'string' ? err : 'No se pudo obtener la ubicación automática. Verificá los permisos.');
-        setIsGPSActive(false);
+        console.error('GPS Activation Error:', err)
+        setErrorMsg(getLocationErrorMessage(err, 'No se pudo obtener la ubicacion automatica. Verifica los permisos.'))
+        setIsGPSActive(false)
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
-    } else {
-      setMode('manual');
-      setDetectedArea(null);
-      await saveLocationToDB({ location_source: 'manual' });
+      return
     }
-  };
+
+    setDetectedArea(null)
+    try {
+      await saveLocationToDB({ location_source: 'manual' })
+    } catch (err) {
+      setErrorMsg(getLocationErrorMessage(err, 'No se pudo cambiar a ubicacion manual.'))
+      setIsGPSActive(true)
+    }
+  }
 
   const handleSaveManual = async () => {
     if (!department && !neighborhood) {
-      setErrorMsg('Ingresa una zona o dirección.');
-      return;
+      setErrorMsg('Ingresa una zona o direccion.')
+      return
     }
-    setLoading(true);
-    setErrorMsg('');
+
+    setLoading(true)
+    setErrorMsg('')
     try {
       const updateData = {
         country: 'Uruguay',
@@ -150,16 +158,17 @@ export default function LocationSelector({ onLocationSaved, className = '' }) {
         neighborhood,
         location_source: 'manual',
         lat: null,
-        lng: null
-      };
-      await saveLocationToDB(updateData);
-      if (onLocationSaved) onLocationSaved(updateData);
+        lng: null,
+      }
+      await saveLocationToDB(updateData)
+      notifyLocationSaved(updateData)
     } catch (err) {
-      setErrorMsg('Error al guardar ubicación manual.');
+      console.error('Error saving manual location:', err)
+      setErrorMsg(getLocationErrorMessage(err, 'Error al guardar ubicacion manual.'))
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   return (
     <div className={`location-selector-container ${className}`}>
@@ -176,6 +185,7 @@ export default function LocationSelector({ onLocationSaved, className = '' }) {
           justify-content: space-between;
           align-items: center;
           margin-bottom: 1rem;
+          gap: 1rem;
         }
         .loc-title {
           font-size: 1.125rem;
@@ -191,8 +201,6 @@ export default function LocationSelector({ onLocationSaved, className = '' }) {
           font-weight: 700;
           color: var(--color-text-secondary);
         }
-        
-        /* Switch styling */
         .switch {
           position: relative;
           display: inline-block;
@@ -203,7 +211,7 @@ export default function LocationSelector({ onLocationSaved, className = '' }) {
         .slider {
           position: absolute;
           cursor: pointer;
-          top: 0; left: 0; right: 0; bottom: 0;
+          inset: 0;
           background-color: var(--color-border);
           transition: .4s;
           border-radius: 34px;
@@ -211,14 +219,16 @@ export default function LocationSelector({ onLocationSaved, className = '' }) {
         .slider:before {
           position: absolute;
           content: "";
-          height: 18px; width: 18px;
-          left: 3px; bottom: 3px;
-          background-color: var(--color-text); transition: .4s;
+          height: 18px;
+          width: 18px;
+          left: 3px;
+          bottom: 3px;
+          background-color: var(--color-text);
+          transition: .4s;
           border-radius: 50%;
         }
         input:checked + .slider { background-color: var(--color-brand-600); }
         input:checked + .slider:before { transform: translateX(24px); }
-
         .loc-status-box {
           background: var(--color-surface-hover);
           border: 1px dashed var(--color-border);
@@ -238,7 +248,6 @@ export default function LocationSelector({ onLocationSaved, className = '' }) {
           50% { opacity: 0.6; transform: scale(1.1); }
           100% { opacity: 1; transform: scale(1); }
         }
-
         .loc-error {
           background: rgba(239, 68, 68, 0.1);
           color: #ef4444;
@@ -248,39 +257,19 @@ export default function LocationSelector({ onLocationSaved, className = '' }) {
           margin-bottom: 1rem;
           font-weight: 500;
         }
-
         .manual-form {
           display: grid;
           gap: 1rem;
           animation: fadeIn 0.3s ease;
         }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-
-        .form-group label {
-          display: block;
-          font-size: 0.8125rem;
-          font-weight: 700;
-          color: var(--color-text-secondary);
-          margin-bottom: 0.375rem;
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(5px); }
+          to { opacity: 1; transform: translateY(0); }
         }
-        .form-group select, .form-group input {
-          width: 100%;
-          padding: 0.75rem;
-          border-radius: var(--radius-lg);
-          background: var(--color-surface-alt);
-          border: 1px solid var(--color-border);
-          color: var(--color-text);
-          font-size: 0.875rem;
-          transition: border-color 0.2s;
-        }
-        .form-group select:focus, .form-group input:focus {
-          border-color: var(--color-brand-600);
-          outline: none;
-        }
-
         .btn-save {
           background: var(--color-brand-600);
-          color: var(--color-text); padding: 0.75rem;
+          color: var(--color-text);
+          padding: 0.75rem;
           border-radius: var(--radius-lg);
           font-weight: 800;
           border: none;
@@ -294,11 +283,11 @@ export default function LocationSelector({ onLocationSaved, className = '' }) {
       <div className="loc-header">
         <h3 className="loc-title">Tu Zona</h3>
         <label className="loc-toggle">
-          Ubicación Inteligente
+          Ubicacion Inteligente
           <div className="switch">
-            <input 
-              type="checkbox" 
-              checked={isGPSActive} 
+            <input
+              type="checkbox"
+              checked={isGPSActive}
               onChange={handleToggleGPS}
               disabled={loading}
             />
@@ -321,10 +310,10 @@ export default function LocationSelector({ onLocationSaved, className = '' }) {
           <span className="material-symbols-outlined detected-icon">location_on</span>
           <div>
             <p style={{ margin: 0, fontWeight: 800, fontSize: '1rem', color: 'var(--color-text)' }}>
-              {detectedArea?.neighborhood || profile?.neighborhood || 'Zona Detectada'}
+              {detectedArea?.neighborhood || profile?.neighborhood || 'Zona detectada'}
             </p>
             <p style={{ margin: 0, fontSize: '0.8125rem', color: 'var(--color-text-secondary)', fontWeight: 500 }}>
-              {detectedArea?.city || profile?.city || 'Actualizando ubicación...'}
+              {detectedArea?.city || profile?.city || 'Actualizando ubicacion...'}
             </p>
           </div>
         </div>
@@ -332,24 +321,22 @@ export default function LocationSelector({ onLocationSaved, className = '' }) {
 
       {!loading && !isGPSActive && (
         <div className="manual-form">
-          <div className="form-group" style={{ marginBottom: '1rem' }}>
+          <div style={{ marginBottom: '1rem' }}>
             <UniversalAddressAutocomplete
               countryCode="uy"
               label="Buscar Zona o Ciudad"
               value={neighborhood || department}
-              onChange={(val) => {
-                // We keep the typed text just in case, or wait for select
-              }}
+              onChange={() => {}}
               onAddressSelect={(data) => {
-                setDepartment(data.department || data.state || '');
-                setNeighborhood(data.neighborhood || data.locality || data.city || '');
+                setDepartment(data.department || data.state || '')
+                setNeighborhood(data.neighborhood || data.locality || data.city || '')
               }}
               placeholder="Ej: Pocitos, Montevideo"
             />
             {department && (
-               <div style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)', marginTop: '0.5rem' }}>
-                 Seleccionado: {neighborhood ? `${neighborhood}, ` : ''}{department}
-               </div>
+              <div style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)', marginTop: '0.5rem' }}>
+                Seleccionado: {neighborhood ? `${neighborhood}, ` : ''}{department}
+              </div>
             )}
           </div>
           <button className="btn-save" onClick={handleSaveManual}>
@@ -357,10 +344,10 @@ export default function LocationSelector({ onLocationSaved, className = '' }) {
           </button>
         </div>
       )}
-      
+
       <p style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginTop: '1rem', textAlign: 'center' }}>
         Tus datos se usan para encontrarte cruces cerca de vos.
       </p>
     </div>
-  );
+  )
 }

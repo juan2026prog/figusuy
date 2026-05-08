@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+﻿import React, { useEffect, useState } from 'react'
 import { useAdminStore } from '../stores/adminStore'
 import { supabase } from '../lib/supabase'
 import { useToast } from '../components/Toast'
@@ -7,6 +7,13 @@ import ConfirmDialog from '../components/ConfirmDialog'
 const card = { background: "var(--admin-panel)", borderRadius: "0.5rem", padding: "1.25rem", border: "1px solid var(--admin-line)" }
 const input = { width: "100%", padding: "0.625rem 0.875rem", borderRadius: "0.5rem", border: "1px solid var(--admin-line)", fontSize: "0.875rem", outline: "none", background: "#0d0d0d", color: "#fff" }
 const btn = (bg = 'var(--color-primary)', color = 'white', border = 'none') => ({ padding: '0.5rem 1rem', borderRadius: '0.5rem', background: bg, color, border, fontSize: '0.875rem', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' })
+const buildAlbumCoverPath = (file) => {
+  const fileExt = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg'
+  const uniqueId = typeof crypto !== 'undefined' && crypto.randomUUID
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+  return `covers/${uniqueId}.${fileExt}`
+}
 
 const categories = ['deportes', 'anime', 'comics', 'películas', 'música', 'historia', 'naturaleza', 'otro']
 const statuses = ['active', 'new', 'popular', 'coming_soon', 'archived']
@@ -145,11 +152,12 @@ export default function AdminAlbums() {
   }
 
   const handleFileUpload = async (e) => {
-    const files = Array.from(e.target.files)
+    const files = Array.from(e.target.files || [])
     if (!files.length) return
     
     if (form.images.length + files.length > 3) {
-      setUploadError('Máximo 3 imágenes por álbum')
+      setUploadError('Maximo 3 imagenes por album')
+      e.target.value = ''
       return
     }
 
@@ -159,21 +167,36 @@ export default function AdminAlbums() {
     try {
       const newImageUrls = []
       for (const file of files) {
-        const fileExt = file.name.split('.').pop()
-        const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`
-        const filePath = `covers/${fileName}`
+        if (!file.type?.startsWith('image/')) {
+          throw new Error('Solo se permiten archivos de imagen.')
+        }
 
-        const { error: uploadError } = await supabase.storage.from('albums').upload(filePath, file)
+        if (file.size > 8 * 1024 * 1024) {
+          throw new Error('Cada imagen debe pesar menos de 8 MB.')
+        }
+
+        const filePath = buildAlbumCoverPath(file)
+
+        const { error: uploadError } = await supabase.storage
+          .from('albums')
+          .upload(filePath, file, {
+            upsert: true,
+            cacheControl: '3600',
+            contentType: file.type || undefined,
+          })
         if (uploadError) throw uploadError
 
         const { data: { publicUrl } } = supabase.storage.from('albums').getPublicUrl(filePath)
         newImageUrls.push(publicUrl)
       }
+
       setForm(prev => ({ ...prev, images: [...prev.images, ...newImageUrls] }))
+      toast.success(newImageUrls.length === 1 ? 'Imagen subida.' : 'Imagenes subidas.')
     } catch (err) {
-      setUploadError('Error al subir imágenes: ' + err.message)
+      setUploadError('Error al subir imagenes: ' + err.message)
     } finally {
       setUploadingFiles(false)
+      e.target.value = ''
     }
   }
 
@@ -330,7 +353,7 @@ export default function AdminAlbums() {
         <div className="ag-hero-row">
           <div>
             <div className="admin-kicker">/ modulo operativo</div>
-            <h1 className="ag-title">Gestión de Álbumes</h1>
+            <h1 className="ag-title">Gestión de Ãlbumes</h1>
             <p className="ag-desc" style={{ marginTop: '.8rem', maxWidth: '48rem' }}>Administra el catálogo, figuritas y metadatos ({allAlbums.length} en total)</p>
           </div>
           <div className="ag-icon-box">
@@ -339,7 +362,7 @@ export default function AdminAlbums() {
         </div>
         <div style={{ marginTop: '1.5rem', display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}><button style={btn()} onClick={() => { resetForm(); setShowForm(true) }}>
           <span className="material-symbols-outlined" style={{ fontSize: '1.25rem' }}>add</span>
-          Crear Álbum
+          Crear Ãlbum
         </button></div>
       </section>
 
@@ -357,7 +380,7 @@ export default function AdminAlbums() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
             <h3 style={{ fontWeight: 800, fontSize: '1.25rem', color: "#f5f5f5", display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <span className="material-symbols-outlined" style={{ color: 'var(--color-primary)' }}>{editing ? 'edit' : 'add_circle'}</span>
-              {editing ? 'Editar Álbum' : 'Nuevo Álbum'}
+              {editing ? 'Editar Ãlbum' : 'Nuevo Ãlbum'}
             </h3>
             <button onClick={resetForm} style={{ background: 'none', border: 'none', cursor: 'pointer', color: "var(--admin-muted)" }}>
               <span className="material-symbols-outlined">close</span>
@@ -409,34 +432,34 @@ export default function AdminAlbums() {
               </div>
             </div>
 
-            <div style={{ gridColumn: '1 / -1', background: '#e0f2fe', padding: '1.25rem', borderRadius: '1rem', border: '1px solid #bae6fd' }}>
-              <label style={{ fontSize: '0.875rem', fontWeight: 800, color: '#0369a1', display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                <span className="material-symbols-outlined" style={{ color: '#0284c7' }}>dataset</span>
-                Configuración Detallada del Álbum
+            <div style={{ gridColumn: '1 / -1', background: 'linear-gradient(135deg, rgba(10, 10, 10, 0.98), rgba(28, 28, 28, 0.96))', padding: '1.25rem', borderRadius: '1rem', border: '1px solid rgba(249, 115, 22, 0.35)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)' }}>
+              <label style={{ fontSize: '0.875rem', fontWeight: 800, color: '#fff7ed', display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+                <span className="material-symbols-outlined" style={{ color: 'var(--color-primary)' }}>dataset</span>
+                Configuracion detallada del album
               </label>
-              <p style={{ fontSize: '0.75rem', color: '#0c4a6e', opacity: 0.8, marginBottom: '1rem' }}>Ajusta las capacidades de checklist detallado para este álbum (ej: Mundial Panini 2026).</p>
+              <p style={{ fontSize: '0.8125rem', color: 'rgba(255, 237, 213, 0.78)', marginBottom: '1rem', lineHeight: 1.5 }}>Ajusta las capacidades del checklist avanzado para este album y define como se cargan codigos, nombres e imagenes.</p>
               
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(14rem, 1fr))', gap: '1rem' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.875rem', fontWeight: 600 }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.875rem', fontWeight: 700, color: '#f8fafc' }}>
                   <input type="checkbox" checked={form.has_detailed_stickers} onChange={e => setForm({...form, has_detailed_stickers: e.target.checked})} />
-                  Habilitar Checklist Detallado
+                  Habilitar checklist detallado
                 </label>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.875rem', fontWeight: 600 }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.875rem', fontWeight: 700, color: '#f8fafc' }}>
                   <input type="checkbox" checked={form.has_sticker_codes} onChange={e => setForm({...form, has_sticker_codes: e.target.checked})} />
-                  Usar Códigos de Figuritas
+                  Usar codigos de figuritas
                 </label>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.875rem', fontWeight: 600 }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.875rem', fontWeight: 700, color: '#f8fafc' }}>
                   <input type="checkbox" checked={form.has_sticker_names} onChange={e => setForm({...form, has_sticker_names: e.target.checked})} />
-                  Requerir Nombres
+                  Requerir nombres
                 </label>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.875rem', fontWeight: 600 }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.875rem', fontWeight: 700, color: '#f8fafc' }}>
                   <input type="checkbox" checked={form.has_sticker_images} onChange={e => setForm({...form, has_sticker_images: e.target.checked})} />
-                  Usar Imágenes de Figuritas
+                  Usar imagenes de figuritas
                 </label>
                 <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 700, display: 'block', marginBottom: '0.25rem' }}>Tipo de Numeración</label>
-                  <select style={{...input, padding: '0.375rem 0.5rem', fontSize: '0.75rem'}} value={form.numbering_type} onChange={e => setForm({...form, numbering_type: e.target.value})}>
-                    <option value="standard">Estándar (1-N)</option>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 800, display: 'block', marginBottom: '0.375rem', color: 'rgba(255, 237, 213, 0.78)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Tipo de numeracion</label>
+                  <select style={{...input, padding: '0.375rem 0.5rem', fontSize: '0.75rem', borderColor: 'rgba(249, 115, 22, 0.35)', background: '#111111'}} value={form.numbering_type} onChange={e => setForm({...form, numbering_type: e.target.value})}>
+                    <option value="standard">Estandar (1-N)</option>
                     <option value="mixed">Mixta (ARG 1, FWC 1)</option>
                   </select>
                 </div>
@@ -524,32 +547,33 @@ export default function AdminAlbums() {
               </div>
             </div>
 
-            {/* IMÁGENES UPLOAD */}
-            <div style={{ gridColumn: '1 / -1', background: "var(--admin-panel2)", padding: '1.25rem', borderRadius: '0.75rem', border: '1px dashed var(--color-text-secondary)' }}>
-              <label style={{ fontSize: '0.875rem', fontWeight: 800, color: "#f5f5f5", display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+            {/* IMÃGENES UPLOAD */}
+            <div style={{ gridColumn: '1 / -1', background: 'linear-gradient(180deg, rgba(18,18,18,0.98), rgba(10,10,10,0.98))', padding: '1.25rem', borderRadius: '0.75rem', border: '1px dashed rgba(249, 115, 22, 0.4)' }}>
+              <label style={{ fontSize: '0.875rem', fontWeight: 800, color: '#f5f5f5', display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
                 <span className="material-symbols-outlined" style={{ color: 'var(--color-primary)' }}>imagesmode</span>
-                Galería y Portada (Máx. 3)
+                Galeria y portada
               </label>
+              <p style={{ fontSize: '0.8125rem', color: 'var(--admin-muted)', marginBottom: '1rem' }}>Subi hasta 3 imagenes. La primera se usa como portada del album.</p>
               
               <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
                 {form.images && form.images.map((img, i) => (
-                  <div key={i} style={{ position: 'relative', width: '6rem', height: '8rem', borderRadius: '0.5rem', overflow: 'hidden', border: i === 0 ? '2px solid var(--color-primary)' : '1px solid #e7e5e4', boxShadow: i === 0 ? '0 0 0 2px rgba(234,88,12,0.2)' : 'none' }}>
+                  <div key={i} style={{ position: 'relative', width: '6rem', height: '8rem', borderRadius: '0.5rem', overflow: 'hidden', border: i === 0 ? '2px solid var(--color-primary)' : '1px solid rgba(255,255,255,0.12)', boxShadow: i === 0 ? '0 0 0 2px rgba(234,88,12,0.2)' : 'none' }}>
                     {i === 0 && <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'var(--color-primary)', color: 'white', fontSize: '0.625rem', fontWeight: 800, textAlign: 'center', padding: '0.25rem' }}>PORTADA</div>}
                     <img src={img} alt="album" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    <button type="button" onClick={() => removeImage(i)} style={{ position: 'absolute', top: '0.25rem', right: '0.25rem', background: 'rgba(15, 23, 42, 0.7)', color: 'white', border: 'none', width: '1.5rem', height: '1.5rem', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '1rem' }}>×</button>
+                    <button type="button" onClick={() => removeImage(i)} style={{ position: 'absolute', top: '0.25rem', right: '0.25rem', background: 'rgba(15, 23, 42, 0.78)', color: 'white', border: 'none', width: '1.5rem', height: '1.5rem', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '1rem' }}>x</button>
                   </div>
                 ))}
                 
                 {(!form.images || form.images.length < 3) && (
-                  <div style={{ width: '6rem', height: '8rem', borderRadius: '0.5rem', border: '2px dashed var(--color-text-secondary)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: "var(--admin-panel2)", cursor: 'pointer', position: 'relative', transition: 'all 0.2s' }}>
-                    <span className="material-symbols-outlined" style={{ fontSize: '2rem', color: "var(--admin-muted)" }}>add_photo_alternate</span>
-                    <span style={{ fontSize: '0.6875rem', fontWeight: 600, color: "var(--admin-muted2)", marginTop: '0.5rem' }}>Subir</span>
+                  <div style={{ width: '6rem', height: '8rem', borderRadius: '0.5rem', border: '2px dashed rgba(249, 115, 22, 0.35)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.02)', cursor: 'pointer', position: 'relative', transition: 'all 0.2s' }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: '2rem', color: 'var(--admin-muted)' }}>add_photo_alternate</span>
+                    <span style={{ fontSize: '0.6875rem', fontWeight: 700, color: 'var(--admin-muted2)', marginTop: '0.5rem' }}>Subir</span>
                     <input type="file" multiple accept="image/*" onChange={handleFileUpload} disabled={uploadingFiles} style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer' }} />
                   </div>
                 )}
               </div>
               
-              {uploadingFiles && <p style={{ fontSize: '0.8125rem', color: 'var(--color-primary)', fontWeight: 700, marginTop: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><span className="material-symbols-outlined" style={{ animation: 'spin 1s linear infinite' }}>sync</span> Subiendo imágenes...</p>}
+              {uploadingFiles && <p style={{ fontSize: '0.8125rem', color: 'var(--color-primary)', fontWeight: 700, marginTop: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><span className="material-symbols-outlined" style={{ animation: 'spin 1s linear infinite' }}>sync</span> Subiendo imagenes...</p>}
               {uploadError && <p style={{ fontSize: '0.8125rem', color: '#ef4444', fontWeight: 700, marginTop: '1rem' }}>{uploadError}</p>}
             </div>
 
@@ -567,10 +591,10 @@ export default function AdminAlbums() {
       {/* Table */}
       <div style={{ ...card, overflow: 'hidden', padding: 0 }}>
         <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+          <table style={{ width: '100%', minWidth: '800px', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
             <thead style={{ background: "var(--admin-panel2)", borderBottom: '2px solid #e2e8f0' }}>
               <tr>
-                {['Álbum', 'Detalles', 'Sello', 'Estado', 'Métricas', 'Acciones'].map(h => (
+                {['Ãlbum', 'Detalles', 'Sello', 'Estado', 'Métricas', 'Acciones'].map(h => (
                   <th key={h} style={{ textAlign: 'left', padding: '1rem', fontWeight: 800, color: "var(--admin-muted)", fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
                 ))}
               </tr>
@@ -592,7 +616,7 @@ export default function AdminAlbums() {
                       </div>
                       <div>
                         <p style={{ fontWeight: 800, color: "#f5f5f5" }}>{album.name}</p>
-                        <p style={{ fontSize: '0.75rem', color: "var(--admin-muted2)", fontWeight: 500 }}>{album.editorial || 'Sin editorial'} • {album.year}</p>
+                        <p style={{ fontSize: '0.75rem', color: "var(--admin-muted2)", fontWeight: 500 }}>{album.editorial || 'Sin editorial'} â€¢ {album.year}</p>
                       </div>
                     </div>
                   </td>
@@ -632,7 +656,7 @@ export default function AdminAlbums() {
                       </p>
                       <p style={{ fontSize: '0.75rem', fontWeight: 600, color: "var(--admin-muted2)", display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                         <span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>pie_chart</span>
-                        ~{album.avg_completion != null ? Math.round(album.avg_completion) : '—'}% <span style={{ color: "var(--admin-muted)", fontWeight: 500, fontSize: '0.6875rem' }}>completitud</span>
+                        ~{album.avg_completion != null ? Math.round(album.avg_completion) : 'â€”'}% <span style={{ color: "var(--admin-muted)", fontWeight: 500, fontSize: '0.6875rem' }}>completitud</span>
                       </p>
                     </div>
                   </td>
@@ -647,7 +671,7 @@ export default function AdminAlbums() {
                       <button onClick={() => handleDuplicate(album)} style={{ ...btn("var(--admin-panel2)", '#d97706', '1px solid var(--color-text-secondary)'), padding: '0.375rem', title: 'Duplicar' }}>
                         <span className="material-symbols-outlined" style={{ fontSize: '1.125rem' }}>content_copy</span>
                       </button>
-                      <button onClick={() => setConfirmConfig({ title: 'Eliminar Álbum', message: `¿Estás seguro de eliminar el álbum "${album.name}"? Esta acción no se puede deshacer.`, variant: 'danger', onConfirm: () => { deleteAlbum(album.id); toast.success('Álbum eliminado'); setConfirmConfig(null) } })} style={{ ...btn('#fef2f2', '#ef4444', '1px solid #fca5a5'), padding: '0.375rem', title: 'Eliminar' }}>
+                      <button onClick={() => setConfirmConfig({ title: 'Eliminar Ãlbum', message: `¿Estás seguro de eliminar el álbum "${album.name}"? Esta acción no se puede deshacer.`, variant: 'danger', onConfirm: () => { deleteAlbum(album.id); toast.success('Ãlbum eliminado'); setConfirmConfig(null) } })} style={{ ...btn('#fef2f2', '#ef4444', '1px solid #fca5a5'), padding: '0.375rem', title: 'Eliminar' }}>
                         <span className="material-symbols-outlined" style={{ fontSize: '1.125rem' }}>delete</span>
                       </button>
                     </div>
@@ -696,7 +720,7 @@ export default function AdminAlbums() {
                     <input style={input} value={stickerForm.team} onChange={e => setStickerForm({...stickerForm, team: e.target.value})} />
                   </div>
                   <div>
-                    <label style={{ fontSize: '0.75rem', fontWeight: 600 }}>Categoría (ej: Estadio, PartnerStore)</label>
+                    <label style={{ fontSize: '0.75rem', fontWeight: 600 }}>Categoría (ej: Estadio, Collector Hub)</label>
                     <input style={input} value={stickerForm.category} onChange={e => setStickerForm({...stickerForm, category: e.target.value})} />
                   </div>
                   <div>
@@ -751,44 +775,46 @@ export default function AdminAlbums() {
 
               {/* List */}
               <div style={{ overflowY: 'auto', maxHeight: '60vh', border: "1px solid var(--admin-line)", borderRadius: '0.5rem' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.75rem' }}>
-                  <thead style={{ background: "var(--admin-panel2)", position: 'sticky', top: 0 }}>
-                    <tr>
-                      <th style={{ textAlign: 'left', padding: '0.75rem', borderBottom: '1px solid #e2e8f0' }}>Nº/Cod</th>
-                      <th style={{ textAlign: 'left', padding: '0.75rem', borderBottom: '1px solid #e2e8f0' }}>Imagen</th>
-                      <th style={{ textAlign: 'left', padding: '0.75rem', borderBottom: '1px solid #e2e8f0' }}>Info</th>
-                      <th style={{ textAlign: 'right', padding: '0.75rem', borderBottom: '1px solid #e2e8f0' }}>Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {albumStickers.map(s => (
-                      <tr key={s.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                        <td style={{ padding: '0.75rem', fontWeight: 800 }}>
-                          {s.sticker_number}
-                          {s.sticker_code && <span style={{ display: 'block', fontSize: '0.625rem', color: "var(--admin-muted2)", fontWeight: 600 }}>{s.sticker_code}</span>}
-                        </td>
-                        <td style={{ padding: '0.75rem' }}>
-                          {s.image_url ? <img src={s.image_url} alt={s.sticker_number} style={{ width: '2rem', height: '2.5rem', objectFit: 'cover', borderRadius: '0.25rem' }} /> : <span style={{ color: "var(--admin-muted)" }}>-</span>}
-                        </td>
-                        <td style={{ padding: '0.75rem' }}>
-                          <p style={{ fontWeight: 600 }}>{s.name || '-'}</p>
-                          <p style={{ color: "var(--admin-muted2)" }}>
-                            {s.team || s.country} {s.section && `• Sec: ${s.section}`} {s.category && `• ${s.category}`}
-                          </p>
-                        </td>
-                        <td style={{ padding: '0.75rem', textAlign: 'right' }}>
-                          <div style={{ display: 'flex', gap: '0.25rem', justifyContent: 'flex-end' }}>
-                            <button onClick={() => { setEditingSticker(s); setStickerForm({ sticker_number: s.sticker_number, name: s.name || '', team: s.team || '', category: s.category || '', image_url: s.image_url || '' }) }} style={{ background: 'none', border: 'none', color: '#2563eb', cursor: 'pointer' }}><span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>edit</span></button>
-                            <button onClick={() => setConfirmConfig({ title: 'Eliminar Figurita', message: `¿Eliminar figurita #${s.sticker_number}?`, variant: 'danger', onConfirm: async () => { await deleteAlbumSticker(s.id); fetchAlbumStickers(manageStickersAlbum.id); toast.success('Figurita eliminada'); setConfirmConfig(null) } })} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer' }}><span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>delete</span></button>
-                          </div>
-                        </td>
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', minWidth: '600px', borderCollapse: 'collapse', fontSize: '0.75rem' }}>
+                    <thead style={{ background: "var(--admin-panel2)", position: 'sticky', top: 0 }}>
+                      <tr>
+                        <th style={{ textAlign: 'left', padding: '0.75rem', borderBottom: '1px solid #e2e8f0' }}>NÂº/Cod</th>
+                        <th style={{ textAlign: 'left', padding: '0.75rem', borderBottom: '1px solid #e2e8f0' }}>Imagen</th>
+                        <th style={{ textAlign: 'left', padding: '0.75rem', borderBottom: '1px solid #e2e8f0' }}>Info</th>
+                        <th style={{ textAlign: 'right', padding: '0.75rem', borderBottom: '1px solid #e2e8f0' }}>Acciones</th>
                       </tr>
-                    ))}
-                    {albumStickers.length === 0 && (
-                      <tr><td colSpan="4" style={{ textAlign: 'center', padding: '2rem', color: "var(--admin-muted)" }}>No hay figuritas cargadas en este álbum</td></tr>
-                    )}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {albumStickers.map(s => (
+                        <tr key={s.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                          <td style={{ padding: '0.75rem', fontWeight: 800 }}>
+                            {s.sticker_number}
+                            {s.sticker_code && <span style={{ display: 'block', fontSize: '0.625rem', color: "var(--admin-muted2)", fontWeight: 600 }}>{s.sticker_code}</span>}
+                          </td>
+                          <td style={{ padding: '0.75rem' }}>
+                            {s.image_url ? <img src={s.image_url} alt={s.sticker_number} style={{ width: '2rem', height: '2.5rem', objectFit: 'cover', borderRadius: '0.25rem' }} /> : <span style={{ color: "var(--admin-muted)" }}>-</span>}
+                          </td>
+                          <td style={{ padding: '0.75rem' }}>
+                            <p style={{ fontWeight: 600 }}>{s.name || '-'}</p>
+                            <p style={{ color: "var(--admin-muted2)" }}>
+                              {s.team || s.country} {s.section && `â€¢ Sec: ${s.section}`} {s.category && `â€¢ ${s.category}`}
+                            </p>
+                          </td>
+                          <td style={{ padding: '0.75rem', textAlign: 'right' }}>
+                            <div style={{ display: 'flex', gap: '0.25rem', justifyContent: 'flex-end' }}>
+                              <button onClick={() => { setEditingSticker(s); setStickerForm({ sticker_number: s.sticker_number, name: s.name || '', team: s.team || '', category: s.category || '', image_url: s.image_url || '' }) }} style={{ background: 'none', border: 'none', color: '#2563eb', cursor: 'pointer' }}><span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>edit</span></button>
+                              <button onClick={() => setConfirmConfig({ title: 'Eliminar Figurita', message: `¿Eliminar figurita #${s.sticker_number}?`, variant: 'danger', onConfirm: async () => { await deleteAlbumSticker(s.id); fetchAlbumStickers(manageStickersAlbum.id); toast.success('Figurita eliminada'); setConfirmConfig(null) } })} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer' }}><span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>delete</span></button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                      {albumStickers.length === 0 && (
+                        <tr><td colSpan="4" style={{ textAlign: 'center', padding: '2rem', color: "var(--admin-muted)" }}>No hay figuritas cargadas en este álbum</td></tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           </div>

@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react'
+﻿import React, { useState, useEffect } from 'react'
+import { useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../stores/authStore'
 
@@ -69,7 +70,10 @@ export default function AlphaWelcomeModal({ forceOpen = false, onClose }) {
     )
   }
 
-  if (!visible) return null
+  const location = useLocation()
+  const isAdminOrBusiness = location.pathname.startsWith('/admin') || location.pathname.startsWith('/business')
+
+  if (!visible || isAdminOrBusiness) return null
 
   return (
     <div className="modal-overlay" onClick={handleDismiss} style={{ zIndex: 9999 }}>
@@ -178,7 +182,7 @@ export default function AlphaWelcomeModal({ forceOpen = false, onClose }) {
               color: 'var(--color-text-secondary)',
               fontWeight: 600,
             }}>
-              Gracias por probarla primero. 🙌
+              Gracias por probarla primero. ðŸ™Œ
             </p>
           </div>
 
@@ -233,7 +237,7 @@ export default function AlphaWelcomeModal({ forceOpen = false, onClose }) {
                 e.target.style.color = 'var(--color-text-muted)'
               }}
             >
-              🐛 Reportar un problema
+              ðŸ› Reportar un problema
             </button>
           </div>
         </div>

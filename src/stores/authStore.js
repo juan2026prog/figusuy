@@ -1,4 +1,4 @@
-import { create } from 'zustand'
+﻿import { create } from 'zustand'
 import { supabase } from '../lib/supabase'
 import { useFeatureFlagStore } from './featureFlagStore'
 import { useExchangeStore } from './exchangeStore'
@@ -11,7 +11,8 @@ const normalizeProfilePlanName = (planName, isPremium = false) => {
 
   if (VALID_USER_PLAN_NAMES.has(value)) return value
   if (value === 'free') return 'gratis'
-  if (value === 'premium') return 'pro'
+  if (value === 'premium' || value === 'premium pro') return 'pro'
+  if (value === 'premium plus') return 'plus'
 
   return isPremium ? 'pro' : 'gratis'
 }
@@ -23,8 +24,7 @@ const buildPlanNameCandidates = (planName, isPremium = false) => {
     value,
     fallback,
     isPremium ? 'pro' : 'gratis',
-    isPremium ? 'premium' : 'free',
-    isPremium ? 'plus' : '',
+    isPremium ? 'plus' : 'gratis',
   ].filter(Boolean)
 
   return [...new Set(candidates)]
@@ -48,6 +48,18 @@ const isPlanConstraintError = (error) => {
   return error?.code === '23514' || message.includes('plan_name_check')
 }
 
+const EMPTY_AUTH_STATE = {
+  user: null,
+  profile: null,
+  planRules: null,
+  session: null,
+}
+
+let authInitializePromise = null
+let authListenerBound = false
+let authHydrationVersion = 0
+const lastActiveTouchByUser = new Map()
+
 const clearSupabaseStorage = () => {
   if (typeof window === 'undefined') return
 
@@ -70,7 +82,13 @@ const clearSupabaseStorage = () => {
 }
 
 const resetDependentStores = async () => {
-  useFeatureFlagStore.setState({ flags: [], lastFetch: 0, loading: false })
+  useFeatureFlagStore.setState({
+    flags: [],
+    flagsStatus: {},
+    lastFetch: 0,
+    lastStatusUserKey: null,
+    loading: false,
+  })
   useExchangeStore.getState().reset()
   useGrowthStore.getState().reset()
   try {
@@ -81,77 +99,186 @@ const resetDependentStores = async () => {
   }
 }
 
+const shouldTouchLastActive = (userId) => {
+  if (!userId) return false
+
+  const now = Date.now()
+  const lastTouch = lastActiveTouchByUser.get(userId) || 0
+  if (now - lastTouch < 60_000) return false
+
+  lastActiveTouchByUser.set(userId, now)
+  return true
+}
+
+const buildAuthSnapshot = async (session) => {
+  if (!session?.user) {
+    return EMPTY_AUTH_STATE
+  }
+
+  const [{ data: profile }, { data: roleData }, { data: planRules }] = await Promise.all([
+    supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', session.user.id)
+      .single(),
+    supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', session.user.id)
+      .maybeSingle(),
+    supabase.rpc('get_user_plan_rules', { user_id: session.user.id }),
+  ])
+
+  return {
+    user: session.user,
+    session,
+    profile: profile ? { ...profile, role: roleData?.role || profile.role || 'user' } : null,
+    planRules: planRules || null,
+  }
+}
+
 export const useAuthStore = create((set, get) => ({
   user: null,
   profile: null,
   planRules: null,
   session: null,
   loading: true,
+  initialized: false,
 
-  initialize: async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (session?.user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', session.user.id)
-          .single()
+  syncSession: async (session, options = {}) => {
+    const { touchLastActive = true } = options
+    const hydrationVersion = ++authHydrationVersion
 
-        if (profile) {
-          const { data: roleData } = await supabase.from('user_roles').select('role').eq('user_id', session.user.id).single()
-          profile.role = roleData?.role || 'user'
-        }
-
-        const { data: planRules } = await supabase.rpc('get_user_plan_rules', { user_id: session.user.id })
-
-        set({ user: session.user, session, profile, planRules, loading: false })
-
-        // Initialize gamification system
-        import('../stores/gamificationStore').then(({ useGamificationStore }) => {
-          useGamificationStore.getState().initialize(session.user.id)
-        })
-
-        // Auto-update last_active when the current database schema supports it.
-        get().touchLastActive(session.user.id)
-
-        // Auto-request geolocation removed per requirements. Requested only on-demand.
-      } else {
-        set({ user: null, session: null, profile: null, planRules: null, loading: false })
+    // PROTECCIÓN CRÃTICA: Si la sesión es null pero ya teníamos un usuario,
+    // NO limpiar el estado. Esto ocurre durante el refresh del token.
+    // Solo el evento SIGNED_OUT explícito debe limpiar el estado.
+    if (!session?.user) {
+      const currentUser = get().user
+      if (currentUser) {
+        console.warn('[AuthStore] syncSession received null session but user exists â€” preserving state (token refresh race)')
+        set({ loading: false, initialized: true })
+        return { user: currentUser, session: get().session, profile: get().profile, planRules: get().planRules }
       }
-    } catch (err) {
-      console.error('Auth init error:', err)
-      set({ loading: false })
+      // Genuinamente no hay usuario
+      set({ ...EMPTY_AUTH_STATE, loading: false, initialized: true })
+      return EMPTY_AUTH_STATE
     }
 
-    // Listen to auth changes
-    supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session?.user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', session.user.id)
-          .single()
-
-        if (profile) {
-          const { data: roleData } = await supabase.from('user_roles').select('role').eq('user_id', session.user.id).single()
-          profile.role = roleData?.role || 'user'
+    try {
+      // Timeout de seguridad: si la DB tarda más de 10s, entrar con perfil mínimo degradado
+      const snapshot = await Promise.race([
+        buildAuthSnapshot(session),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Auth Timeout')), 10000))
+      ]).catch(err => {
+        console.error('[AuthStore] Auth hydration timeout. Loading with degraded profile.', err.message)
+        // Si ya tenemos perfil, usarlo en vez de degradar
+        const existingProfile = get().profile
+        if (existingProfile && existingProfile.id === session.user.id) {
+          return { user: session.user, session, profile: existingProfile, planRules: get().planRules }
         }
+        // Perfil mínimo marcado como degradado â€” NO otorga permisos elevados
+        return {
+          user: session.user,
+          session,
+          profile: { id: session.user.id, plan_name: 'gratis', is_premium: false, role: 'user', _degraded: true },
+          planRules: null
+        }
+      })
 
-        const { data: planRules } = await supabase.rpc('get_user_plan_rules', { user_id: session.user.id })
+      if (hydrationVersion !== authHydrationVersion) return snapshot
 
-        set({ user: session.user, session, profile, planRules })
-      } else {
-        set({ user: null, session: null, profile: null, planRules: null })
+      set({ ...snapshot, loading: false, initialized: true })
+
+      if (snapshot.user) {
+        import('../stores/gamificationStore').then(({ useGamificationStore }) => {
+          useGamificationStore.getState().initialize(snapshot.user.id)
+        })
+
+        if (touchLastActive && shouldTouchLastActive(snapshot.user.id)) {
+          void get().touchLastActive(snapshot.user.id)
+        }
       }
-    })
+
+      return snapshot
+    } catch (error) {
+      if (hydrationVersion === authHydrationVersion) {
+        console.error('Auth hydration error:', error)
+        // Si ya tenemos usuario, preservar el estado en vez de romper la sesión
+        if (get().user) {
+          set({ loading: false, initialized: true })
+          return { user: get().user, session: get().session, profile: get().profile, planRules: get().planRules }
+        }
+      }
+      set({ loading: false, initialized: true })
+      return EMPTY_AUTH_STATE
+    }
   },
 
-  signInWithGoogle: async () => {
+  initialize: async () => {
+    if (get().initialized && authListenerBound) return
+    if (authInitializePromise) return authInitializePromise
+
+    set({ loading: true })
+
+    authInitializePromise = (async () => {
+      try {
+        // PASO 1: Configurar el listener PRIMERO para no perder eventos
+        if (!authListenerBound) {
+          supabase.auth.onAuthStateChange((event, nextSession) => {
+            if (event === 'SIGNED_OUT') {
+              authHydrationVersion += 1
+              void resetDependentStores()
+              set({ ...EMPTY_AUTH_STATE, loading: false, initialized: true })
+              return
+            }
+
+            // INITIAL_SESSION es manejado abajo en getSession, ignorar duplicado
+            if (event === 'INITIAL_SESSION') return
+
+            // TOKEN_REFRESHED: actualizar session silenciosamente sin mostrar loading
+            if (event === 'TOKEN_REFRESHED') {
+              if (nextSession?.user && get().user) {
+                set({ session: nextSession })
+              }
+              return
+            }
+
+            // Solo mostrar pantalla de carga si no tenemos datos previos
+            if (!get().user) {
+              set({ loading: true })
+            }
+            void get()
+              .syncSession(nextSession, {
+                touchLastActive: event === 'SIGNED_IN' || event === 'USER_UPDATED',
+              })
+              .catch((error) => {
+                console.error('Auth state change error:', error)
+                set({ loading: false, initialized: true })
+              })
+          })
+          authListenerBound = true
+        }
+
+        // PASO 2: Obtener sesión actual
+        const { data: { session } } = await supabase.auth.getSession()
+        await get().syncSession(session)
+
+      } catch (error) {
+        console.error('Auth init error:', error)
+        set({ loading: false, initialized: true })
+      } finally {
+        authInitializePromise = null
+      }
+    })()
+
+    return authInitializePromise
+  },
+
+  signInWithGoogle: async (redirectTo = window.location.origin) => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: window.location.origin,
+        redirectTo,
       },
     })
     if (error) throw error
@@ -163,6 +290,10 @@ export const useAuthStore = create((set, get) => ({
       password,
     })
     if (error) throw error
+    if (data?.session) {
+      set({ loading: true })
+      await get().syncSession(data.session)
+    }
     return data
   },
 
@@ -175,6 +306,10 @@ export const useAuthStore = create((set, get) => ({
       },
     })
     if (error) throw error
+    if (data?.session) {
+      set({ loading: true })
+      await get().syncSession(data.session)
+    }
     return data
   },
 
@@ -187,7 +322,8 @@ export const useAuthStore = create((set, get) => ({
     } finally {
       clearSupabaseStorage()
       await resetDependentStores()
-      set({ user: null, session: null, profile: null, planRules: null })
+      authHydrationVersion += 1
+      set({ ...EMPTY_AUTH_STATE, loading: false, initialized: true })
     }
   },
 
@@ -256,7 +392,7 @@ export const useAuthStore = create((set, get) => ({
     }
 
     if (error) throw error
-    set({ profile: data })
+    set((state) => ({ profile: state.profile ? { ...state.profile, ...data } : data }))
     return data
   },
 

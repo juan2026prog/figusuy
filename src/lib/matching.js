@@ -1,4 +1,4 @@
-import { haversineDistance } from './haversine'
+﻿import { haversineDistance } from './haversine'
 
 /**
  * Core matching engine for FigusUy

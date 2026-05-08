@@ -1,8 +1,10 @@
-import React, { useEffect, useState } from 'react'
+﻿import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
 import { useAppStore } from '../stores/appStore'
 import { supabase } from '../lib/supabase'
+import { LiveBadge, LiveFeed } from '../components/LiveMomentum'
+import { useLiveMomentum } from '../hooks/useLiveMomentum'
 
 export default function ChatsListPage() {
   const navigate = useNavigate()
@@ -12,6 +14,7 @@ export default function ChatsListPage() {
   const [blockedUsers, setBlockedUsers] = useState([])
   const [loadingBlocked, setLoadingBlocked] = useState(false)
   const [activeTab, setActiveTab] = useState('todos')
+  const { summary, feed } = useLiveMomentum({ chats })
 
   const loadBlockedUsers = async () => {
     setLoadingBlocked(true)
@@ -77,120 +80,16 @@ export default function ChatsListPage() {
 
   return (
     <div className="chats-list-page">
-      <style>{`
-        .chats-list-page {
-          --bg:#0b0b0b; --panel:#121212; --panel2:#181818; --panel3:#202020; --line:rgba(255,255,255,.08); --line2:rgba(255,255,255,.14);
-          --text:#f5f5f5; --muted:rgba(245,245,245,.56); --muted2:rgba(245,245,245,.34); --orange:#ff5a00; --orange2:#cc4800; --green:#22c55e; --red:#ef4444; --yellow:#facc15; --blue:#38bdf8;
-          min-height:100vh; color:var(--text); font-family:'Barlow',sans-serif;
-          background:radial-gradient(circle at top right, rgba(255,90,0,.12), transparent 26%), linear-gradient(180deg, #0b0b0b 0%, #090909 100%);
-        }
-        .chats-list-page * { box-sizing:border-box; }
-        .topbar { position:sticky; top:0; z-index:20; display:flex; justify-content:space-between; align-items:center; gap:18px; min-height:82px; padding:14px 22px; border-bottom:1px solid var(--line); background:rgba(11,11,11,.96); backdrop-filter:blur(8px); }
-        .top-kicker,.kicker,.section-kicker,.side-label { font:900 .72rem 'Barlow Condensed'; letter-spacing:.16em; text-transform:uppercase; color:var(--orange); }
-        .top-title { margin-top:3px; font:italic 900 2.45rem 'Barlow Condensed'; text-transform:uppercase; line-height:.9; }
-        .btn,.open-btn,.unblock-btn { font-family:inherit; cursor:pointer; }
-        .btn { border:1px solid var(--line2); background:transparent; color:#fff; padding:.85rem 1.15rem; font:900 .88rem 'Barlow Condensed'; letter-spacing:.08em; text-transform:uppercase; display:inline-flex; align-items:center; justify-content:center; gap:8px; }
-        .btn:hover { border-color:var(--orange); color:var(--orange); }
-        .btn.orange { background:var(--orange); border-color:var(--orange); color:#fff; }
-        .wrap { max-width:1280px; margin:0 auto; padding:28px 22px 76px; }
-        .hero { display:grid; grid-template-columns:minmax(0,1fr) 320px; gap:22px; margin-bottom:22px; }
-        .hero-main,.quick-card,.controls,.chat-card,.empty,.side-card,.blocked-card { border:1px solid var(--line); background:var(--panel); }
-        .hero-main { position:relative; overflow:hidden; min-height:290px; padding:30px; display:flex; flex-direction:column; justify-content:space-between; background:linear-gradient(135deg, #181818 0%, #101010 55%, rgba(255,90,0,.18) 100%); }
-        .hero-main:before { content:'CHATS'; position:absolute; right:24px; top:-18px; font:italic 900 8.5rem 'Barlow Condensed'; color:rgba(255,255,255,.035); line-height:1; pointer-events:none; }
-        .hero-title { margin-top:8px; max-width:760px; font:italic 900 clamp(3rem,6vw,5.4rem) 'Barlow Condensed'; line-height:.86; text-transform:uppercase; position:relative; z-index:1; }
-        .hero-title span { color:var(--orange); }
-        .hero-sub,.section-title p,.chat-meta,.last-msg,.side-card p,.empty p,.blocked-user span { color:var(--muted); line-height:1.58; }
-        .hero-sub { max-width:620px; margin-top:14px; font-size:1rem; position:relative; z-index:1; }
-        .hero-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:1px; margin-top:28px; background:var(--line); position:relative; z-index:1; }
-        .hero-stat { padding:17px; background:rgba(18,18,18,.92); }
-        .hero-stat b { display:block; font:italic 900 2.35rem 'Barlow Condensed'; line-height:.9; }
-        .hero-stat span { font:900 .72rem 'Barlow Condensed'; letter-spacing:.08em; text-transform:uppercase; color:var(--muted2); }
-        .hero-stat.orange b { color:var(--orange); }
-        .hero-stat.green b { color:var(--green); }
-        .hero-stat.blue b { color:var(--blue); }
-        .quick-card { min-height:290px; padding:22px; display:flex; flex-direction:column; justify-content:space-between; background:linear-gradient(180deg, rgba(255,90,0,.08) 0%, rgba(255,90,0,0) 100%), var(--panel); }
-        .quick-card h2,.section-title h2,.side-card h3,.empty h3 { margin-top:10px; font:italic 900 2.35rem 'Barlow Condensed'; text-transform:uppercase; line-height:.88; }
-        .quick-card p { margin-top:10px; }
-        .controls { margin-bottom:22px; overflow:hidden; }
-        .controls-top { display:grid; grid-template-columns:1fr auto; gap:1px; background:var(--line); border-bottom:1px solid var(--line); }
-        .search-box,.blocked-toggle { padding:14px; background:var(--panel2); }
-        .search-box label { display:block; margin-bottom:7px; font:900 .65rem 'Barlow Condensed'; letter-spacing:.14em; text-transform:uppercase; color:var(--orange); }
-        .search-box input { width:100%; height:42px; padding:0 12px; background:#0d0d0d; border:1px solid var(--line2); color:#fff; font-weight:700; outline:none; }
-        .search-box input:focus { border-color:var(--orange); }
-        .blocked-toggle { display:flex; align-items:end; }
-        .blocked-toggle .btn { height:42px; white-space:nowrap; }
-        .tabs { display:flex; gap:1px; overflow:auto; background:var(--line); }
-        .tab { border:0; background:var(--panel); color:var(--muted); padding:13px 18px; font:900 .82rem 'Barlow Condensed'; letter-spacing:.08em; text-transform:uppercase; white-space:nowrap; cursor:pointer; }
-        .tab.active { background:var(--orange); color:#fff; }
-        .layout { display:grid; grid-template-columns:minmax(0,1fr) 320px; gap:22px; align-items:start; }
-        .main-stack,.side-stack { display:grid; gap:14px; }
-        .side-stack { position:sticky; top:104px; }
-        .section-title { display:flex; justify-content:space-between; align-items:end; gap:14px; margin-bottom:10px; }
-        .section-title p { margin-top:5px; font-size:.92rem; }
-        .count-pill { border:1px solid var(--line2); padding:7px 10px; color:var(--muted); font:900 .75rem 'Barlow Condensed'; letter-spacing:.08em; text-transform:uppercase; }
-        .chat-card { display:grid; grid-template-columns:72px 1fr auto; position:relative; overflow:hidden; cursor:pointer; transition:.18s; }
-        .chat-card:hover { border-color:rgba(255,90,0,.5); transform:translateY(-2px); }
-        .chat-card.hot { border-color:rgba(255,90,0,.45); box-shadow:0 18px 44px rgba(255,90,0,.1); }
-        .chat-avatar-wrap { display:grid; place-items:center; background:#0d0d0d; border-right:1px solid var(--line); }
-        .avatar { width:48px; height:48px; overflow:hidden; display:grid; place-items:center; background:var(--orange); font:italic 900 1.45rem 'Barlow Condensed'; }
-        .avatar img { width:100%; height:100%; object-fit:cover; }
-        .chat-body { padding:15px 16px; }
-        .chat-top { display:flex; justify-content:space-between; gap:12px; align-items:flex-start; }
-        .chat-name { margin:0; font:italic 900 1.55rem 'Barlow Condensed'; line-height:.9; text-transform:uppercase; }
-        .chat-time { color:var(--muted2); white-space:nowrap; font:900 .7rem 'Barlow Condensed'; letter-spacing:.08em; text-transform:uppercase; }
-        .chat-meta { margin-top:5px; font-size:.82rem; }
-        .last-msg { margin-top:9px; font-size:.86rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:560px; }
-        .chat-tags { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
-        .tag { border:1px solid var(--line2); background:#0b0b0b; padding:4px 7px; color:var(--muted); font:900 .62rem 'Barlow Condensed'; letter-spacing:.08em; text-transform:uppercase; }
-        .tag.orange { color:var(--orange); border-color:rgba(255,90,0,.35); background:rgba(255,90,0,.08); }
-        .tag.green { color:var(--green); border-color:rgba(34,197,94,.35); background:rgba(34,197,94,.07); }
-        .tag.blue { color:var(--blue); border-color:rgba(56,189,248,.35); background:rgba(56,189,248,.08); }
-        .chat-action { min-width:128px; padding:14px; display:grid; place-items:center; background:var(--panel2); border-left:1px solid var(--line); }
-        .open-btn { width:100%; padding:11px 14px; border:1px solid var(--orange); background:var(--orange); color:#fff; font:900 .76rem 'Barlow Condensed'; letter-spacing:.08em; text-transform:uppercase; }
-        .chat-card:not(.hot) .open-btn { background:transparent; border-color:var(--line2); }
-        .blocked-card { padding:16px; display:flex; justify-content:space-between; gap:14px; align-items:center; }
-        .blocked-user { display:flex; gap:12px; align-items:center; }
-        .blocked-user b { display:block; font:italic 900 1.3rem 'Barlow Condensed'; text-transform:uppercase; }
-        .unblock-btn { padding:.7rem 1rem; border:1px solid var(--line2); background:#24303d; color:#fff; font:900 .74rem 'Barlow Condensed'; letter-spacing:.08em; text-transform:uppercase; }
-        .empty { padding:52px 24px; text-align:center; }
-        .empty-icon { margin-bottom:14px; font-size:3rem; }
-        .empty p { max-width:420px; margin:10px auto 20px; }
-        .side-card { padding:18px; }
-        .side-card p { font-size:.9rem; }
-        .side-cta { background:linear-gradient(180deg, rgba(255,90,0,.1) 0%, rgba(255,90,0,0) 100%), var(--panel); }
-        .side-cta .btn { width:100%; margin-top:14px; background:#0b0b0b; border-color:#0b0b0b; color:#fff; }
-        .side-row { display:flex; justify-content:space-between; padding:11px 0; border-bottom:1px solid var(--line); }
-        .side-row:last-child { border-bottom:0; }
-        .side-row span { color:var(--muted); font-size:.86rem; }
-        .side-row b { font:900 1rem 'Barlow Condensed'; text-transform:uppercase; }
-        .safety { background:rgba(250,204,21,.08); border-color:rgba(250,204,21,.22); color:#fde68a; }
-        @media (max-width:1050px) {
-          .hero,.layout { grid-template-columns:1fr; }
-          .side-stack { position:static; }
-          .quick-card { min-height:auto; }
-          .controls-top { grid-template-columns:1fr; }
-        }
-        @media (max-width:720px) {
-          .wrap { padding:16px 12px 64px; }
-          .topbar { align-items:flex-start; }
-          .top-title { font-size:2rem; }
-          .hero-main { padding:22px; }
-          .hero-stats { grid-template-columns:1fr; }
-          .chat-card { grid-template-columns:58px 1fr; }
-          .chat-action { grid-column:1 / -1; border-left:0; border-top:1px solid var(--line); padding:10px; }
-          .section-title { display:block; }
-          .count-pill { display:inline-block; margin-top:10px; }
-          .blocked-card { display:block; }
-          .blocked-card .unblock-btn { margin-top:12px; width:100%; }
-          .chat-name { font-size:1.35rem; }
-          .blocked-toggle { display:none; }
-        }
-      `}</style>
+      
 
       <header className="topbar">
         <div>
           <div className="top-kicker">Intercambios</div>
           <div className="top-title">Chats</div>
+          <div className="top-live">
+            <LiveBadge tone="orange" pulse>{summary.activeNow} activos ahora</LiveBadge>
+            <LiveBadge tone="green">{chats.length} conversaciones en marcha</LiveBadge>
+          </div>
         </div>
         <button className="btn orange" onClick={() => navigate('/matches')}>Buscar matches</button>
       </header>
@@ -265,7 +164,7 @@ export default function ChatsListPage() {
                   </div>
                 ) : blockedUsers.length === 0 ? (
                   <div className="empty">
-                    <div className="empty-icon">🛡</div>
+                    <div className="empty-icon">ðŸ›¡</div>
                     <h3>Sin bloqueados</h3>
                     <p>No tenes usuarios bloqueados en este momento.</p>
                   </div>
@@ -291,7 +190,7 @@ export default function ChatsListPage() {
                 )
               ) : filteredChats.length === 0 ? (
                 <div className="empty">
-                  <div className="empty-icon">💬</div>
+                  <div className="empty-icon">ðŸ’¬</div>
                   <h3>Sin conversaciones</h3>
                   <p>No hay chats en esta sección.</p>
                   <button className="btn orange" onClick={() => navigate('/matches')}>Ver intercambios</button>
@@ -319,7 +218,7 @@ export default function ChatsListPage() {
                         <div className="chat-top">
                           <div>
                             <h3 className="chat-name">{other?.name || 'Usuario'}</h3>
-                            <div className="chat-meta">{other?.city || other?.department || 'Sin ubicacion'} · {chat.album?.name || 'Intercambio activo'}</div>
+                            <div className="chat-meta">{other?.city || other?.department || 'Sin ubicacion'} Â· {chat.album?.name || 'Intercambio activo'}</div>
                           </div>
                           <span className="chat-time">{formatTime(chat.last_message_at || chat.created_at)}</span>
                         </div>
@@ -347,6 +246,8 @@ export default function ChatsListPage() {
               <p>{showBlocked ? 'Los bloqueos tambien forman parte de una experiencia segura y ordenada dentro de la app.' : 'Tenes conversaciones abiertas esperando respuesta. Prioriza las mas activas primero.'}</p>
               <button className="btn" onClick={() => navigate('/matches')}>{showBlocked ? 'Volver a matches' : 'Ver fuertes'}</button>
             </section>
+
+            {!showBlocked && <LiveFeed title="Ahora en FigusUY" items={feed} refreshedAt={summary.refreshedAt} />}
 
             <section className="side-card">
               <div className="side-label">Resumen</div>

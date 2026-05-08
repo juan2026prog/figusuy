@@ -1,9 +1,11 @@
-import React, { useEffect, useState } from 'react'
+﻿import React, { useEffect, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import { useGamificationStore } from '../stores/gamificationStore'
 import { LEVELS, ACHIEVEMENTS } from '../lib/gamification'
+import GamificationIcon from './gamification/icons/GamificationIcon'
 
 /**
- * GamificationToast — Shows elegant, non-intrusive notifications
+ * GamificationToast â€” Shows elegant, non-intrusive notifications
  * when user unlocks achievements or levels up.
  * No confetti. No gamer aesthetics. Premium and clean.
  */
@@ -11,6 +13,7 @@ export default function GamificationToast() {
   const { lastUnlock, clearLastUnlock } = useGamificationStore()
   const [visible, setVisible] = useState(false)
   const [content, setContent] = useState(null)
+  const location = useLocation()
 
   useEffect(() => {
     if (!lastUnlock) return
@@ -18,7 +21,8 @@ export default function GamificationToast() {
     if (lastUnlock.type === 'level') {
       const level = LEVELS[lastUnlock.value]
       setContent({
-        icon: level?.icon || '⭐',
+        iconKey: level?.iconKey,
+        icon: level?.icon || 'â­',
         title: '¡Nuevo nivel!',
         message: `Ahora sos ${level?.name || lastUnlock.value}`,
         color: level?.color || '#f59e0b',
@@ -27,7 +31,8 @@ export default function GamificationToast() {
     } else if (lastUnlock.type === 'achievement') {
       const def = ACHIEVEMENTS[lastUnlock.key]
       setContent({
-        icon: def?.icon || '🎯',
+        iconKey: def?.iconKey,
+        icon: def?.icon || 'ðŸŽ¯',
         title: 'Hito desbloqueado',
         message: lastUnlock.name || def?.name || 'Nuevo logro',
         color: '#22c55e',
@@ -44,6 +49,7 @@ export default function GamificationToast() {
     return () => clearTimeout(timer)
   }, [lastUnlock])
 
+  if (location.pathname.startsWith('/admin')) return null
   if (!content) return null
 
   return (
@@ -115,8 +121,8 @@ export default function GamificationToast() {
           style={{ background: content.gradient }}
           onClick={() => { setVisible(false); setTimeout(clearLastUnlock, 400) }}
         >
-          <div className="gam-toast-icon" style={{ background: `${content.color}25` }}>
-            {content.icon}
+          <div className="gam-toast-icon" style={{ background: `${content.color}25`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {content.iconKey ? <GamificationIcon icon={content.iconKey} size="md" /> : content.icon}
           </div>
           <div className="gam-toast-text">
             <p className="gam-toast-title">{content.title}</p>

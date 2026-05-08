@@ -1,4 +1,4 @@
-import React from 'react'
+﻿import React from 'react'
 import { useThemeStore } from '../stores/themeStore'
 
 export default function StickerGrid({ totalStickers, missingStickers, duplicateStickers, onToggle, mode, searchFilter }) {
@@ -19,7 +19,7 @@ export default function StickerGrid({ totalStickers, missingStickers, duplicateS
   const getStyle = (n) => {
     if (missingSet.has(n)) return { ...btnBase, background: '#ef4444', color: 'white' }
     if (duplicateSet.has(n)) return { ...btnBase, background: '#10b981', color: 'white' }
-    // "owned" = not missing and not duplicate — shown as dark/inverted
+    // "owned" = not missing and not duplicate â€” shown as dark/inverted
     return {
       ...btnBase,
       background: isDark ? 'rgba(255,255,255,0.06)' : '#fff',

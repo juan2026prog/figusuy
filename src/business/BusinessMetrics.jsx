@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+﻿import React, { useEffect, useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { isBusinessPlanAtLeast } from '../lib/businessPlans'
@@ -293,7 +293,7 @@ export default function BusinessMetrics() {
             </div>
           </div>
 
-          {/* LAYER 2: INTERACCION — Turbo+ */}
+          {/* LAYER 2: INTERACCION â€” Turbo+ */}
           <div className={`metrics-layer locked-wrap ${!isTurbo ? 'locked' : ''}`}>
             <div className="layer-head">
               <span className="material-symbols-outlined" style={{ color: 'var(--green)' }}>touch_app</span>
@@ -301,7 +301,7 @@ export default function BusinessMetrics() {
                 <h3>Interacción</h3>
                 <p>¿Me prestan atención?</p>
               </div>
-              <span className="plan-access turbo">Turbo +</span>
+              <span className="plan-access turbo">Radar +</span>
             </div>
             <div className="metrics-grid">
               <div className="metric-card">
@@ -320,12 +320,12 @@ export default function BusinessMetrics() {
             {!isTurbo && (
               <div className="locked-badge">
                 <span className="material-symbols-outlined">lock</span>
-                Disponible desde Plan Turbo
+                Disponible desde Plan Radar
               </div>
             )}
           </div>
 
-          {/* LAYER 3: CONVERSION — Dominio */}
+          {/* LAYER 3: CONVERSION â€” Dominio */}
           <div className={`metrics-layer locked-wrap ${!isDominio ? 'locked' : ''}`}>
             <div className="layer-head">
               <span className="material-symbols-outlined" style={{ color: '#a78bfa' }}>shopping_cart</span>
@@ -333,7 +333,7 @@ export default function BusinessMetrics() {
                 <h3>Conversión</h3>
                 <p>¿Me están eligiendo?</p>
               </div>
-              <span className="plan-access dominio">Dominio</span>
+              <span className="plan-access dominio">Conversion</span>
             </div>
             <div className="metrics-grid">
               <div className="metric-card">
@@ -352,12 +352,12 @@ export default function BusinessMetrics() {
             {!isDominio && (
               <div className="locked-badge">
                 <span className="material-symbols-outlined">lock</span>
-                Disponible en Plan Dominio
+                Disponible en Plan Conversion
               </div>
             )}
           </div>
 
-          {/* LAYER 4: OPTIMIZACION — Dominio */}
+          {/* LAYER 4: OPTIMIZACION â€” Dominio */}
           <div className={`metrics-layer locked-wrap ${!isDominio ? 'locked' : ''}`}>
             <div className="layer-head">
               <span className="material-symbols-outlined" style={{ color: 'var(--yellow)' }}>auto_fix_high</span>
@@ -365,7 +365,7 @@ export default function BusinessMetrics() {
                 <h3>Optimización</h3>
                 <p>¿Qué hago ahora?</p>
               </div>
-              <span className="plan-access dominio">Dominio</span>
+              <span className="plan-access dominio">Conversion</span>
             </div>
             <div className="optimization-grid">
               <div className="optimization-card">
@@ -374,7 +374,7 @@ export default function BusinessMetrics() {
               </div>
               <div className="optimization-card">
                 <h4>Mejor horario</h4>
-                <p>14 – 18h</p>
+                <p>14 â€“ 18h</p>
               </div>
               <div className="optimization-card">
                 <h4>Barrio top</h4>
@@ -384,7 +384,7 @@ export default function BusinessMetrics() {
             {!isDominio && (
               <div className="locked-badge">
                 <span className="material-symbols-outlined">lock</span>
-                Disponible en Plan Dominio
+                Disponible en Plan Conversion
               </div>
             )}
           </div>

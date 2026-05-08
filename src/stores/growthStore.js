@@ -1,9 +1,25 @@
-import { create } from 'zustand'
+﻿import { create } from 'zustand'
 import { supabase } from '../lib/supabase'
 import {
   NOTIFICATION_TRIGGERS, ONBOARDING_STEPS, SHARE_TYPES,
   GROWTH_ACHIEVEMENTS, REFERRAL_REWARDS, getOnboardingProgress, buildShareText
 } from '../lib/growthEngine'
+
+const normalizeShareType = (platform) => {
+  if (!platform) return 'album'
+  const key = String(platform).toLowerCase()
+  return SHARE_TYPES[key] ? key : 'album'
+}
+
+const normalizeReferralEvent = (status, rewardGranted = false) => {
+  const value = String(status || '').toLowerCase()
+  if (value === 'pending') return 'invite_sent'
+  if (value === 'signed_up') return 'friend_signed_up'
+  if (value === 'activated') return 'friend_activated'
+  if (value === 'completed_trade' || value === 'first_trade') return 'friend_first_trade'
+  if (rewardGranted) return 'friend_activated'
+  return 'invite_sent'
+}
 
 export const useGrowthStore = create((set, get) => ({
   // State
@@ -18,6 +34,10 @@ export const useGrowthStore = create((set, get) => ({
   onboardingVisible: false,
   loading: false,
   initialized: false,
+  capabilities: {
+    shareEvents: true,
+    referralEvents: true,
+  },
 
   // ============================
   // INITIALIZATION
@@ -33,7 +53,8 @@ export const useGrowthStore = create((set, get) => ({
         get().fetchReferralStats(userId),
       ])
       // Calculate onboarding
-      const ob = getOnboardingProgress(profile || {}, progress || {})
+      const isBusiness = profile?.account_type === 'business' || profile?.role === 'business'
+      const ob = getOnboardingProgress(profile || {}, progress || {}, isBusiness)
       set({ onboardingProgress: ob, onboardingVisible: !ob.isActivated, initialized: true })
     } catch (err) {
       console.error('Growth init error:', err)
@@ -102,7 +123,8 @@ export const useGrowthStore = create((set, get) => ({
   // ONBOARDING
   // ============================
   updateOnboarding: (profile, progress) => {
-    const ob = getOnboardingProgress(profile || {}, progress || {})
+    const isBusiness = profile?.account_type === 'business' || profile?.role === 'business'
+    const ob = getOnboardingProgress(profile || {}, progress || {}, isBusiness)
     set({ onboardingProgress: ob })
     if (ob.isActivated) set({ onboardingVisible: false })
   },
@@ -126,11 +148,14 @@ export const useGrowthStore = create((set, get) => ({
   closeShareModal: () => set({ shareModal: { open: false, type: null, data: {} } }),
 
   trackShare: async (userId, shareType, data = {}) => {
-    if (!userId) return
+    if (!userId || !get().capabilities.shareEvents) return
     try {
       await supabase.from('share_events').insert({
-        user_id: userId, share_type: shareType,
-        metadata: data, created_at: new Date().toISOString(),
+        user_id: userId,
+        platform: shareType,
+        link_id: data?.link_id || data?.album_name || data?.store_name || null,
+        status: 'clicked',
+        created_at: new Date().toISOString(),
       })
       // Trigger growth achievement
       const achievementKey = SHARE_TYPES[shareType]?.achievement_key
@@ -138,28 +163,55 @@ export const useGrowthStore = create((set, get) => ({
         await get().unlockGrowthAchievement(userId, achievementKey)
       }
       await get().fetchShareStats(userId)
-    } catch (err) { console.error(err) }
+    } catch (err) {
+      if (err?.status === 400) {
+        set(s => ({ capabilities: { ...s.capabilities, shareEvents: false } }))
+        return
+      }
+      console.error(err)
+    }
   },
 
   fetchShareStats: async (userId) => {
-    if (!userId) return
+    if (!userId || !get().capabilities.shareEvents) return
     try {
       const { data } = await supabase
         .from('share_events')
-        .select('share_type, created_at')
+        .select('platform, link_id, status, created_at')
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
         .limit(100)
-      set({ shares: data || [] })
-    } catch (err) { console.error(err) }
+      set({
+        shares: (data || []).map((item) => ({
+          ...item,
+          share_type: normalizeShareType(item.platform),
+        }))
+      })
+    } catch (err) {
+      if (err?.status === 400) {
+        set(s => ({ shares: [], capabilities: { ...s.capabilities, shareEvents: false } }))
+        return
+      }
+      console.error(err)
+    }
   },
 
   trackReferral: async (userId, referredUserId, event) => {
-    if (!userId) return
+    if (!userId || !get().capabilities.referralEvents) return
     try {
+      const statusMap = {
+        invite_sent: 'pending',
+        friend_signed_up: 'signed_up',
+        friend_activated: 'activated',
+        friend_first_trade: 'completed_trade',
+      }
+
       await supabase.from('referral_events').insert({
-        referrer_id: userId, referred_id: referredUserId,
-        event, created_at: new Date().toISOString(),
+        referrer_id: userId,
+        referred_id: referredUserId,
+        status: statusMap[event] || 'pending',
+        reward_granted: false,
+        created_at: new Date().toISOString(),
       })
       const rewardDef = REFERRAL_REWARDS[event]
       if (rewardDef?.reward_type) {
@@ -172,20 +224,37 @@ export const useGrowthStore = create((set, get) => ({
         })
       }
       await get().fetchReferralStats(userId)
-    } catch (err) { console.error(err) }
+    } catch (err) {
+      if (err?.status === 400) {
+        set(s => ({ capabilities: { ...s.capabilities, referralEvents: false } }))
+        return
+      }
+      console.error(err)
+    }
   },
 
   fetchReferralStats: async (userId) => {
-    if (!userId) return
+    if (!userId || !get().capabilities.referralEvents) return
     try {
       const { data } = await supabase
         .from('referral_events')
-        .select('event, created_at, referred_id')
+        .select('status, reward_granted, created_at, referred_id')
         .eq('referrer_id', userId)
         .order('created_at', { ascending: false })
         .limit(100)
-      set({ referrals: data || [] })
-    } catch (err) { console.error(err) }
+      set({
+        referrals: (data || []).map((item) => ({
+          ...item,
+          event: normalizeReferralEvent(item.status, item.reward_granted),
+        }))
+      })
+    } catch (err) {
+      if (err?.status === 400) {
+        set(s => ({ referrals: [], capabilities: { ...s.capabilities, referralEvents: false } }))
+        return
+      }
+      console.error(err)
+    }
   },
 
   executeShare: async (userId, shareType, data = {}) => {
@@ -247,8 +316,12 @@ export const useGrowthStore = create((set, get) => ({
         const def = GROWTH_ACHIEVEMENTS[achievementKey]
         const done = def.target <= 1
         await supabase.from('user_achievements').insert({
-          user_id: userId, achievement_key: achievementKey,
-          progress: 1, target: def.target, completed: done,
+          user_id: userId,
+          achievement_key: achievementKey,
+          category: def.category,
+          progress: 1,
+          target: def.target,
+          completed: done,
           unlocked_at: done ? new Date().toISOString() : null,
         })
         if (done) await get()._grantGrowthReward(userId, achievementKey)
@@ -276,15 +349,20 @@ export const useGrowthStore = create((set, get) => ({
   // ============================
   fetchGrowthMetrics: async () => {
     try {
+      const { capabilities } = get()
       const [notifRes, shareRes, refRes, achRes] = await Promise.all([
         supabase.from('smart_notifications').select('id, trigger_key, read_at, action_taken, created_at').limit(500),
-        supabase.from('share_events').select('id, share_type, created_at').limit(500),
-        supabase.from('referral_events').select('id, event, created_at').limit(500),
+        capabilities.shareEvents
+          ? supabase.from('share_events').select('id, platform, status, created_at').limit(500)
+          : Promise.resolve({ data: [] }),
+        capabilities.referralEvents
+          ? supabase.from('referral_events').select('id, status, reward_granted, created_at').limit(500)
+          : Promise.resolve({ data: [] }),
         supabase.from('user_achievements').select('achievement_key, completed').in('achievement_key', Object.keys(GROWTH_ACHIEVEMENTS)),
       ])
       const notifs = notifRes.data || []
-      const shares = shareRes.data || []
-      const refs = refRes.data || []
+      const shares = (shareRes.data || []).map((item) => ({ ...item, share_type: normalizeShareType(item.platform) }))
+      const refs = (refRes.data || []).map((item) => ({ ...item, event: normalizeReferralEvent(item.status, item.reward_granted) }))
       const achs = achRes.data || []
       set({
         growthMetrics: {
@@ -322,5 +400,6 @@ export const useGrowthStore = create((set, get) => ({
     notificationCenter: { open: false, unread: 0 },
     shareModal: { open: false, type: null, data: {} },
     onboardingVisible: false, loading: false, initialized: false,
+    capabilities: { shareEvents: true, referralEvents: true },
   }),
 }))

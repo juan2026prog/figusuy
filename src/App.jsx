@@ -1,6 +1,7 @@
-import React, { Suspense, lazy, useEffect } from 'react'
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
+﻿import React, { Suspense, lazy, useEffect } from 'react'
+import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useAuthStore } from './stores/authStore'
+// FigusUY - PayPal Integration Final Sync
 import { useFeatureFlagStore } from './stores/featureFlagStore'
 import { useBrandingStore } from './stores/brandingStore'
 import BottomNav from './components/BottomNav'
@@ -10,12 +11,19 @@ import { useAnalytics } from './hooks/useAnalytics'
 import { useGrowthStore } from './stores/growthStore'
 
 import BusinessAccessGuard from './components/BusinessAccessGuard'
-import AffiliateAccessGuard from './components/AffiliateAccessGuard'
+import InfluencerAccessGuard from './components/InfluencerAccessGuard'
+import AdminRoleGuard from './components/AdminRoleGuard'
+import { useInfluencerStore } from './stores/influencerStore'
 
-const Landing = lazy(() => import('./pages/Landing'))
-const Login = lazy(() => import('./pages/Login'))
+import Landing from './pages/Landing'
+import Login from './pages/Login'
+import Points from './pages/Points'
+import InfluencersPage from './pages/InfluencersPage'
+import FAQ from './pages/FAQ'
+
 const ReferralLanding = lazy(() => import('./pages/ReferralLanding'))
-const AffiliateJoin = lazy(() => import('./pages/AffiliateJoin'))
+const UserReferrals = lazy(() => import('./pages/UserReferrals'))
+const InfluencerJoin = lazy(() => import('./pages/InfluencerJoin'))
 const StaticPage = lazy(() => import('./pages/StaticPage'))
 
 const Album = lazy(() => import('./pages/Album'))
@@ -28,6 +36,9 @@ const Stores = lazy(() => import('./pages/Stores'))
 const Favorites = lazy(() => import('./pages/Favorites'))
 const PartnerPlans = lazy(() => import('./pages/PartnerPlans'))
 const Achievements = lazy(() => import('./pages/Achievements'))
+const PublicProfile = lazy(() => import('./pages/PublicProfile'))
+const PublicAlbum = lazy(() => import('./pages/PublicAlbum'))
+const HybridLayout = lazy(() => import('./components/HybridLayout'))
 
 const BusinessLayout = lazy(() => import('./business/BusinessLayout'))
 const BusinessDashboard = lazy(() => import('./business/BusinessDashboard'))
@@ -40,11 +51,12 @@ const BusinessPartnerStoreValidations = lazy(() => import('./business/BusinessPa
 const BusinessHelp = lazy(() => import('./business/BusinessHelp'))
 const BusinessApply = lazy(() => import('./pages/BusinessApply'))
 const BusinessPending = lazy(() => import('./pages/BusinessPending'))
-const AffiliateLayout = lazy(() => import('./affiliate/AffiliateLayout'))
-const AffiliateDashboardHome = lazy(() => import('./affiliate/AffiliateDashboardHome'))
-const AffiliateAssets = lazy(() => import('./affiliate/AffiliateAssets'))
-const AffiliatePerformance = lazy(() => import('./affiliate/AffiliatePerformance'))
-const AffiliatePayouts = lazy(() => import('./affiliate/AffiliatePayouts'))
+const BusinessSuspended = lazy(() => import('./pages/BusinessSuspended'))
+const InfluencerLayout = lazy(() => import('./influencer/InfluencerLayout'))
+const InfluencerDashboardHome = lazy(() => import('./influencer/InfluencerDashboardHome'))
+const InfluencerAssets = lazy(() => import('./influencer/InfluencerAssets'))
+const InfluencerPerformance = lazy(() => import('./influencer/InfluencerPerformance'))
+const InfluencerPayouts = lazy(() => import('./influencer/InfluencerPayouts'))
 
 const AdminLayout = lazy(() => import('./admin/AdminLayout'))
 const AdminDashboard = lazy(() => import('./admin/Dashboard'))
@@ -75,11 +87,11 @@ const AdminBusinessPlans = lazy(() => import('./admin/AdminBusinessPlans'))
 const AdminSponsored = lazy(() => import('./admin/AdminSponsored'))
 const AdminFeatureFlags = lazy(() => import('./admin/AdminFeatureFlags'))
 const AdminGamification = lazy(() => import('./admin/AdminGamification'))
-const AdminAffiliates = lazy(() => import('./admin/AdminAffiliates'))
-const AdminAffiliateCampaigns = lazy(() => import('./admin/AdminAffiliateCampaigns'))
-const AdminAffiliateBenefits = lazy(() => import('./admin/AdminAffiliateBenefits'))
-const AdminAffiliateCommissions = lazy(() => import('./admin/AdminAffiliateCommissions'))
-const AdminAffiliatePayments = lazy(() => import('./admin/AdminAffiliatePayments'))
+const AdminInfluencers = lazy(() => import('./admin/AdminInfluencers'))
+const AdminInfluencerCampaigns = lazy(() => import('./admin/AdminInfluencerCampaigns'))
+const AdminInfluencerBenefits = lazy(() => import('./admin/AdminInfluencerBenefits'))
+const AdminInfluencerCommissions = lazy(() => import('./admin/AdminInfluencerCommissions'))
+const AdminInfluencerPayments = lazy(() => import('./admin/AdminInfluencerPayments'))
 const AdminBranding = lazy(() => import('./admin/AdminBranding'))
 const AdminStaticPages = lazy(() => import('./admin/AdminStaticPages'))
 const AdminSmartNotifications = lazy(() => import('./admin/AdminSmartNotifications'))
@@ -88,6 +100,10 @@ const AdminReferrals = lazy(() => import('./admin/AdminReferrals'))
 const AdminGrowthAchievements = lazy(() => import('./admin/AdminGrowthAchievements'))
 const AdminRewardsEngine = lazy(() => import('./admin/AdminRewardsEngine'))
 const AdminExchangeCompletion = lazy(() => import('./admin/AdminExchangeCompletion'))
+const AdminInfluencerApplications = lazy(() => import('./admin/AdminInfluencerApplications'))
+const AdminEmailLifecycle = lazy(() => import('./admin/AdminEmailLifecycle'))
+
+import LandingLayout from './components/landing/LandingLayout'
 
 const AlphaWelcomeModal = lazy(() => import('./components/AlphaWelcomeModal'))
 const GamificationToast = lazy(() => import('./components/GamificationToast'))
@@ -96,20 +112,70 @@ const ShareModal = lazy(() => import('./components/ShareModal'))
 const SmartNotifications = lazy(() => import('./components/SmartNotifications'))
 const GlobalLogoutDialog = lazy(() => import('./components/GlobalLogoutDialog'))
 
-function LoadingScreen() {
+import './components/gamification/icons/GamificationIcons.css'
+import { GamificationIconDefs } from './components/gamification/icons/GamificationIconDefs'
+
+function LoadingScreen({ text = "Cargando FigusUY..." }) {
   return (
-    <div className="flex-center flex-col gap-lg" style={{ minHeight: '100vh' }}>
-      <div className="logo-icon-lg animate-celebrate">F</div>
-      <p className="text-sm text-muted font-medium">Cargando...</p>
+    <div style={{
+      minHeight: '100vh',
+      display: 'grid',
+      placeItems: 'center',
+      padding: '2rem',
+      background: 'var(--color-bg, #080808)',
+      color: 'var(--color-text, #f5f5f5)',
+    }}>
+      <div style={{ textAlign: 'center', display: 'grid', gap: '0.75rem' }}>
+        <span className="material-symbols-outlined" style={{ fontSize: '2.5rem', color: 'var(--color-primary, #ff5a00)' }}>hourglass_top</span>
+        <strong style={{ fontSize: '1rem', letterSpacing: '0.04em' }}>{text}</strong>
+      </div>
     </div>
   )
 }
 
 function ProtectedRoute({ children }) {
-  const { user, loading } = useAuthStore()
-  if (loading) return <LoadingScreen />
-  if (!user) return <Navigate to="/login" replace />
-  return children
+  const { user, loading, initialized } = useAuthStore()
+  const [timedOut, setTimedOut] = React.useState(false)
+
+  // Detectar si hay un token almacenado (indica que el usuario SÃ estaba logueado)
+  const hasStoredSession = React.useMemo(() => {
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i)
+        if (key && (key.includes('supabase.auth.token') || key.includes('sb-') && key.includes('-auth-token'))) {
+          return true
+        }
+      }
+    } catch { /* ignore */ }
+    return false
+  }, [])
+
+  React.useEffect(() => {
+    // Solo activar timeout si NO hay token guardado (sesión genuinamente inexistente)
+    // Si hay token, darle más tiempo â€” la sesión existe, solo está cargando del servidor
+    const delay = hasStoredSession ? 20000 : 6000
+    const timer = setTimeout(() => {
+      if (!user) setTimedOut(true)
+    }, delay)
+    return () => clearTimeout(timer)
+  }, [user, hasStoredSession])
+
+  // Si ya tenemos usuario, permitir acceso inmediato
+  if (user) return children
+
+  // Si todavía estamos cargando y no ha pasado el timeout, mostrar loading
+  if ((loading || !initialized) && !timedOut) return <LoadingScreen text="Verificando sesión..." />
+
+  // Si hay un token guardado pero aún no tenemos usuario y se agotó el tiempo,
+  // forzar un re-intento antes de redirigir
+  if (hasStoredSession && timedOut && !user) {
+    // Último intento: re-inicializar auth
+    const { initialize } = useAuthStore.getState()
+    void initialize()
+  }
+
+  // Auth resolvió sin usuario y no hay token guardado â†’ login
+  return <Navigate to="/login" replace />
 }
 
 function AuthRedirector() {
@@ -120,7 +186,7 @@ function AuthRedirector() {
     return <Navigate to="/admin" replace />
   }
   if (profile?.role === 'influencer') {
-    return <Navigate to="/affiliate/dashboard" replace />
+    return <Navigate to="/influencer/dashboard" replace />
   }
   if (profile?.account_type === 'business') {
     return <Navigate to="/business" replace />
@@ -129,11 +195,20 @@ function AuthRedirector() {
 }
 
 function PublicRoute({ children }) {
-  const { user, loading } = useAuthStore()
-  if (loading) return <LoadingScreen />
+  const { user, loading, initialized } = useAuthStore()
+
+  // Mientras la autenticación no se haya inicializado, mostrar loading breve
+  // Pero NO bloquear indefinidamente â€” si initialized es true, decidir ya
+  if (!initialized && loading) {
+    return <LoadingScreen text="Preparando ingreso..." />
+  }
+
+  // Si hay usuario autenticado, redirigir al dashboard correspondiente
   if (user) {
     return <AuthRedirector />
   }
+
+  // No hay usuario â†’ mostrar la página pública (login)
   return children
 }
 
@@ -163,14 +238,26 @@ function FeatureGuard({ featureKey, children }) {
 }
 
 function GlobalHooks() {
+  const { user } = useAuthStore()
+  const checkAndProcessReferral = useInfluencerStore(state => state.checkAndProcessReferral)
+
   useAnalytics()
+
+  useEffect(() => {
+    if (user?.id) {
+      void checkAndProcessReferral(user.id)
+    }
+  }, [user?.id, checkAndProcessReferral])
+
   return null
 }
 
 function AppChrome() {
   const location = useLocation()
-  const isLandingRoute = location.pathname === '/'
-
+  const isLandingRoute = ['/', '/puntos', '/influencers', '/faq', '/login'].includes(location.pathname) || 
+                         location.pathname.startsWith('/p/') || 
+                         location.pathname.startsWith('/r/')
+  
   if (isLandingRoute) return null
 
   return (
@@ -182,6 +269,7 @@ function AppChrome() {
       <ShareModal />
       <SmartNotifications />
       <GlobalLogoutDialog />
+      <GamificationIconDefs />
     </>
   )
 }
@@ -189,54 +277,13 @@ function AppChrome() {
 function AppLayout({ children }) {
   return (
     <div className="app-layout">
-      <style>{`
-        .app-layout {
-          min-height: 100vh;
-          display: flex;
-          width: 100%;
-          max-width: 100%;
-          min-width: 0;
-          overflow-x: clip;
-          background-color: var(--color-bg); /* Matches body bg */
-        }
-
-        .app-sidebar-wrapper {
-          display: none;
-          flex-shrink: 0;
-        }
-
-        .app-main {
-          flex: 1;
-          position: relative;
-          min-width: 0;
-          width: 100%;
-          max-width: 100%;
-          overflow-y: auto;
-          overflow-x: hidden;
-          min-height: 100vh;
-        }
-
-        .app-main > * {
-          width: 100%;
-          min-width: 0;
-          max-width: 100%;
-        }
-
-        @media (min-width: 768px) {
-          .app-sidebar-wrapper {
-            display: block;
-            width: 208px; /* w-52 */
-          }
-          .app-layout {
-            flex-direction: row;
-          }
-        }
-      `}</style>
       <div className="app-sidebar-wrapper">
         <Sidebar />
       </div>
-      <main className="app-main" style={{ display: 'flex', flexDirection: 'column' }}>
-        <PageTransitionWrapper>{children}</PageTransitionWrapper>
+      <main className="app-main">
+        <PageTransitionWrapper>
+          {children || <Outlet />}
+        </PageTransitionWrapper>
         <GlobalFooter />
       </main>
       <BottomNav />
@@ -251,8 +298,9 @@ export default function App() {
   const initGrowth = useGrowthStore(s => s.initialize)
   
   useEffect(() => {
-    initialize()
-    fetchSettings()
+    void initialize()
+    void fetchSettings()
+    
     if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
       document.documentElement.classList.add('dark')
     } else {
@@ -261,7 +309,7 @@ export default function App() {
   }, [])
 
   useEffect(() => {
-    initializeFlags(user?.id)
+    void initializeFlags(user?.id)
   }, [user?.id])
 
   useEffect(() => {
@@ -278,14 +326,26 @@ export default function App() {
 
   return (
     <BrowserRouter>
-      <Suspense fallback={<LoadingScreen />}>
+      <Suspense fallback={<LoadingScreen text="Iniciando interfaz..." />}>
         <Routes>
-        {/* Public */}
-        <Route path="/" element={<Landing />} />
+        {/* Public Landing Suite */}
+        <Route element={<LandingLayout />}>
+          <Route path="/" element={<Landing />} />
+          <Route path="/puntos" element={<Points />} />
+          <Route path="/influencers" element={<InfluencersPage />} />
+          <Route path="/faq" element={<FAQ />} />
+          <Route path="/p/:slug" element={<StaticPage />} />
+        </Route>
+
         <Route path="/login" element={<PublicRoute><PageTransitionWrapper><Login /></PageTransitionWrapper></PublicRoute>} />
         <Route path="/r/:code" element={<ReferralLanding />} />
-        <Route path="/affiliate-join/:code" element={<AffiliateJoin />} />
-        <Route path="/p/:slug" element={<StaticPage />} />
+        <Route path="/influencer-join/:code" element={<InfluencerJoin />} />
+
+        {/* Public Profiles */}
+        <Route element={<HybridLayout />}>
+          <Route path="/u/:username" element={<PageTransitionWrapper><PublicProfile /></PageTransitionWrapper>} />
+          <Route path="/u/:username/album/:albumId" element={<PageTransitionWrapper><PublicAlbum /></PageTransitionWrapper>} />
+        </Route>
 
         {/* App */}
         <Route path="/home" element={
@@ -293,20 +353,25 @@ export default function App() {
             <AuthRedirector />
           </ProtectedRoute>
         } />
-        <Route path="/album" element={<ProtectedRoute><FeatureGuard featureKey="album"><AppLayout><Album /></AppLayout></FeatureGuard></ProtectedRoute>} />
-        <Route path="/matches" element={<ProtectedRoute><AppLayout><Matches /></AppLayout></ProtectedRoute>} />
-        <Route path="/chats" element={<ProtectedRoute><FeatureGuard featureKey="chats"><AppLayout><ChatsList /></AppLayout></FeatureGuard></ProtectedRoute>} />
-        <Route path="/chat/:chatId" element={<ProtectedRoute><FeatureGuard featureKey="chats"><AppLayout><Chat /></AppLayout></FeatureGuard></ProtectedRoute>} />
-        <Route path="/profile" element={<ProtectedRoute><AppLayout><Profile /></AppLayout></ProtectedRoute>} />
-        <Route path="/premium" element={<ProtectedRoute><AppLayout><Premium /></AppLayout></ProtectedRoute>} />
-        <Route path="/stores" element={<ProtectedRoute><AppLayout><Stores /></AppLayout></ProtectedRoute>} />
-        <Route path="/favorites" element={<ProtectedRoute><AppLayout><Favorites /></AppLayout></ProtectedRoute>} />
-        <Route path="/achievements" element={<ProtectedRoute><AppLayout><Achievements /></AppLayout></ProtectedRoute>} />
-        <Route path="/partners" element={<AppLayout><PartnerPlans /></AppLayout>} />
+        {/* App Routes with persistent Layout */}
+        <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
+          <Route path="/album" element={<FeatureGuard featureKey="album"><Album /></FeatureGuard>} />
+          <Route path="/matches" element={<Matches />} />
+          <Route path="/chats" element={<FeatureGuard featureKey="chats"><ChatsList /></FeatureGuard>} />
+          <Route path="/chat/:chatId" element={<FeatureGuard featureKey="chats"><Chat /></FeatureGuard>} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/premium" element={<Premium />} />
+          <Route path="/stores" element={<Stores />} />
+          <Route path="/favorites" element={<Favorites />} />
+          <Route path="/achievements" element={<Achievements />} />
+          <Route path="/referidos" element={<UserReferrals />} />
+          <Route path="/partners" element={<PartnerPlans />} />
+        </Route>
 
         {/* Business Dashboard */}
         <Route path="/business/apply" element={<ProtectedRoute><BusinessApply /></ProtectedRoute>} />
         <Route path="/business/pending" element={<ProtectedRoute><BusinessPending /></ProtectedRoute>} />
+        <Route path="/business/suspended" element={<ProtectedRoute><BusinessSuspended /></ProtectedRoute>} />
         <Route path="/business" element={<ProtectedRoute><BusinessAccessGuard><BusinessLayout /></BusinessAccessGuard></ProtectedRoute>}>
           <Route index element={<BusinessDashboard />} />
           <Route path="profile" element={<BusinessProfile />} />
@@ -318,16 +383,16 @@ export default function App() {
           <Route path="help" element={<BusinessHelp />} />
         </Route>
 
-        <Route path="/affiliate" element={<ProtectedRoute><AffiliateAccessGuard><AppLayout><AffiliateLayout /></AppLayout></AffiliateAccessGuard></ProtectedRoute>}>
-          <Route index element={<Navigate to="/affiliate/dashboard" replace />} />
-          <Route path="dashboard" element={<AffiliateDashboardHome />} />
-          <Route path="assets" element={<AffiliateAssets />} />
-          <Route path="performance" element={<AffiliatePerformance />} />
-          <Route path="payouts" element={<AffiliatePayouts />} />
+        <Route path="/influencer" element={<ProtectedRoute><InfluencerAccessGuard><AppLayout><InfluencerLayout /></AppLayout></InfluencerAccessGuard></ProtectedRoute>}>
+          <Route index element={<Navigate to="/influencer/dashboard" replace />} />
+          <Route path="dashboard" element={<InfluencerDashboardHome />} />
+          <Route path="assets" element={<InfluencerAssets />} />
+          <Route path="performance" element={<InfluencerPerformance />} />
+          <Route path="payouts" element={<InfluencerPayouts />} />
         </Route>
 
         {/* Admin Panel */}
-        <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
+        <Route path="/admin" element={<ProtectedRoute><AdminRoleGuard><AdminLayout /></AdminRoleGuard></ProtectedRoute>}>
           <Route index element={<AdminDashboard />} />
           <Route path="albums" element={<AdminAlbums />} />
           <Route path="users" element={<AdminUsers />} />
@@ -343,7 +408,6 @@ export default function App() {
           <Route path="locations" element={<AdminLocations />} />
           <Route path="location-requests" element={<AdminLocationRequests />} />
           <Route path="business-plans" element={<AdminBusinessPlans />} />
-          <Route path="promos" element={<AdminSponsored />} />
           <Route path="blocks" element={<AdminBlocks />} />
           <Route path="security" element={<AdminSecurity />} />
           <Route path="subscriptions" element={<AdminSubscriptions />} />
@@ -360,16 +424,18 @@ export default function App() {
           <Route path="sponsored" element={<AdminSponsored />} />
           <Route path="feature-flags" element={<AdminFeatureFlags />} />
           <Route path="gamification" element={<AdminGamification />} />
-          <Route path="affiliates" element={<AdminAffiliates />} />
-          <Route path="affiliate-campaigns" element={<AdminAffiliateCampaigns />} />
-          <Route path="affiliate-benefits" element={<AdminAffiliateBenefits />} />
-          <Route path="affiliate-commissions" element={<AdminAffiliateCommissions />} />
-          <Route path="affiliate-payments" element={<AdminAffiliatePayments />} />
+          <Route path="affiliates" element={<AdminInfluencers />} />
+          <Route path="influencer-applications" element={<AdminInfluencerApplications />} />
+          <Route path="affiliate-campaigns" element={<AdminInfluencerCampaigns />} />
+          <Route path="affiliate-benefits" element={<AdminInfluencerBenefits />} />
+          <Route path="affiliate-commissions" element={<AdminInfluencerCommissions />} />
+          <Route path="affiliate-payments" element={<AdminInfluencerPayments />} />
           <Route path="smart-notifications" element={<AdminSmartNotifications />} />
           <Route path="onboarding" element={<AdminOnboarding />} />
           <Route path="referrals" element={<AdminReferrals />} />
           <Route path="growth-achievements" element={<AdminGrowthAchievements />} />
           <Route path="rewards-engine" element={<AdminRewardsEngine />} />
+          <Route path="email-lifecycle" element={<AdminEmailLifecycle />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />

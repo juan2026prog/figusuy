@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+﻿import React, { useEffect, useState } from 'react'
 import { useAdminStore } from '../stores/adminStore'
 import { useAuthStore } from '../stores/authStore'
 import ConfirmDialog from '../components/ConfirmDialog'
@@ -56,12 +56,14 @@ export default function AdminLocationRequests() {
         <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--admin-muted)' }}>Cargando solicitudes...</div>
       ) : (
         <div style={{ display: 'grid', gap: '1rem' }}>
-          {locationRequests.map((req) => (
+          {locationRequests.map((req) => {
+            const isSuggestedPoint = req.metadata?.request_type === 'suggested'
+            return (
             <div key={req.id} style={card}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
                 <div style={{ display: 'flex', gap: '1rem' }}>
                   <div style={{ width: '3rem', height: '3rem', borderRadius: '0.75rem', background: 'var(--admin-panel2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-primary)' }}>
-                    <span className="material-symbols-outlined" style={{ fontSize: '1.5rem' }}>store</span>
+                    <span className="material-symbols-outlined" style={{ fontSize: '1.5rem' }}>{isSuggestedPoint ? 'place' : 'store'}</span>
                   </div>
                   <div>
                     <h3 style={{ fontSize: '1.125rem', fontWeight: 800, color: '#f5f5f5', margin: 0 }}>{req.name}</h3>
@@ -90,7 +92,7 @@ export default function AdminLocationRequests() {
                   {req.status === 'approved' && <span style={badge('#10b981', '#ecfdf5')}>Aprobado</span>}
                   {req.status === 'rejected' && <span style={badge('#ef4444', '#fef2f2')}>Rechazado</span>}
                   <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-primary)', background: 'rgba(249, 115, 22, 0.1)', padding: '0.25rem 0.5rem', borderRadius: '0.25rem' }}>
-                    Plan: {req.business_plan?.toUpperCase() || 'GRATIS'}
+                    {isSuggestedPoint ? 'Tipo: Punto sugerido' : `Plan: ${req.business_plan?.toUpperCase() || 'GRATIS'}`}
                   </div>
                 </div>
               </div>
@@ -121,7 +123,7 @@ export default function AdminLocationRequests() {
                 </div>
               )}
             </div>
-          ))}
+          )})}
 
           {locationRequests.length === 0 && (
             <div style={{ ...card, textAlign: 'center', padding: '4rem', color: 'var(--admin-muted)' }}>

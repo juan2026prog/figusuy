@@ -1,13 +1,15 @@
-import React, { useEffect, useState } from 'react'
+﻿import React, { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../stores/authStore'
-import { useAffiliateStore } from '../stores/affiliateStore'
+import { useInfluencerStore } from '../stores/influencerStore'
 import { useToast } from './Toast'
 
-export default function AuthPanel({ initialType = null, mode = 'page', onClose = null }) {
+export default function AuthPanel({ initialType = null, mode = 'page', onClose = null, redirectTo = '/home' }) {
   const { signInWithGoogle, signInWithEmail, signUpWithEmail } = useAuthStore()
-  const { checkAndProcessReferral } = useAffiliateStore()
+  const { checkAndProcessReferral } = useInfluencerStore()
   const toast = useToast()
+  const navigate = useNavigate()
 
   const [isSignUp, setIsSignUp] = useState(false)
   const [email, setEmail] = useState('')
@@ -27,6 +29,8 @@ export default function AuthPanel({ initialType = null, mode = 'page', onClose =
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    if (loading) return
+
     setError('')
     setLoading(true)
 
@@ -39,6 +43,14 @@ export default function AuthPanel({ initialType = null, mode = 'page', onClose =
       } else {
         await signInWithEmail(email, password)
       }
+      
+      if (mode === 'modal' && onClose) {
+        onClose()
+      }
+      if (redirectTo) {
+        navigate(redirectTo)
+      }
+      return // Avoid setting loading to false if unmounted
     } catch (err) {
       setError(err.message || 'Error al iniciar sesion')
     }
@@ -69,13 +81,14 @@ export default function AuthPanel({ initialType = null, mode = 'page', onClose =
       setError('Ingresa tu email primero para usar Magic Link')
       return
     }
+    if (loading) return
 
     setLoading(true)
     try {
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
-          emailRedirectTo: window.location.origin,
+          emailRedirectTo: redirectTo ? new URL(redirectTo, window.location.origin).toString() : window.location.href,
         },
       })
       if (error) throw error
@@ -482,24 +495,33 @@ export default function AuthPanel({ initialType = null, mode = 'page', onClose =
         }
 
         @media (max-width: 920px) {
+          .auth-shell.page {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            background: #0b0b0b;
+          }
           .auth-wrap {
             grid-template-columns: 1fr;
+            border: none;
+            background: transparent;
+            max-width: 440px;
           }
-
           .auth-hero {
-            border-right: 0;
-            border-bottom: 1px solid var(--auth-line);
+            display: none;
+          }
+          .auth-form-panel {
+            border: 1px solid var(--auth-line);
+            border-radius: 4px;
           }
         }
 
         @media (max-width: 640px) {
-          .auth-hero,
+          .auth-hero { display: none; }
           .auth-form-panel {
             padding: 1.2rem;
-          }
-
-          .auth-hero h1 {
-            font-size: 2.5rem;
+            border: none;
           }
         }
       `}</style>
@@ -565,7 +587,7 @@ export default function AuthPanel({ initialType = null, mode = 'page', onClose =
               <div style={{ marginTop: '1rem' }}>
                 {forgotSent ? (
                   <div className="auth-success">
-                    <span style={{ fontSize: '2.5rem' }}>📧</span>
+                    <span style={{ fontSize: '2.5rem' }}>ðŸ“§</span>
                     <strong style={{ font: "italic 900 1.9rem 'Barlow Condensed'", textTransform: 'uppercase' }}>Email enviado</strong>
                     <p style={{ color: 'var(--auth-muted)', lineHeight: 1.55 }}>Revisa tu bandeja de entrada en <b>{forgotEmail}</b>.</p>
                     <button className="auth-btn-primary" onClick={() => { setShowForgot(false); setForgotSent(false) }}>
@@ -618,7 +640,23 @@ export default function AuthPanel({ initialType = null, mode = 'page', onClose =
                 </div>
               )}
 
-              <button onClick={signInWithGoogle} className="auth-google">
+              <button
+                type="button"
+                onClick={() => {
+                  if (loading) return
+
+                  setError('')
+                  setLoading(true)
+                  signInWithGoogle(
+                    redirectTo ? new URL(redirectTo, window.location.origin).toString() : window.location.href
+                  ).catch((err) => {
+                    setError(err.message || 'Error al iniciar con Google')
+                    setLoading(false)
+                  })
+                }}
+                className="auth-google"
+                disabled={loading}
+              >
                 <svg width={20} height={20} viewBox="0 0 24 24" aria-hidden="true">
                   <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
                   <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
@@ -679,7 +717,7 @@ export default function AuthPanel({ initialType = null, mode = 'page', onClose =
                       onClick={() => setShowPassword(!showPassword)}
                       aria-label={showPassword ? 'Ocultar contrasena' : 'Mostrar contrasena'}
                     >
-                      {showPassword ? '🙈' : '👁️'}
+                      {showPassword ? 'ðŸ™ˆ' : 'ðŸ‘ï¸'}
                     </button>
                   </div>
                 </div>
@@ -722,7 +760,7 @@ export default function AuthPanel({ initialType = null, mode = 'page', onClose =
               </div>
 
               <div className="auth-legal">
-                Al continuar aceptas nuestros <a href="#">Terminos</a> y <a href="#">Privacidad</a>.
+                Al continuar aceptas nuestros <a href="/p/terminos">Terminos</a> y <a href="/p/privacidad">Privacidad</a>.
               </div>
             </>
           )}

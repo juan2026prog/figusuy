@@ -1,7 +1,7 @@
-import React, { useEffect } from 'react'
+﻿import React, { useEffect } from 'react'
 import AuthPanel from './AuthPanel'
 
-export default function AuthModal({ isOpen, onClose, initialType = null }) {
+export default function AuthModal({ isOpen, onClose, initialType = null, redirectTo = '/home' }) {
   useEffect(() => {
     if (!isOpen) return undefined
 
@@ -44,7 +44,7 @@ export default function AuthModal({ isOpen, onClose, initialType = null }) {
       `}</style>
 
       <div className="auth-modal-card" onClick={(event) => event.stopPropagation()}>
-        <AuthPanel mode="modal" onClose={onClose} initialType={initialType} />
+        <AuthPanel mode="modal" onClose={onClose} initialType={initialType} redirectTo={redirectTo} />
       </div>
     </div>
   )

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+﻿import React, { useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
 import { useAppStore } from '../stores/appStore'
@@ -8,12 +8,23 @@ import ReputationStars from '../components/ReputationStars'
 import { useFavoritesStore } from '../stores/favoritesStore'
 import ConfirmDialog from '../components/ConfirmDialog'
 import { useToast } from '../components/Toast'
+import { useExchangeStore } from '../stores/exchangeStore'
+import { useGamificationStore } from '../stores/gamificationStore'
+import { EXCHANGE_RESPONSE_LABELS, formatPercent, getExchangePromptVisibility, getExchangeStatusMeta, getMyExchangeResponse } from '../lib/exchangeCompletion'
+import { LiveFeed } from '../components/LiveMomentum'
+import { useLiveMomentum } from '../hooks/useLiveMomentum'
+import { getPresenceLabel } from '../lib/liveMomentum'
 
 export default function ChatPage() {
   const { chatId } = useParams()
   const navigate = useNavigate()
   const { profile } = useAuthStore()
   const { messages, fetchMessages, sendMessage, subscribeToMessages } = useAppStore()
+  const { completion, trigger } = useExchangeStore((state) => state.getChatCompletionState(chatId))
+  const fetchCompletionState = useExchangeStore((state) => state.fetchCompletionState)
+  const submitExchangeResponse = useExchangeStore((state) => state.submitResponse)
+  const exchangeLoading = useExchangeStore((state) => state.loading)
+  const refreshGamification = useGamificationStore((state) => state.fetchGamification)
   const [text, setText] = useState('')
   const [otherUser, setOtherUser] = useState(null)
   const [otherStars, setOtherStars] = useState(1)
@@ -24,10 +35,12 @@ export default function ChatPage() {
   const [reporting, setReporting] = useState(false)
   const bottomRef = useRef(null)
   const toast = useToast()
+  const { summary, feed } = useLiveMomentum()
 
   useEffect(() => {
     if (chatId && profile?.id) {
       fetchMessages(chatId)
+      fetchCompletionState(chatId)
       const unsub = subscribeToMessages(chatId)
 
       const loadChatData = async () => {
@@ -72,9 +85,10 @@ export default function ChatPage() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!text.trim()) return
-    sendMessage(chatId, profile.id, text.trim())
+    await sendMessage(chatId, profile.id, text.trim())
+    fetchCompletionState(chatId)
     setText('')
   }
 
@@ -125,127 +139,33 @@ export default function ChatPage() {
 
   const otherName = otherUser?.name || 'Cargando...'
   const otherInitial = otherName[0]?.toUpperCase() || '?'
-  const locationText = otherUser ? `${otherUser.city || otherUser.department || 'Sin ubicacion'} · ${exchangeData.albumName}` : 'Cargando...'
+  const presenceLabel = getPresenceLabel(otherUser?.last_active)
+  const locationText = otherUser ? `${otherUser.city || otherUser.department || 'Sin ubicacion'} Â· ${exchangeData.albumName}` : 'Cargando...'
   const incomingCount = exchangeData.theyCanGiveMe.length
   const outgoingCount = exchangeData.iCanGiveThem.length
   const totalMoves = incomingCount + outgoingCount
+  const promptVisibility = getExchangePromptVisibility(completion, trigger, profile?.id)
+  const myExchangeResponse = getMyExchangeResponse(completion, profile?.id)
+  const statusMeta = getExchangeStatusMeta(completion?.status || (trigger?.should_prompt ? 'pending_confirmation' : 'pending'))
+  const triggerScore = Math.round(Number(trigger?.score || completion?.trigger_score || 0))
+
+  const handleExchangeResponse = async (response) => {
+    const result = await submitExchangeResponse(chatId, profile?.id, response)
+    if (!result) {
+      toast.error('No se pudo registrar la confirmacion')
+      return
+    }
+
+    await refreshGamification(profile?.id)
+
+    if (response === 'yes') toast.success('Confirmacion registrada')
+    if (response === 'no') toast.success('Marcaste este intercambio como no concretado')
+    if (response === 'not_yet') toast.success('Seguimos pendiente de cierre')
+  }
 
   return (
     <div className="chat-page-root">
-      <style>{`
-        .chat-page-root {
-          --bg:#0b0b0b; --panel:#121212; --panel2:#181818; --panel3:#202020; --line:rgba(255,255,255,.08); --line2:rgba(255,255,255,.14);
-          --text:#f5f5f5; --muted:rgba(245,245,245,.56); --muted2:rgba(245,245,245,.34); --orange:#ff5a00; --orange2:#cc4800; --green:#22c55e; --red:#ef4444; --yellow:#facc15; --blue:#38bdf8;
-          min-height:100vh; background:var(--bg); color:var(--text); font-family:'Barlow',sans-serif;
-        }
-        .chat-page-root * { box-sizing:border-box; }
-        .chat-layout { min-height:100vh; display:grid; grid-template-columns:minmax(0,1fr) 320px; }
-        .chat-main { min-height:100vh; display:flex; flex-direction:column; background:radial-gradient(circle at 18% 0%, rgba(255,90,0,.06), transparent 24%), var(--bg); border-right:1px solid var(--line); }
-        .chat-header { position:sticky; top:0; z-index:20; display:flex; justify-content:space-between; align-items:center; gap:18px; min-height:90px; padding:16px 18px; border-bottom:1px solid var(--line); background:rgba(11,11,11,.96); backdrop-filter:blur(8px); }
-        .header-left { display:flex; gap:12px; align-items:center; min-width:0; }
-        .chat-back-btn,.ghost-btn,.danger-btn,.send-btn,.cta-btn { font-family:inherit; cursor:pointer; }
-        .chat-back-btn { width:42px; height:42px; border:1px solid var(--line2); background:var(--panel); color:#fff; font:900 1.15rem 'Barlow Condensed'; }
-        .chat-avatar { width:54px; height:54px; overflow:hidden; display:grid; place-items:center; background:var(--orange); font:italic 900 1.7rem 'Barlow Condensed'; flex-shrink:0; }
-        .chat-avatar img { width:100%; height:100%; object-fit:cover; }
-        .header-copy { min-width:0; }
-        .header-kicker,.summary-label,.side-label { font:900 .7rem 'Barlow Condensed'; letter-spacing:.16em; text-transform:uppercase; color:var(--orange); }
-        .chat-name-row { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
-        .chat-header-name { margin:0; font:italic 900 clamp(1.5rem,3vw,2rem) 'Barlow Condensed'; line-height:.88; text-transform:uppercase; }
-        .chat-header-loc { margin:.25rem 0 0; color:var(--muted); font-size:.84rem; }
-        .status-pill,.mini-pill { display:inline-flex; align-items:center; gap:6px; padding:4px 8px; border:1px solid var(--line2); background:#0d0d0d; font:900 .63rem 'Barlow Condensed'; letter-spacing:.08em; text-transform:uppercase; }
-        .status-pill.green,.mini-pill.green { color:var(--green); border-color:rgba(34,197,94,.35); background:rgba(34,197,94,.07); }
-        .status-pill.orange,.mini-pill.orange { color:var(--orange); border-color:rgba(255,90,0,.35); background:rgba(255,90,0,.08); }
-        .status-pill.blue,.mini-pill.blue { color:var(--blue); border-color:rgba(56,189,248,.35); background:rgba(56,189,248,.08); }
-        .header-actions { display:flex; gap:8px; align-items:center; }
-        .ghost-btn,.danger-btn,.cta-btn { border:1px solid var(--line2); background:transparent; color:#fff; padding:.72rem .95rem; font:900 .76rem 'Barlow Condensed'; letter-spacing:.08em; text-transform:uppercase; }
-        .ghost-btn:hover,.cta-btn:hover { border-color:var(--orange); color:var(--orange); }
-        .danger-btn { color:#fca5a5; border-color:rgba(239,68,68,.35); background:rgba(239,68,68,.08); }
-        .hero-strip { display:grid; grid-template-columns:minmax(0,1.15fr) minmax(240px,.85fr); gap:1px; background:var(--line); border-bottom:1px solid var(--line); }
-        .hero-main,.hero-side { padding:16px 18px; background:var(--panel); }
-        .hero-main { background:linear-gradient(135deg, rgba(255,90,0,.12) 0%, rgba(255,90,0,.03) 30%, transparent 50%), var(--panel); }
-        .hero-title { margin:8px 0 0; font:italic 900 clamp(2.2rem,4.2vw,3.4rem) 'Barlow Condensed'; line-height:.88; text-transform:uppercase; }
-        .hero-title span { color:var(--orange); }
-        .hero-copy { margin-top:8px; color:var(--muted); font-size:.92rem; line-height:1.55; max-width:52rem; }
-        .hero-stats { display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; }
-        .hero-stat { min-width:110px; padding:10px 12px; border:1px solid var(--line); background:#0d0d0d; }
-        .hero-stat b { display:block; font:italic 900 1.7rem 'Barlow Condensed'; line-height:.9; }
-        .hero-stat span { font:900 .7rem 'Barlow Condensed'; letter-spacing:.08em; text-transform:uppercase; color:var(--muted2); }
-        .hero-side { display:flex; flex-direction:column; justify-content:space-between; gap:12px; background:linear-gradient(180deg, rgba(255,90,0,.08) 0%, rgba(255,90,0,0) 100%), var(--panel2); }
-        .hero-side-title { font:italic 900 1.75rem 'Barlow Condensed'; line-height:.9; text-transform:uppercase; }
-        .hero-side p { color:var(--muted); font-size:.9rem; line-height:1.5; margin:8px 0 0; }
-        .exchange-strip { padding:14px 18px; border-bottom:1px solid var(--line); background:var(--panel); }
-        .exchange-grid { display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--line); border:1px solid var(--line); }
-        .exchange-box { background:#0d0d0d; padding:14px; }
-        .exchange-title { margin-bottom:10px; font:900 .72rem 'Barlow Condensed'; letter-spacing:.12em; text-transform:uppercase; }
-        .exchange-title.green { color:var(--green); }
-        .exchange-title.orange { color:var(--orange); }
-        .chips { display:flex; flex-wrap:wrap; gap:6px; }
-        .chip { border:1px solid var(--line2); padding:6px 9px; background:#090909; font:900 .78rem 'Barlow Condensed'; }
-        .chip.green { color:var(--green); border-color:rgba(34,197,94,.34); background:rgba(34,197,94,.07); }
-        .chip.orange { color:var(--orange); border-color:rgba(255,90,0,.34); background:rgba(255,90,0,.08); }
-        .safety-strip { padding:10px 18px; border-bottom:1px solid rgba(250,204,21,.2); background:rgba(250,204,21,.06); color:#fde68a; font-size:.78rem; font-weight:700; }
-        .chat-messages { flex:1; overflow:auto; padding:22px 18px 24px; display:flex; flex-direction:column; gap:14px; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; }
-        .empty-chat { padding:48px 20px; text-align:center; color:var(--muted2); }
-        .empty-chat b { display:block; margin-bottom:8px; font:italic 900 2rem 'Barlow Condensed'; text-transform:uppercase; color:#fff; }
-        .empty-chat span { font-size:.9rem; }
-        .msg-row { display:flex; width:100%; }
-        .msg-left { justify-content:flex-start; }
-        .msg-right { justify-content:flex-end; }
-        .bubble { max-width:min(82%,560px); padding:12px 14px; border:1px solid var(--line); }
-        .bubble-other { background:var(--panel); color:var(--text); }
-        .bubble-own { background:var(--orange); border-color:var(--orange); color:#fff; }
-        .msg-text { margin:0; font-size:.92rem; line-height:1.45; white-space:pre-wrap; }
-        .msg-time { margin:.45rem 0 0; text-align:right; font:800 .6rem 'Barlow Condensed'; letter-spacing:.08em; text-transform:uppercase; opacity:.58; }
-        .chat-footer { border-top:1px solid var(--line); background:#0b0b0b; padding:14px 18px 16px; padding-bottom:max(16px, env(safe-area-inset-bottom)); }
-        .input-row { display:grid; grid-template-columns:1fr auto; gap:10px; align-items:end; }
-        .input-wrap { padding:11px 13px; border:1px solid var(--line2); background:var(--panel); }
-        .input-wrap:focus-within { border-color:var(--orange); }
-        .chat-input { width:100%; min-height:24px; max-height:120px; resize:none; border:0; outline:0; background:transparent; color:#fff; font-size:.92rem; }
-        .chat-input::placeholder { color:var(--muted2); }
-        .send-btn { height:48px; padding:0 20px; border:1px solid var(--orange); background:var(--orange); color:#fff; font:900 .88rem 'Barlow Condensed'; letter-spacing:.08em; text-transform:uppercase; }
-        .send-btn:disabled { opacity:.45; cursor:not-allowed; }
-        .premium-note { margin-top:8px; color:var(--muted2); font-size:.72rem; }
-        .expired-box { padding:14px; border:1px solid rgba(239,68,68,.3); background:rgba(239,68,68,.08); text-align:center; color:#fca5a5; font-weight:800; }
-        .expired-box .cta-btn { margin-top:10px; background:var(--orange); border-color:var(--orange); color:#fff; }
-        .chat-side { padding:18px; display:flex; flex-direction:column; gap:14px; background:var(--panel); overflow:auto; }
-        .side-card { padding:16px; border:1px solid var(--line); background:#0d0d0d; }
-        .side-title { margin:10px 0 0; font:italic 900 1.8rem 'Barlow Condensed'; text-transform:uppercase; line-height:.9; }
-        .side-card p { margin:8px 0 0; color:var(--muted); font-size:.88rem; line-height:1.5; }
-        .side-user { display:flex; gap:12px; align-items:center; }
-        .side-user .chat-avatar { width:48px; height:48px; font-size:1.4rem; }
-        .side-user strong { display:block; font:italic 900 1.2rem 'Barlow Condensed'; line-height:.9; text-transform:uppercase; }
-        .side-user span { display:block; margin-top:4px; color:var(--muted); font-size:.82rem; }
-        .side-row { display:flex; justify-content:space-between; gap:10px; padding:10px 0; border-bottom:1px solid var(--line); }
-        .side-row:last-child { border-bottom:0; }
-        .side-row span { color:var(--muted); font-size:.84rem; }
-        .side-row b { font:900 1rem 'Barlow Condensed'; text-transform:uppercase; }
-        .side-cta { background:linear-gradient(180deg, rgba(255,90,0,.1) 0%, rgba(255,90,0,0) 100%), var(--panel2); }
-        .cta-btn { width:100%; margin-top:14px; background:#0b0b0b; border-color:#0b0b0b; color:#fff; }
-        @media (max-width:1024px) {
-          .chat-layout { grid-template-columns:1fr; }
-          .chat-side { display:none; }
-          .chat-main { border-right:0; }
-        }
-        @media (max-width:760px) {
-          .chat-header { min-height:78px; padding:12px; }
-          .header-actions { display:none; }
-          .hero-strip { grid-template-columns:1fr; }
-          .exchange-grid { grid-template-columns:1fr; }
-          .chat-messages { padding:16px 12px; }
-          .exchange-strip,.safety-strip,.chat-footer,.hero-main,.hero-side { padding-left:12px; padding-right:12px; }
-          .bubble { max-width:88%; }
-          .hero-title { font-size:2.2rem; }
-        }
-        
-        .report-overlay { position: fixed; inset: 0; z-index: 1000; background: rgba(11,11,11,0.85); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; padding: 16px; }
-        .report-card { background: #181818; border: 1px solid rgba(255,255,255,0.08); width: 100%; max-width: 480px; padding: 24px; position: relative; animation: cd-scale-in 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
-        .report-card:before { content:''; position:absolute; inset:auto 0 0 0; height:3px; background: #ef4444; }
-        .report-actions { display: flex; gap: 12px; margin-top: 16px; }
-        @media (max-width: 480px) {
-          .report-actions { flex-direction: column-reverse; gap: 8px; }
-          .report-actions button { width: 100%; padding: 14px; }
-        }
-      `}</style>
+      
 
       <div className="chat-layout">
         <main className="chat-main">
@@ -264,7 +184,7 @@ export default function ChatPage() {
                   <h2 className="chat-header-name">{otherName}</h2>
                   <ReputationStars stars={otherStars} size="sm" inline />
                   {otherUser?.id && <FavoriteButton targetUserId={otherUser.id} size="sm" showLabel />}
-                  <span className="status-pill green">En linea</span>
+                  <span className="status-pill green">{presenceLabel}</span>
                   <span className="status-pill orange">Intercambio fuerte</span>
                 </div>
                 <p className="chat-header-loc">{locationText}</p>
@@ -279,8 +199,8 @@ export default function ChatPage() {
           <section className="hero-strip">
             <div className="hero-main">
               <div className="header-kicker">// intercambio activo</div>
-              <h1 className="hero-title">Cerra el <span>cruce</span> sin vueltas.</h1>
-              <p className="hero-copy">Usa el chat para confirmar figuritas, ordenar el intercambio y cerrar un encuentro con menos friccion.</p>
+              <h1 className="hero-title">TodavÃƒÂ­a podés cerrar este <span>cruce hoy</span>.</h1>
+              <p className="hero-copy">Usá el chat para confirmar figuritas, fijar lugar y convertir esta ventana activa en intercambio real antes de que se enfrÃƒÂ­e.</p>
               <div className="hero-stats">
                 <div className="hero-stat">
                   <b>{incomingCount}</b>
@@ -300,14 +220,71 @@ export default function ChatPage() {
               <div>
                 <div className="summary-label">Siguiente accion</div>
                 <div className="hero-side-title">Coordina punto, horario y canje.</div>
-                <p>Si el cruce esta claro, avancen a una confirmacion simple en un lugar publico.</p>
+                <p>Si el cruce está claro, avanzá ahora a una confirmación concreta en un lugar público.</p>
               </div>
               <div className="hero-stats">
                 <span className="mini-pill blue">{exchangeData.albumName || 'Album'}</span>
-                <span className="mini-pill green">Chat activo</span>
+                <span className="mini-pill green">{presenceLabel}</span>
+                <span className="mini-pill orange">{summary.exchangesToday} cierres hoy</span>
               </div>
             </aside>
           </section>
+
+          {promptVisibility.visible && (
+            <section className="completion-card">
+              <div className="completion-top">
+                <div>
+                  <div className="header-kicker">// exchange completion</div>
+                  <h3 className="completion-title">¿Se concreto el intercambio?</h3>
+                  <p className="completion-copy">
+                    {completion?.status === 'completed' && 'Quedo confirmado por ambas partes. Este cierre ya impacta reputacion, ranking y progreso.'}
+                    {completion?.status === 'pending_confirmation' && 'Una de las partes ya respondio. Falta la otra confirmacion para cerrar el resultado real.'}
+                    {completion?.status === 'disputed' && 'Las respuestas no coinciden. Queda registrado como inconsistente y puede revisarse desde admin.'}
+                    {completion?.status === 'not_completed' && 'Quedo registrado como intento no concretado. No cuenta como intercambio cerrado.'}
+                    {completion?.status === 'expired' && 'La ventana de confirmacion vencio. El sistema lo toma como expirado hasta nueva revision.'}
+                    {!completion?.status && trigger?.should_prompt && 'Hay señales reales de coordinacion en este chat. Cerralo en un toque cuando ya haya pasado.'}
+                    {completion?.status === 'pending' && 'Todavia no esta cerrado. Cuando lo hagan, confirmalo aca para que cuente como intercambio real.'}
+                  </p>
+                </div>
+                <span className="status-pill" style={{ color: statusMeta.tone, borderColor: `${statusMeta.tone}55`, background: `${statusMeta.tone}12` }}>
+                  {statusMeta.label}
+                </span>
+              </div>
+
+              {(completion?.status === 'pending' || completion?.status === 'pending_confirmation' || (!completion && trigger?.should_prompt)) && (
+                <div className="completion-actions">
+                  <button className="primary" disabled={exchangeLoading || myExchangeResponse === 'yes'} onClick={() => handleExchangeResponse('yes')}>
+                    {exchangeLoading && myExchangeResponse !== 'yes' ? 'Guardando...' : EXCHANGE_RESPONSE_LABELS.yes}
+                  </button>
+                  <button className="warn" disabled={exchangeLoading || myExchangeResponse === 'not_yet'} onClick={() => handleExchangeResponse('not_yet')}>
+                    {EXCHANGE_RESPONSE_LABELS.not_yet}
+                  </button>
+                  <button className="danger" disabled={exchangeLoading || myExchangeResponse === 'no'} onClick={() => handleExchangeResponse('no')}>
+                    {EXCHANGE_RESPONSE_LABELS.no}
+                  </button>
+                </div>
+              )}
+
+              <div className="completion-grid">
+                <div className="completion-stat">
+                  <b>{triggerScore}</b>
+                  <span>Intent score</span>
+                </div>
+                <div className="completion-stat">
+                  <b>{completion?.user_1_response || completion?.user_2_response ? '1+' : '0'}</b>
+                  <span>Confirmaciones</span>
+                </div>
+                <div className="completion-stat">
+                  <b>{trigger?.message_count || 0}</b>
+                  <span>Mensajes</span>
+                </div>
+                <div className="completion-stat">
+                  <b>{completion?.is_suspicious ? 'Rev.' : 'OK'}</b>
+                  <span>Anti abuso</span>
+                </div>
+              </div>
+            </section>
+          )}
 
           {!exchangeData.loading && (incomingCount > 0 || outgoingCount > 0) && (
             <section className="exchange-strip">
@@ -375,6 +352,7 @@ export default function ChatPage() {
         </main>
 
         <aside className="chat-side">
+          <LiveFeed title="Ahora en FigusUY" items={feed} refreshedAt={summary.refreshedAt} />
           <section className="side-card">
             <div className="side-label">Usuario</div>
             <div className="side-title">Perfil del cruce</div>
@@ -384,7 +362,7 @@ export default function ChatPage() {
               </div>
               <div>
                 <strong>{otherName}</strong>
-                <span>{otherUser?.city || otherUser?.department || 'Sin ubicacion'}{otherUser?.is_verified ? ' · Verificada' : ''}</span>
+                <span>{otherUser?.city || otherUser?.department || 'Sin ubicacion'}{otherUser?.is_verified ? ' Â· Verificada' : ''}</span>
                 <div style={{ marginTop: '6px' }}>
                   <ReputationStars stars={otherStars} size="sm" showLabel />
                 </div>
@@ -395,8 +373,10 @@ export default function ChatPage() {
           <section className="side-card side-cta">
             <div className="side-label">Cerrar cruce</div>
             <div className="side-title">Confirma el intercambio</div>
-            <p>Si ya validaron las figuritas, el siguiente paso es acordar horario y punto de encuentro publico.</p>
-            <button className="cta-btn" onClick={() => navigate('/matches')}>Ver mas matches</button>
+            <p>Si ya paso el canje real, registralo aca. Esta señal alimenta confianza, ranking y logros.</p>
+            <button className="cta-btn" onClick={() => promptVisibility.visible ? handleExchangeResponse('yes') : navigate('/matches')}>
+              {promptVisibility.visible ? 'Marcar como hecho' : 'Ver mas matches'}
+            </button>
           </section>
 
           <section className="side-card">
@@ -405,7 +385,7 @@ export default function ChatPage() {
             <div className="side-row"><span>Te da</span><b>{incomingCount} figus</b></div>
             <div className="side-row"><span>Le das</span><b>{outgoingCount} figus</b></div>
             <div className="side-row"><span>Album</span><b>{exchangeData.albumName || 'Album'}</b></div>
-            <div className="side-row"><span>Estado</span><b>Activo</b></div>
+            <div className="side-row"><span>Estado</span><b>{statusMeta.label}</b></div>
           </section>
 
           <section className="side-card">

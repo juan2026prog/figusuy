@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+﻿import React, { useState } from 'react'
 import { useGrowthStore } from '../stores/growthStore'
 import { useAuthStore } from '../stores/authStore'
 import { SHARE_TYPES } from '../lib/growthEngine'
@@ -74,7 +74,7 @@ export default function ShareModal() {
       <div className="sm-modal" onClick={e => e.stopPropagation()}>
         {copied ? (
           <div className="sm-success">
-            <span className="sm-success-icon">✅</span>
+            <span className="sm-success-icon">âœ…</span>
             <h3>¡Compartido!</h3>
             <p>Tu contenido fue compartido. +XP de comunidad.</p>
           </div>
@@ -84,7 +84,7 @@ export default function ShareModal() {
               <div className="sm-kicker">// compartir valor</div>
               <h2>Compartí con contexto</h2>
               <p>No compartís un link. Compartís tu colección, tu progreso, tu resultado.</p>
-              <button className="sm-close" onClick={closeShareModal}>✕</button>
+              <button className="sm-close" onClick={closeShareModal}>âœ•</button>
             </div>
 
             <div className="sm-body">

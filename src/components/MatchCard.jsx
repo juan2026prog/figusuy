@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+﻿import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
 import { useAppStore } from '../stores/appStore'
@@ -6,6 +6,8 @@ import { usePushNotifications } from '../hooks/usePushNotifications'
 import { getUserBadges } from '../lib/ranking'
 import FavoriteButton from './FavoriteButton'
 import ReputationStars from './ReputationStars'
+import { getPresenceLabel } from '../lib/liveMomentum'
+import GamificationIcon from './gamification/icons/GamificationIcon'
 
 export default function MatchCard({ match, isLocked = false, isTopMatch = false, idx = null }) {
   const navigate = useNavigate()
@@ -34,16 +36,7 @@ export default function MatchCard({ match, isLocked = false, isTopMatch = false,
     setContactLoading(false)
   }
 
-  const formatLastActive = (dateStr) => {
-    if (!dateStr) return null
-    const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000)
-    if (diff < 3600) return 'Activa ahora'
-    if (diff < 86400) return `Activa hace ${Math.floor(diff / 3600)}h`
-    if (diff < 172800) return 'Activa ayer'
-    return `Activa hace ${Math.floor(diff / 86400)}d`
-  }
-
-  const lastActive = formatLastActive(match.profile?.last_active || match.last_login)
+  const lastActive = getPresenceLabel(match.profile?.last_active || match.last_login)
   const distanceStr = match.distance != null ? (match.distance < 1 ? `${Math.round(match.distance * 1000)}m` : `${match.distance.toFixed(1)} km`) : 'Distancia desconocida'
   const locationStr = match.profile?.city 
     ? `${match.profile.city}, ${match.profile.department || ''}`
@@ -94,7 +87,7 @@ export default function MatchCard({ match, isLocked = false, isTopMatch = false,
                 </div>
               </div>
               <div className="match-meta">
-                {locationStr} · {distanceStr} · {lastActive || 'Recientemente'}
+                {locationStr} Â· {distanceStr} Â· {lastActive || 'Recientemente'}
               </div>
             </div>
           </div>
@@ -102,12 +95,12 @@ export default function MatchCard({ match, isLocked = false, isTopMatch = false,
         </div>
 
         <div className="badges">
-          {match.isMutual && <span className="badge green">Mutuo</span>}
-          {match.distance != null && match.distance <= 5 && <span className="badge blue">Cerca</span>}
+          {match.isMutual && <span className="badge green">Cruce mutuo ahora</span>}
+          {match.distance != null && match.distance <= 5 && <span className="badge blue">Cerca hoy</span>}
           {canGive.length > canReceive.length && canReceive.length > 0 && <span className="badge orange">Fuerte para vos</span>}
           {getUserBadges(match.badges || match.profile?.badges || []).slice(0, 2).map(b => (
-            <span key={b.label} className="badge" style={{ color: b.color, borderColor: `${b.color}40`, backgroundColor: `${b.color}15` }}>
-              {b.emoji} {b.label}
+            <span key={b.label} className="badge" style={{ color: b.color, borderColor: `${b.color}40`, backgroundColor: `${b.color}15`, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+              {b.iconKey ? <GamificationIcon icon={b.iconKey} size="sm" /> : b.emoji} {b.label}
             </span>
           ))}
         </div>

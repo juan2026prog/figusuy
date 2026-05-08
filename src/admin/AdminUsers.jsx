@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react'
+﻿import React, { useEffect, useState } from 'react'
 import { useAdminStore } from '../stores/adminStore'
 import { useAuthStore } from '../stores/authStore'
+import { useNavigate } from 'react-router-dom'
 import { formatScore, getScoreColor, buildScoreBreakdown } from '../lib/ranking'
 
 const card = { background: "var(--admin-panel)", borderRadius: "0.5rem", padding: "1.25rem", border: "1px solid var(--admin-line)" }
@@ -9,13 +10,21 @@ const badgeStyle = (bg, color) => ({ padding: '0.25rem 0.625rem', borderRadius: 
 const btn = (bg, color) => ({ padding: '0.375rem 0.75rem', borderRadius: '0.5rem', background: bg, color, border: 'none', fontSize: '0.8125rem', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.375rem', transition: 'all 0.15s' })
 
 export default function AdminUsers() {
-  const { users, fetchUsers, toggleUserBlock, toggleUserPremium, toggleUserVerified, setUserRole, calculateUserRanking, getUserRanking } = useAdminStore()
+  const { 
+    users, fetchUsers, toggleUserBlock, toggleUserPremium, toggleUserVerified, 
+    setUserRole, calculateUserRanking, getUserRanking, allAlbums, fetchAllAlbums, addAlbumToUser 
+  } = useAdminStore()
   const { user: adminUser } = useAuthStore()
+  const navigate = useNavigate()
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState('all')
   const [expandedUser, setExpandedUser] = useState(null)
   const [userScores, setUserScores] = useState({})
   const [scoringUser, setScoringUser] = useState(null)
+  
+  const [showAlbumModal, setShowAlbumModal] = useState(false)
+  const [selectedUserForAlbum, setSelectedUserForAlbum] = useState(null)
+  const [albumToAdd, setAlbumToAdd] = useState('')
 
   const loadUserScore = async (userId) => {
     const data = await getUserRanking(userId)
@@ -32,11 +41,29 @@ export default function AdminUsers() {
     setScoringUser(null)
   }
 
-  useEffect(() => {
-    if (expandedUser && !userScores[expandedUser]) loadUserScore(expandedUser)
-  }, [expandedUser])
+  useEffect(() => { 
+    fetchUsers()
+    fetchAllAlbums()
+  }, [])
 
-  useEffect(() => { fetchUsers() }, [])
+  const handleRoleChange = async (userId, role, user) => {
+    const error = await setUserRole(userId, role, user, adminUser?.id)
+    if (!error && role === 'influencer') {
+      navigate('/admin/influencers')
+    }
+  }
+
+  const handleAddAlbum = async () => {
+    if (!selectedUserForAlbum || !albumToAdd) return
+    const error = await addAlbumToUser(selectedUserForAlbum.id, albumToAdd)
+    if (!error) {
+      alert('Ãlbum agregado con éxito')
+      setShowAlbumModal(false)
+      fetchUsers()
+    } else {
+      alert('Error al agregar álbum: ' + error.message)
+    }
+  }
 
   const filtered = users.filter(u => {
     const matchSearch = u.name?.toLowerCase().includes(search.toLowerCase()) || u.email?.toLowerCase().includes(search.toLowerCase())
@@ -199,7 +226,7 @@ export default function AdminUsers() {
                                 <span>ID:</span> <span style={{ fontFamily: 'monospace', color: "#f5f5f5", fontWeight: 600 }}>{user.id.substring(0, 8)}...</span>
                               </p>
                               <p style={{ fontSize: '0.8125rem', color: "var(--admin-muted2)", display: 'flex', justifyContent: 'space-between' }}>
-                                <span>Ciudad:</span> <span style={{ color: "#f5f5f5", fontWeight: 600 }}>{user.city || '—'}</span>
+                                <span>Ciudad:</span> <span style={{ color: "#f5f5f5", fontWeight: 600 }}>{user.city || 'â€”'}</span>
                               </p>
                               <p style={{ fontSize: '0.8125rem', color: "var(--admin-muted2)", display: 'flex', justifyContent: 'space-between' }}>
                                 <span>GPS:</span> <span style={{ color: "#f5f5f5", fontWeight: 600 }}>{user.lat ? `${user.lat.toFixed(4)}, ${user.lng?.toFixed(4)}` : 'Sin ub.'}</span>
@@ -258,16 +285,17 @@ export default function AdminUsers() {
                             <p style={{ fontSize: '0.75rem', fontWeight: 800, color: "var(--admin-muted)", textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
                               <span className="material-symbols-outlined" style={{ fontSize: '1.125rem' }}>shield_person</span> Permisos y Rol
                             </p>
-                            <select style={{ ...input, fontWeight: 600, color: 'var(--color-primary)', borderColor: 'var(--color-primary)' }} value={user.user_roles?.[0]?.role || 'user'} onChange={e => setUserRole(user.id, e.target.value)}>
+                            <select style={{ ...input, fontWeight: 600, color: 'var(--color-primary)', borderColor: 'var(--color-primary)' }} value={user.user_roles?.[0]?.role || 'user'} onChange={e => handleRoleChange(user.id, e.target.value, user)}>
                               {[
                                 { val: 'user', label: 'Usuario Estándar' },
-                                { val: 'album_creator', label: 'Creador de Álbumes' },
+                                { val: 'influencer', label: 'Influencer / Creador' },
+                                { val: 'album_creator', label: 'Creador de Ãlbumes' },
                                 { val: 'commercial', label: 'Comercial / Ventas' },
                                 { val: 'analyst', label: 'Analista de Datos' },
                                 { val: 'support', label: 'Soporte Técnico' },
                                 { val: 'moderator', label: 'Moderador' },
                                 { val: 'admin', label: 'Administrador' },
-                                { val: 'god_admin', label: '⚡ God Admin' },
+                                { val: 'god_admin', label: 'âš¡ God Admin' },
                               ].map(r => (
                                 <option key={r.val} value={r.val}>{r.label}</option>
                               ))}
@@ -288,21 +316,32 @@ export default function AdminUsers() {
                              <p style={{ fontSize: '0.75rem', fontWeight: 800, color: "var(--admin-muted)", textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '1rem' }}>Resumen de Actividad</p>
                              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(10rem, 1fr))', gap: '1rem' }}>
                                 <div style={{ background: "var(--admin-panel2)", padding: '0.75rem', borderRadius: '0.5rem', textAlign: 'center' }}>
-                                   <p style={{ fontSize: '1.25rem', fontWeight: 900, color: "#f5f5f5" }}>{user.user_albums_count ?? '—'}</p>
-                                   <p style={{ fontSize: '0.625rem', fontWeight: 700, color: "var(--admin-muted2)", textTransform: 'uppercase' }}>Álbumes Activos</p>
+                                   <p style={{ fontSize: '1.25rem', fontWeight: 900, color: "#f5f5f5" }}>{user.user_albums_count ?? 'â€”'}</p>
+                                   <p style={{ fontSize: '0.625rem', fontWeight: 700, color: "var(--admin-muted2)", textTransform: 'uppercase' }}>Ãlbumes Activos</p>
                                 </div>
                                 <div style={{ background: "var(--admin-panel2)", padding: '0.75rem', borderRadius: '0.5rem', textAlign: 'center' }}>
-                                   <p style={{ fontSize: '1.25rem', fontWeight: 900, color: "#f5f5f5" }}>{user.trades_count ?? '—'}</p>
+                                   <p style={{ fontSize: '1.25rem', fontWeight: 900, color: "#f5f5f5" }}>{user.trades_count ?? 'â€”'}</p>
                                    <p style={{ fontSize: '0.625rem', fontWeight: 700, color: "var(--admin-muted2)", textTransform: 'uppercase' }}>Matches Exitosos</p>
                                 </div>
                                 <div style={{ background: "var(--admin-panel2)", padding: '0.75rem', borderRadius: '0.5rem', textAlign: 'center' }}>
-                                   <p style={{ fontSize: '1.25rem', fontWeight: 900, color: "#f5f5f5" }}>{user.favorites_count ?? '—'}</p>
+                                   <p style={{ fontSize: '1.25rem', fontWeight: 900, color: "#f5f5f5" }}>{user.favorites_count ?? 'â€”'}</p>
                                    <p style={{ fontSize: '0.625rem', fontWeight: 700, color: "var(--admin-muted2)", textTransform: 'uppercase' }}>Puntos Favoritos</p>
                                 </div>
                                 <div style={{ background: "var(--admin-panel2)", padding: '0.75rem', borderRadius: '0.5rem', textAlign: 'center' }}>
-                                   <p style={{ fontSize: '1.25rem', fontWeight: 900, color: "#f5f5f5" }}>{user.sticker_count ?? '—'}</p>
+                                   <p style={{ fontSize: '1.25rem', fontWeight: 900, color: "#f5f5f5" }}>{user.sticker_count ?? 'â€”'}</p>
                                    <p style={{ fontSize: '0.625rem', fontWeight: 700, color: "var(--admin-muted2)", textTransform: 'uppercase' }}>Figuritas en Colección</p>
                                 </div>
+                                <button 
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    setSelectedUserForAlbum(user)
+                                    setShowAlbumModal(true)
+                                  }} 
+                                  style={{ ...btn("var(--color-primary)", "white"), gridColumn: '1 / -1', marginTop: '0.5rem', justifyContent: 'center' }}
+                                >
+                                  <span className="material-symbols-outlined">add_circle</span>
+                                  Asignar Nuevo Ãlbum
+                                </button>
                              </div>
                           </div>
 
@@ -313,7 +352,7 @@ export default function AdminUsers() {
                                  <span className="material-symbols-outlined" style={{ fontSize: '1.125rem', color: 'var(--color-primary)' }}>leaderboard</span> Ranking Score
                                </p>
                                <button onClick={() => recalcUser(user.id)} disabled={scoringUser === user.id} style={{ padding: '0.25rem 0.625rem', borderRadius: '0.375rem', background: "rgba(249, 115, 22, 0.1)", color: 'var(--color-primary)', border: '1px solid #fed7aa', fontSize: '0.6875rem', fontWeight: 700, cursor: 'pointer', opacity: scoringUser === user.id ? 0.5 : 1 }}>
-                                 {scoringUser === user.id ? '⏳ ...' : '🔄 Recalcular'}
+                                 {scoringUser === user.id ? 'â³ ...' : 'ðŸ”„ Recalcular'}
                                </button>
                              </div>
                              {userScores[user.id] ? (() => {
@@ -340,9 +379,9 @@ export default function AdminUsers() {
                                      ))}
                                    </div>
                                    {sc.penalties && Object.keys(sc.penalties).length > 0 && (
-                                     <p style={{ fontSize: '0.6875rem', color: '#ef4444', marginTop: '0.5rem', fontWeight: 600 }}>⚠️ Penalizaciones: {JSON.stringify(sc.penalties)}</p>
+                                     <p style={{ fontSize: '0.6875rem', color: '#ef4444', marginTop: '0.5rem', fontWeight: 600 }}>âš ï¸ Penalizaciones: {JSON.stringify(sc.penalties)}</p>
                                    )}
-                                   <p style={{ fontSize: '0.5625rem', color: "var(--admin-muted)", marginTop: '0.375rem' }}>Último cálculo: {sc.last_scored_at ? new Date(sc.last_scored_at).toLocaleString() : '—'}</p>
+                                   <p style={{ fontSize: '0.5625rem', color: "var(--admin-muted)", marginTop: '0.375rem' }}>Último cálculo: {sc.last_scored_at ? new Date(sc.last_scored_at).toLocaleString() : 'â€”'}</p>
                                  </>
                                )
                              })() : (
@@ -366,6 +405,32 @@ export default function AdminUsers() {
           )}
         </div>
       </div>
+
+      {/* Add Album Modal */}
+      {showAlbumModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+          <div style={{ ...card, width: '100%', maxWidth: '28rem', border: '1px solid var(--color-primary)' }}>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 900, color: '#fff', marginBottom: '0.5rem' }}>Asignar Ãlbum</h2>
+            <p style={{ fontSize: '0.875rem', color: 'var(--admin-muted2)', marginBottom: '1.5rem' }}>Elegí un álbum para asignar a <strong>{selectedUserForAlbum?.name || 'este usuario'}</strong></p>
+            
+            <select 
+              style={{ ...input, marginBottom: '2rem' }} 
+              value={albumToAdd} 
+              onChange={e => setAlbumToAdd(e.target.value)}
+            >
+              <option value="">Seleccionar un álbum...</option>
+              {allAlbums.map(a => (
+                <option key={a.id} value={a.id}>{a.name} ({a.year})</option>
+              ))}
+            </select>
+
+            <div style={{ display: 'flex', gap: '1rem' }}>
+              <button style={{ ...btn("transparent", "var(--admin-muted)"), flex: 1, border: '1px solid var(--admin-line)' }} onClick={() => setShowAlbumModal(false)}>Cerrar</button>
+              <button style={{ ...btn("var(--color-primary)", "white"), flex: 1 }} onClick={handleAddAlbum}>Agregar</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

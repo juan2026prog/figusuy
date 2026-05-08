@@ -1,9 +1,12 @@
-import React, { useEffect, useMemo, useState } from 'react'
+﻿import React, { useEffect, useMemo, useState } from 'react'
 import LandingRenderer from '../components/landing/LandingRenderer'
 import {
-  LANDING_BLOCK_LIBRARY,
+  LANDING_PAGE_KEY,
+  LANDING_PAGE_OPTIONS,
   computeBlockMetrics,
   getBlockDefinition,
+  getLandingPageBlockLibrary,
+  getLandingPageDefinition,
   normalizeLandingBlocks,
 } from '../lib/landingBuilder'
 import {
@@ -16,6 +19,7 @@ import {
   reorderDraftBlocks,
   saveDraftBlock,
 } from '../lib/landingApi'
+import { collectBlockDiagnostics, getFieldGuidance } from '../lib/landingEditor'
 
 const cardStyle = {
   background: 'var(--admin-panel)',
@@ -23,38 +27,58 @@ const cardStyle = {
 }
 
 export default function AdminCMS() {
+  const [pageKey, setPageKey] = useState(LANDING_PAGE_KEY)
   const [blocks, setBlocks] = useState([])
+  const [sharedBlocks, setSharedBlocks] = useState([])
   const [events, setEvents] = useState([])
   const [selectedId, setSelectedId] = useState(null)
   const [device, setDevice] = useState('desktop')
   const [draggedId, setDraggedId] = useState(null)
   const [status, setStatus] = useState({ type: 'idle', message: '' })
   const [saving, setSaving] = useState(false)
-  const [addingType, setAddingType] = useState(LANDING_BLOCK_LIBRARY[0].type)
+  const pageLibrary = useMemo(() => getLandingPageBlockLibrary(pageKey), [pageKey])
+  const pageDefinition = useMemo(() => getLandingPageDefinition(pageKey), [pageKey])
+  const [addingType, setAddingType] = useState('')
 
   useEffect(() => {
-    load()
-  }, [])
+    setAddingType(pageLibrary[0]?.type || '')
+  }, [pageLibrary])
+
+  useEffect(() => {
+    load(pageKey)
+  }, [pageKey])
 
   const selectedBlock = useMemo(
     () => blocks.find((block) => block.id === selectedId) || blocks[0] || null,
     [blocks, selectedId]
   )
 
-  const previewBlocks = useMemo(() => normalizeLandingBlocks(blocks, 'draft'), [blocks])
+  const previewBlocks = useMemo(() => {
+    const current = normalizeLandingBlocks(blocks, 'draft')
+    if (pageKey === LANDING_PAGE_KEY) return current
 
-  async function load() {
+    const shared = normalizeLandingBlocks(sharedBlocks, 'draft')
+    const nav = shared.filter((block) => block.block_type === 'navbar')
+    const footer = shared.filter((block) => block.block_type === 'footer')
+    return [...nav, ...current, ...footer]
+  }, [blocks, pageKey, sharedBlocks])
+
+  async function load(targetPageKey = pageKey) {
     try {
-      const [draftRows, landingEvents] = await Promise.all([
-        fetchLandingBlocks({ mode: 'draft' }),
-        fetchLandingEvents(),
+      const [draftRows, landingEvents, sharedRows] = await Promise.all([
+        fetchLandingBlocks({ mode: 'draft', pageKey: targetPageKey }),
+        fetchLandingEvents({ pageKey: targetPageKey }),
+        targetPageKey === LANDING_PAGE_KEY
+          ? Promise.resolve([])
+          : fetchLandingBlocks({ mode: 'draft', pageKey: LANDING_PAGE_KEY }),
       ])
       setBlocks(draftRows)
       setEvents(landingEvents)
-      if (draftRows[0]) setSelectedId(draftRows[0].id)
+      setSharedBlocks(sharedRows)
+      setSelectedId((current) => draftRows.find((block) => block.id === current)?.id || draftRows[0]?.id || null)
     } catch (error) {
       console.error(error)
-      setStatus({ type: 'error', message: 'No se pudo cargar el builder.' })
+      setStatus({ type: 'error', message: 'No se pudo cargar el editor de landings.' })
     }
   }
 
@@ -98,7 +122,7 @@ export default function AdminCMS() {
         await saveDraftBlock(block)
       }
       await publishLandingDraft(reordered)
-      await load()
+      await load(pageKey)
       setStatus({ type: 'success', message: 'Landing publicada.' })
     } catch (error) {
       console.error(error)
@@ -109,8 +133,9 @@ export default function AdminCMS() {
   }
 
   const addBlock = async () => {
+    if (!addingType) return
     try {
-      const created = await createLandingBlock(addingType, blocks.length)
+      const created = await createLandingBlock(addingType, blocks.length, pageKey)
       setBlocks((current) => [...current, created])
       setSelectedId(created.id)
       setStatus({ type: 'success', message: 'Bloque agregado.' })
@@ -160,44 +185,72 @@ export default function AdminCMS() {
     setDraggedId(null)
   }
 
+  const selectedDiagnostics = selectedBlock ? collectBlockDiagnostics(selectedBlock) : null
+
   return (
     <div className="admin-generic-page">
       <section className="ag-hero">
         <div className="ag-hero-row">
           <div>
-            <div className="admin-kicker">/ admin &gt; cms</div>
-            <h1 className="ag-title">Landing Builder</h1>
-            <p className="ag-desc" style={{ marginTop: '.8rem', maxWidth: '60rem' }}>
-              Builder visual para la landing oficial. Todos los bloques visibles salen de CMS, con draft, publish, orden, schedule, preview y metricas.
+            <div className="admin-kicker">/ admin &gt; landings</div>
+            <h1 className="ag-title">Landing Editor</h1>
+            <p style={{ marginTop: '.8rem', maxWidth: '62rem', color: 'var(--admin-muted)' }}>
+              Editor visual para `/`, `/puntos` e `/influencers`. Textos con guardrails editoriales, imagenes con tamano recomendado y preview real con autoajuste.
             </p>
           </div>
           <div className="ag-icon-box">
-            <span className="material-symbols-outlined">view_quilt</span>
+            <span className="material-symbols-outlined">web_stories</span>
           </div>
         </div>
       </section>
 
-      <section style={{ ...cardStyle, padding: '1rem', display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
-        <select value={addingType} onChange={(event) => setAddingType(event.target.value)}>
-          {LANDING_BLOCK_LIBRARY.map((item) => (
-            <option key={item.type} value={item.type}>{item.label}</option>
+      <section style={{ ...cardStyle, padding: '1rem', display: 'grid', gap: '0.85rem' }}>
+        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+          {LANDING_PAGE_OPTIONS.map((page) => (
+            <button
+              key={page.key}
+              type="button"
+              className="admin-action-btn"
+              onClick={() => setPageKey(page.key)}
+              style={{
+                background: pageKey === page.key ? 'rgba(255,90,0,.12)' : 'transparent',
+                borderColor: pageKey === page.key ? 'rgba(255,90,0,.35)' : 'var(--admin-line)',
+                color: pageKey === page.key ? '#fff' : 'var(--admin-muted2)',
+              }}
+            >
+              {page.label}
+            </button>
           ))}
-        </select>
-        <button className="admin-action-btn" onClick={addBlock}>Agregar bloque</button>
-        <button className="admin-action-btn" onClick={saveDrafts} disabled={saving}>Guardar draft</button>
-        <button className="admin-action-btn admin-action-primary" onClick={publishDraft} disabled={saving}>Publicar landing</button>
-        <div style={{ marginLeft: 'auto', color: status.type === 'error' ? 'var(--admin-red)' : status.type === 'success' ? 'var(--admin-green)' : 'var(--admin-muted)' }}>
-          {status.message || 'Preview real del draft actual'}
+        </div>
+
+        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
+          <div style={{ minWidth: '240px' }}>
+            <div className="admin-kicker">{pageDefinition.route}</div>
+            <strong style={{ color: '#fff' }}>{pageDefinition.label}</strong>
+            <div style={{ color: 'var(--admin-muted)', marginTop: '.2rem' }}>{pageDefinition.description}</div>
+          </div>
+          <select value={addingType} onChange={(event) => setAddingType(event.target.value)}>
+            {pageLibrary.map((item) => (
+              <option key={item.type} value={item.type}>{item.label}</option>
+            ))}
+          </select>
+          <button className="admin-action-btn" onClick={addBlock}>Agregar bloque</button>
+          <button className="admin-action-btn" onClick={saveDrafts} disabled={saving}>Guardar draft</button>
+          <button className="admin-action-btn admin-action-primary" onClick={publishDraft} disabled={saving}>Publicar landing</button>
+          <div style={{ marginLeft: 'auto', color: status.type === 'error' ? 'var(--admin-red)' : status.type === 'success' ? 'var(--admin-green)' : 'var(--admin-muted)' }}>
+            {status.message || 'Preview del draft actual'}
+          </div>
         </div>
       </section>
 
-      <section style={{ display: 'grid', gridTemplateColumns: '340px minmax(0, 1fr) minmax(360px, 560px)', gap: '1rem', alignItems: 'start' }}>
+      <section style={{ display: 'grid', gridTemplateColumns: '340px minmax(0, 1fr) minmax(380px, 620px)', gap: '1rem', alignItems: 'start' }}>
         <div style={{ ...cardStyle, padding: '1rem', position: 'sticky', top: '88px' }}>
           <h3 style={panelTitle}>Bloques</h3>
-          <p style={panelCopy}>Arrastra para reordenar. Cada card muestra estado, visibilidad y metricas basicas.</p>
+          <p style={panelCopy}>Reordena, edita y controla la salud editorial de cada bloque.</p>
           <div style={{ display: 'grid', gap: '0.75rem', marginTop: '1rem' }}>
             {blocks.map((block, index) => {
               const metrics = computeBlockMetrics(events, block.slug)
+              const diagnostics = collectBlockDiagnostics(block)
               const definition = getBlockDefinition(block.block_type)
               const isSelected = selectedBlock?.id === block.id
               return (
@@ -213,27 +266,24 @@ export default function AdminCMS() {
                     ...cardStyle,
                     background: isSelected ? 'rgba(255,90,0,.08)' : 'var(--admin-panel2)',
                     borderColor: isSelected ? 'rgba(255,90,0,.35)' : 'var(--admin-line)',
-                    padding: '0.85rem',
+                    padding: '0.9rem',
                     textAlign: 'left',
                     cursor: 'pointer',
                   }}
                 >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem', alignItems: 'start' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.75rem', alignItems: 'start' }}>
                     <div>
                       <div className="admin-kicker">#{String(index + 1).padStart(2, '0')} / {definition?.label || block.block_type}</div>
-                      <strong style={{ display: 'block', marginTop: '.4rem', color: '#fff' }}>{block.internal_title}</strong>
+                      <strong style={{ display: 'block', marginTop: '.35rem', color: '#fff' }}>{block.internal_title}</strong>
                       <div style={{ marginTop: '.25rem', fontSize: '.76rem', color: 'var(--admin-muted2)' }}>{block.slug}</div>
                     </div>
-                    <span className="ag-status" style={{
-                      borderColor: block.draft_visible ? 'rgba(34,197,94,.28)' : 'rgba(250,204,21,.28)',
-                      color: block.draft_visible ? 'var(--admin-green)' : 'var(--admin-yellow)',
-                      background: block.draft_visible ? 'rgba(34,197,94,.08)' : 'rgba(250,204,21,.08)',
-                    }}>
-                      {block.draft_visible ? 'Visible' : 'Oculto'}
-                    </span>
+                    <Badge state={block.draft_visible !== false ? 'success' : 'warning'}>
+                      {block.draft_visible !== false ? 'Visible' : 'Oculto'}
+                    </Badge>
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '.5rem', marginTop: '.9rem' }}>
-                    <MetricMini label="Imp." value={metrics.impressions} />
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '.5rem', marginTop: '.9rem' }}>
+                    <MetricMini label="Warn" value={diagnostics.warnings} />
+                    <MetricMini label="Err" value={diagnostics.errors} />
                     <MetricMini label="Clicks" value={metrics.clicks} />
                     <MetricMini label="CTR" value={`${metrics.ctr}%`} />
                   </div>
@@ -251,13 +301,20 @@ export default function AdminCMS() {
                   <div>
                     <div className="admin-kicker">/ bloque seleccionado</div>
                     <h3 style={panelTitle}>{selectedBlock.internal_title}</h3>
-                    <p style={panelCopy}>Editor simple, sin JSON crudo. Lo que se guarda aca es el draft.</p>
+                    <p style={panelCopy}>El editor marca longitud ideal, riesgo de overflow y recomendaciones visuales por campo.</p>
                   </div>
                   <div style={{ display: 'flex', gap: '.5rem', flexWrap: 'wrap' }}>
                     <button className="admin-action-btn" onClick={() => duplicateBlock(selectedBlock)}>Duplicar</button>
                     <button className="admin-action-btn" style={{ borderColor: 'rgba(239,68,68,.3)', color: 'var(--admin-red)' }} onClick={() => removeBlock(selectedBlock)}>Eliminar</button>
                   </div>
                 </div>
+                {selectedDiagnostics ? (
+                  <div style={{ display: 'flex', gap: '.6rem', flexWrap: 'wrap', marginTop: '1rem' }}>
+                    <Badge state={selectedDiagnostics.errors ? 'error' : 'success'}>{selectedDiagnostics.errors} errores</Badge>
+                    <Badge state={selectedDiagnostics.warnings ? 'warning' : 'success'}>{selectedDiagnostics.warnings} alertas</Badge>
+                    <Badge state={selectedDiagnostics.emptyRequired ? 'warning' : 'success'}>{selectedDiagnostics.emptyRequired} campos vacios</Badge>
+                  </div>
+                ) : null}
               </div>
 
               <div style={{ ...cardStyle, padding: '1rem' }}>
@@ -290,6 +347,7 @@ export default function AdminCMS() {
               <div style={{ ...cardStyle, padding: '1rem' }}>
                 <h4 style={fieldsetTitle}>Contenido</h4>
                 <FieldRenderer
+                  blockType={selectedBlock.block_type}
                   definition={getBlockDefinition(selectedBlock.block_type)}
                   value={selectedBlock.draft_content || {}}
                   onChange={(nextContent) => updateSelectedBlock((block) => ({ ...block, draft_content: nextContent }))}
@@ -305,26 +363,15 @@ export default function AdminCMS() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
             <div>
               <h3 style={panelTitle}>Preview</h3>
-              <p style={panelCopy}>Desktop y mobile usan el mismo renderer de la landing publica.</p>
+              <p style={panelCopy}>Usa el mismo renderer de las landings publicas.</p>
             </div>
             <div style={{ display: 'flex', gap: '.5rem' }}>
               <button className="admin-action-btn" style={{ background: device === 'desktop' ? 'rgba(255,90,0,.08)' : 'transparent' }} onClick={() => setDevice('desktop')}>Desktop</button>
               <button className="admin-action-btn" style={{ background: device === 'mobile' ? 'rgba(255,90,0,.08)' : 'transparent' }} onClick={() => setDevice('mobile')}>Mobile</button>
             </div>
           </div>
-          <div style={{
-            marginTop: '1rem',
-            border: '1px solid var(--admin-line)',
-            background: '#060606',
-            padding: device === 'mobile' ? '0.75rem' : '0.5rem',
-            overflow: 'auto',
-          }}>
-            <div style={{
-              width: device === 'mobile' ? '390px' : '100%',
-              maxWidth: '100%',
-              margin: '0 auto',
-              border: '1px solid rgba(255,255,255,.08)',
-            }}>
+          <div style={{ marginTop: '1rem', padding: '.85rem', border: '1px solid var(--admin-line)', background: '#060606', overflow: 'auto' }}>
+            <div style={{ width: device === 'mobile' ? '390px' : '100%', maxWidth: '100%', margin: '0 auto', border: '1px solid rgba(255,255,255,.08)' }}>
               <LandingRenderer blocks={previewBlocks} device={device} preview />
             </div>
           </div>
@@ -334,7 +381,7 @@ export default function AdminCMS() {
   )
 }
 
-function FieldRenderer({ definition, value, onChange }) {
+function FieldRenderer({ blockType, definition, value, onChange }) {
   if (!definition) return null
 
   return (
@@ -342,7 +389,9 @@ function FieldRenderer({ definition, value, onChange }) {
       {definition.fields.map((field) => (
         <FieldNode
           key={field.key}
+          blockType={blockType}
           field={field}
+          path={[field.key]}
           value={value[field.key]}
           onChange={(nextValue) => onChange({ ...value, [field.key]: nextValue })}
         />
@@ -351,7 +400,7 @@ function FieldRenderer({ definition, value, onChange }) {
   )
 }
 
-function FieldNode({ field, value, onChange }) {
+function FieldNode({ blockType, field, path, value, onChange }) {
   if (field.type === 'group') {
     return (
       <div style={subCard}>
@@ -360,7 +409,9 @@ function FieldNode({ field, value, onChange }) {
           {field.fields.map((child) => (
             <FieldNode
               key={child.key}
+              blockType={blockType}
               field={child}
+              path={[...path, child.key]}
               value={value?.[child.key]}
               onChange={(nextValue) => onChange({ ...(value || {}), [child.key]: nextValue })}
             />
@@ -389,7 +440,9 @@ function FieldNode({ field, value, onChange }) {
                 {field.fields.map((child) => (
                   <FieldNode
                     key={`${field.key}-${index}-${child.key}`}
+                    blockType={blockType}
                     field={child}
+                    path={[...path, child.key]}
                     value={item?.[child.key]}
                     onChange={(nextValue) =>
                       onChange(
@@ -410,10 +463,14 @@ function FieldNode({ field, value, onChange }) {
 
   if (field.type === 'simple-list') {
     const list = Array.isArray(value) ? value : []
+    const guidance = getFieldGuidance(blockType, path, field, list[0] || '')
     return (
       <div style={subCard}>
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', alignItems: 'center', marginBottom: '.75rem' }}>
-          <h5 style={fieldsetTitle}>{field.label}</h5>
+          <div>
+            <h5 style={fieldsetTitle}>{field.label}</h5>
+            {guidance ? <Guidance guidance={guidance} /> : null}
+          </div>
           <button className="admin-action-btn" type="button" onClick={() => onChange([...list, ''])}>Agregar</button>
         </div>
         <div style={{ display: 'grid', gap: '.5rem' }}>
@@ -451,18 +508,36 @@ function FieldNode({ field, value, onChange }) {
     )
   }
 
+  const guidance = getFieldGuidance(blockType, path, field, value)
+  const isImage = guidance?.meta?.kind === 'image'
+
   if (field.type === 'textarea') {
     return (
-      <Field label={field.label}>
+      <Field label={field.label} guidance={guidance}>
         <textarea value={value || ''} onChange={(event) => onChange(event.target.value)} rows={4} />
       </Field>
     )
   }
 
+  if (isImage) {
+    return (
+      <Field label={field.label} guidance={guidance}>
+        <div style={{ display: 'grid', gap: '.75rem' }}>
+          <input type="url" value={value || ''} onChange={(event) => onChange(event.target.value)} placeholder="https://..." />
+          <div style={{ ...cardStyle, padding: '.6rem', background: 'var(--admin-panel2)' }}>
+            <div style={{ aspectRatio: '16 / 9', width: '100%', background: '#0b0b0b', border: '1px solid rgba(255,255,255,.08)', display: 'grid', placeItems: 'center', overflow: 'hidden' }}>
+              {value ? <img src={value} alt={field.label} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ color: 'var(--admin-muted2)' }}>Preview</span>}
+            </div>
+          </div>
+        </div>
+      </Field>
+    )
+  }
+
   return (
-    <Field label={field.label}>
+    <Field label={field.label} guidance={guidance}>
       <input
-        type={field.type === 'number' ? 'number' : field.type === 'color' ? 'color' : 'text'}
+        type={field.type === 'number' ? 'number' : field.type === 'color' ? 'color' : field.type === 'url' ? 'url' : 'text'}
         value={value ?? (field.type === 'color' ? '#ffffff' : '')}
         onChange={(event) => onChange(field.type === 'number' ? Number(event.target.value || 0) : event.target.value)}
       />
@@ -470,12 +545,41 @@ function FieldNode({ field, value, onChange }) {
   )
 }
 
-function Field({ label, children }) {
+function Field({ label, guidance, children }) {
   return (
     <div>
       <label style={fieldLabel}>{label}</label>
       {children}
+      {guidance ? <Guidance guidance={guidance} /> : null}
     </div>
+  )
+}
+
+function Guidance({ guidance }) {
+  return (
+    <div style={{ marginTop: '.45rem', display: 'grid', gap: '.25rem' }}>
+      <Badge state={guidance.state}>{guidance.state === 'error' ? 'Muy largo' : guidance.state === 'warning' ? 'Revisar' : guidance.state === 'empty' ? 'Vacio' : 'OK'}</Badge>
+      {guidance.lines.map((line) => (
+        <div key={line} style={{ color: 'var(--admin-muted2)', fontSize: '.76rem' }}>{line}</div>
+      ))}
+    </div>
+  )
+}
+
+function Badge({ state = 'success', children }) {
+  const palette = state === 'error'
+    ? ['rgba(239,68,68,.12)', 'rgba(239,68,68,.35)', 'var(--admin-red)']
+    : state === 'warning' || state === 'empty'
+      ? ['rgba(250,204,21,.12)', 'rgba(250,204,21,.35)', 'var(--admin-yellow)']
+      : ['rgba(34,197,94,.12)', 'rgba(34,197,94,.35)', 'var(--admin-green)']
+
+  return (
+    <span
+      className="ag-status"
+      style={{ background: palette[0], borderColor: palette[1], color: palette[2] }}
+    >
+      {children}
+    </span>
   )
 }
 

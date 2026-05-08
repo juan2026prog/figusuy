@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+﻿import React, { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 
 const card = { background: "var(--admin-panel)", borderRadius: "0.5rem", padding: "1.25rem", border: "1px solid var(--admin-line)" }
@@ -75,7 +75,7 @@ export default function AdminFavorites() {
               {stats.topFavorited.map(([name, count], i) => (
                 <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem', background: "var(--admin-panel2)", borderRadius: '0.5rem' }}>
                   <span style={{ fontWeight: 600, color: "var(--admin-line)" }}>{name || 'Anónimo'}</span>
-                  <span style={{ fontWeight: 800, color: 'var(--color-primary)' }}>{count} ❤️</span>
+                  <span style={{ fontWeight: 800, color: 'var(--color-primary)' }}>{count} â¤ï¸</span>
                 </div>
               ))}
               {stats.topFavorited.length === 0 && <p style={{ color: "var(--admin-muted)", textAlign: 'center' }}>Sin datos aún</p>}

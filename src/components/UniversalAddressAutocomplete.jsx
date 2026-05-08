@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 
 export default function UniversalAddressAutocomplete({
   countryCode = 'uy',
@@ -166,7 +166,7 @@ export default function UniversalAddressAutocomplete({
     if (addr.state) parts.push(normalizeDepartment(addr.state));
     if (addr.country) parts.push(addr.country);
     
-    return parts.filter(Boolean).join(' · ');
+    return parts.filter(Boolean).join(' Â· ');
   };
 
   return (
@@ -192,10 +192,10 @@ export default function UniversalAddressAutocomplete({
         .ua-input {
           width: 100%;
           padding: 0.875rem 1rem 0.875rem 2.5rem;
-          background: #0d0d0d;
-          border: 1px solid var(--line2, #334155);
+          background: var(--color-surface-alt, #f8fafc);
+          border: 1px solid var(--color-border, #334155);
           border-radius: var(--radius-lg, 0.5rem);
-          color: #ffffff;
+          color: var(--color-text, #111111);
           font-weight: 600;
           font-size: 0.875rem;
           outline: none;
@@ -225,10 +225,10 @@ export default function UniversalAddressAutocomplete({
           top: calc(100% + 4px);
           left: 0;
           right: 0;
-          background: var(--panel, #121212);
-          border: 1px solid var(--line, #334155);
+          background: var(--color-surface, #ffffff);
+          border: 1px solid var(--color-border, #334155);
           border-radius: var(--radius-lg, 0.5rem);
-          box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.8);
+          box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.2);
           z-index: 5000;
           max-height: 250px;
           overflow-y: auto;
@@ -256,7 +256,7 @@ export default function UniversalAddressAutocomplete({
         }
         .ua-item-primary {
           font-weight: 700;
-          color: var(--color-text, #f8fafc);
+          color: var(--color-text, #111111);
           font-size: 0.875rem;
           margin-bottom: 0.125rem;
         }

@@ -1,13 +1,14 @@
-import React, { useEffect } from 'react'
+﻿import React, { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useGamificationStore } from '../stores/gamificationStore'
 import { useAuthStore } from '../stores/authStore'
 import { LEVELS, LEVEL_ORDER, BADGES, ACHIEVEMENTS, getLevelProgress, getNextLevelMessage } from '../lib/gamification'
 import ReputationStars from './ReputationStars'
 import { getStarLevel } from '../lib/reputation'
+import GamificationIcon from './gamification/icons/GamificationIcon'
 
 /**
- * ProfileGamification — Premium, clean gamification section for the Profile page.
+ * ProfileGamification â€” Premium, clean gamification section for the Profile page.
  * Shows: Level, progress bar, next objective, badges, recent achievements, rewards.
  */
 export default function ProfileGamification() {
@@ -79,15 +80,11 @@ export default function ProfileGamification() {
           gap: 0.875rem;
         }
         .level-icon-circle {
-          width: 3rem;
-          height: 3rem;
-          border-radius: 4px;
+          width: 4rem;
+          height: 4rem;
           display: flex;
           align-items: center;
           justify-content: center;
-          font-size: 1.5rem;
-          background: var(--color-border-light);
-          backdrop-filter: blur(8px);
         }
         .level-name {
           font-size: 1.375rem;
@@ -97,8 +94,29 @@ export default function ProfileGamification() {
         }
         .level-desc {
           font-size: 0.8125rem;
-          color: rgba(255,255,255,0.65);
+          color: rgba(255,255,255,0.85);
           margin: 0;
+        }
+        @media (max-width: 480px) {
+          .level-card {
+            padding: 1.25rem;
+          }
+          .mini-stat-label {
+            color: rgba(255,255,255,0.85)!important;
+          }
+          .level-desc {
+            color: rgba(255,255,255,0.9)!important;
+          }
+          .level-name {
+            font-size: 1.15rem;
+          }
+          .level-desc {
+            font-size: 0.75rem;
+          }
+          .level-icon-circle {
+            width: 3rem;
+            height: 3rem;
+          }
         }
         .level-steps {
           display: flex;
@@ -128,7 +146,7 @@ export default function ProfileGamification() {
         }
         .level-progress-bar-bg {
           height: 0.5rem;
-          background: rgba(255,255,255,0.12);
+          background: rgba(255,255,255,0.25);
           border-radius: 9999px;
           overflow: hidden;
           margin-bottom: 0.625rem;
@@ -173,9 +191,7 @@ export default function ProfileGamification() {
         }
         .badge-chip-icon {
           font-size: 0.875rem;
-        }
-
-        /* Achievement Mini Cards */
+        }        /* Achievement Mini Cards */
         .achievements-mini-grid {
           display: grid;
           grid-template-columns: 1fr 1fr;
@@ -187,13 +203,13 @@ export default function ProfileGamification() {
         .achievement-mini {
           padding: 1rem;
           border-radius: 1.25rem;
-          background: var(--color-bg);
-          border: 1px solid var(--color-border);
+          background: #141414;
+          border: 1px solid rgba(255,255,255,0.08);
           transition: all 0.2s;
           cursor: pointer;
         }
         .achievement-mini:hover {
-          border-color: #334155;
+          border-color: var(--color-primary);
           transform: translateY(-1px);
         }
         .achievement-mini-icon {
@@ -205,10 +221,10 @@ export default function ProfileGamification() {
           font-size: 0.8125rem;
           font-weight: 800;
           margin: 0 0 0.25rem;
-          color: var(--color-text); }
+          color: white; }
         .achievement-mini-bar {
           height: 0.25rem;
-          background: var(--color-border);
+          background: rgba(255,255,255,0.1);
           border-radius: 9999px;
           overflow: hidden;
           margin-top: 0.5rem;
@@ -222,7 +238,7 @@ export default function ProfileGamification() {
         .achievement-mini-progress-text {
           font-size: 0.625rem;
           font-weight: 700;
-          color: var(--color-text-muted);
+          color: rgba(255,255,255,0.6);
           margin: 0.25rem 0 0;
         }
         .achievement-completed .achievement-mini-fill {
@@ -236,12 +252,12 @@ export default function ProfileGamification() {
           gap: 0.875rem;
           padding: 0.875rem 1rem;
           border-radius: 1.25rem;
-          background: linear-gradient(135deg, rgba(234,88,12,0.08) 0%, rgba(234,88,12,0.02) 100%);
-          border: 1px solid rgba(234,88,12,0.15);
+          background: #1a1a1a;
+          border: 1px solid rgba(255,255,255,0.08);
           transition: all 0.2s;
         }
         .reward-mini:hover {
-          border-color: rgba(234,88,12,0.3);
+          border-color: var(--color-primary);
           transform: translateY(-1px);
         }
         .reward-mini-icon {
@@ -295,6 +311,10 @@ export default function ProfileGamification() {
         }
         .gamification-see-all:hover { opacity: 0.8; }
 
+        .gamification-block {
+          padding-top: 1rem;
+          border-top: 1px solid rgba(255,255,255,0.08);
+        }
         .section-header {
           display: flex;
           align-items: center;
@@ -302,10 +322,52 @@ export default function ProfileGamification() {
           margin-bottom: 1rem;
         }
         .section-title {
-          font-size: 1.25rem;
-          font-weight: 900;
-          letter-spacing: -0.02em;
+          font-size: 1.1rem;
+          font-weight: 800;
+          letter-spacing: -0.01em;
           margin: 0;
+          color: rgba(255,255,255,0.95);
+        }
+        /* Stats Row */
+        .stats-grid {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 0.75rem;
+        }
+        @media (max-width: 640px) {
+          .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+          }
+        }
+        .mini-stat {
+          padding: 1rem 0.5rem;
+          border-radius: 1rem;
+          background: #141414 !important;
+          border: 1px solid rgba(255,255,255,0.1);
+          text-align: center;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          min-height: 80px;
+        }
+        .mini-stat-val {
+          font-size: 1.5rem;
+          font-weight: 900;
+          margin: 0;
+          color: #ffffff !important;
+          line-height: 1.2;
+          font-family: 'Barlow Condensed', sans-serif;
+          text-transform: uppercase;
+        }
+        .mini-stat-label {
+          font-size: 0.7rem;
+          font-weight: 900;
+          color: rgba(255,255,255,0.7) !important;
+          margin: 4px 0 0;
+          text-transform: uppercase;
+          letter-spacing: 0.08em;
+          font-family: 'Barlow Condensed', sans-serif;
         }
       `}</style>
 
@@ -320,7 +382,9 @@ export default function ProfileGamification() {
           <div className="level-card-glow" style={{ background: level.color }} />
           <div className="level-header">
             <div className="level-identity">
-              <div className="level-icon-circle">{level.icon}</div>
+              <div className="level-icon-circle">
+                <GamificationIcon icon={level.iconKey} size="md" />
+              </div>
               <div>
                 <h3 className="level-name">{level.name}</h3>
                 <p className="level-desc">{level.description}</p>
@@ -348,29 +412,31 @@ export default function ProfileGamification() {
                 <div className="level-progress-bar-fill" style={{ width: `${percent}%` }} />
               </div>
               <p className="level-next-msg">
-                → {nextMsg}
+                â†’ {nextMsg}
               </p>
             </div>
           )}
           {!nextLevel && (
             <div className="level-progress-area">
-              <p className="level-next-msg">🏆 Circuito Referente desbloqueado — Completá hitos y ganá rewards</p>
+              <p className="level-next-msg">ðŸ† Circuito Referente desbloqueado â€” Completá hitos y ganá rewards</p>
             </div>
           )}
         </div>
 
         {/* Badges */}
         {badges && badges.length > 0 && (
-          <div className="card">
+          <div className="gamification-block">
             <div className="section-header">
               <h3 className="section-title">Insignias</h3>
             </div>
             <div className="badges-row">
               {badges.map(b => {
-                const def = BADGES[b.key] || { name: b.key, icon: '🏅', color: 'var(--color-text-muted)' }
+                const def = BADGES[b.key] || { name: b.key, icon: 'ðŸ…', color: 'var(--color-text-muted)' }
                 return (
                   <div key={b.key} className="badge-chip" style={{ borderColor: `${def.color}30` }} title={def.description}>
-                    <span className="badge-chip-icon">{def.icon}</span>
+                    <span className="badge-chip-icon" style={{ display: 'flex', alignItems: 'center' }}>
+                      <GamificationIcon icon={def.iconKey} size="sm" />
+                    </span>
                     {def.name}
                   </div>
                 )
@@ -381,7 +447,7 @@ export default function ProfileGamification() {
 
         {/* In-Progress Achievements */}
         {inProgressAchievements.length > 0 && (
-          <div className="card">
+          <div className="gamification-block">
             <div className="section-header">
               <h3 className="section-title">Hitos activos</h3>
               <button className="gamification-see-all" onClick={() => navigate('/achievements')}>
@@ -390,11 +456,13 @@ export default function ProfileGamification() {
             </div>
             <div className="achievements-mini-grid">
               {inProgressAchievements.map(a => {
-                const def = ACHIEVEMENTS[a.key] || { name: a.key, icon: '🎯' }
+                const def = ACHIEVEMENTS[a.key] || { name: a.key, icon: 'ðŸŽ¯' }
                 const pct = Math.round((a.progress / a.target) * 100)
                 return (
                   <div key={a.key} className="achievement-mini" onClick={() => navigate('/achievements')}>
-                    <span className="achievement-mini-icon">{def.icon}</span>
+                    <span className="achievement-mini-icon" style={{ display: 'flex', alignItems: 'center' }}>
+                      {def.iconKey ? <GamificationIcon icon={def.iconKey} size="sm" /> : def.icon}
+                    </span>
                     <p className="achievement-mini-name">{def.name}</p>
                     <div className="achievement-mini-bar">
                       <div className="achievement-mini-fill" style={{ width: `${pct}%` }} />
@@ -409,7 +477,7 @@ export default function ProfileGamification() {
 
         {/* Recent Rewards */}
         {activeRewards.length > 0 && (
-          <div className="card">
+          <div className="gamification-block">
             <div className="section-header">
               <h3 className="section-title">Rewards activos</h3>
               <button className="gamification-see-all" onClick={() => navigate('/achievements')}>
@@ -421,10 +489,10 @@ export default function ProfileGamification() {
                 const timeLeft = r.expires_at ? getTimeLeft(r.expires_at) : null
                 return (
                   <div key={r.id} className="reward-mini">
-                    <div className="reward-mini-icon">🎁</div>
+                    <div className="reward-mini-icon">ðŸŽ</div>
                     <div className="reward-mini-info">
                       <p className="reward-mini-name">{r.resolved_as || r.type}</p>
-                      <p className="reward-mini-meta">{r.value}{timeLeft ? ` · ${timeLeft}` : ''}</p>
+                      <p className="reward-mini-meta">{r.value}{timeLeft ? ` Â· ${timeLeft}` : ''}</p>
                     </div>
                     <span className="reward-mini-badge">ACTIVO</span>
                   </div>
@@ -435,31 +503,31 @@ export default function ProfileGamification() {
         )}
 
         {/* Stats Row */}
-        <div className="card">
+        <div className="gamification-block">
           <div className="section-header">
             <h3 className="section-title">Mi progreso</h3>
             <button className="gamification-see-all" onClick={() => navigate('/achievements')}>
               Mis logros <span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>arrow_forward</span>
             </button>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.75rem' }}>
-            <div style={miniStatStyle}>
-              <p style={miniStatVal}>{progress?.streak_days || 0}</p>
-              <p style={miniStatLabel}>racha</p>
+          <div className="stats-grid">
+            <div className="mini-stat">
+              <p className="mini-stat-val">{progress?.streak_days || 0}</p>
+              <p className="mini-stat-label">racha</p>
             </div>
-            <div style={miniStatStyle}>
-              <p style={miniStatVal}>{completedAchievements.length}</p>
-              <p style={miniStatLabel}>hitos</p>
+            <div className="mini-stat">
+              <p className="mini-stat-val">{completedAchievements.length}</p>
+              <p className="mini-stat-label">hitos</p>
             </div>
-            <div style={miniStatStyle}>
-              <p style={miniStatVal}>{progress?.total_trades || 0}</p>
-              <p style={miniStatLabel}>cruces</p>
+            <div className="mini-stat">
+              <p className="mini-stat-val">{progress?.completed_exchanges || progress?.total_trades || 0}</p>
+              <p className="mini-stat-label">cerrados</p>
             </div>
-            <div style={miniStatStyle}>
-              <p style={{ ...miniStatVal, color: getStarLevel(reputation?.star_rating || 1).color }}>
-                {'★'.repeat(reputation?.star_rating || 1)}
+            <div className="mini-stat">
+              <p className="mini-stat-val" style={{ color: getStarLevel(reputation?.star_rating || 1).color }}>
+                {reputation?.star_rating ? 'â˜…'.repeat(reputation.star_rating) : 'â˜…'}
               </p>
-              <p style={miniStatLabel}>reputación</p>
+              <p className="mini-stat-label">reputación</p>
             </div>
           </div>
         </div>
@@ -468,15 +536,6 @@ export default function ProfileGamification() {
   )
 }
 
-const miniStatStyle = {
-  padding: '0.875rem',
-  borderRadius: '1.25rem',
-  background: 'var(--color-bg)',
-  border: '1px solid var(--color-border)',
-  textAlign: 'center',
-}
-const miniStatVal = { fontSize: '1.5rem', fontWeight: 900, margin: 0, color: 'white' }
-const miniStatLabel = { fontSize: '0.6875rem', fontWeight: 700, color: 'var(--color-text-muted)', margin: '0.125rem 0 0', textTransform: 'uppercase' }
 
 function getTimeLeft(expiresAt) {
   const diff = new Date(expiresAt) - new Date()
