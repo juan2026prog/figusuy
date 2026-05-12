@@ -39,7 +39,7 @@
   .fy-landing .fy-shell { width: calc(100% - 20px); }
   .fy-navbar { min-height: 56px; gap: 12px; padding: 0 12px; }
   .fy-logo { font-size: 1.4rem; }
-  .fy-logo img { width: 28px; height: 28px; }
+  .fy-logo img { height: 28px; width: auto; max-width: 140px; object-fit: contain; }
   .fy-hero { padding: 48px 0 32px; gap: 24px; }
   .fy-hero-copy h1 { font-size: clamp(2rem, 9vw, 3rem); }
   .fy-copy-lg { font-size: 0.9rem; line-height: 1.5; }

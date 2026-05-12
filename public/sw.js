@@ -13,7 +13,8 @@ const PRECACHE_ASSETS = [
   '/',
   '/offline.html',
   '/manifest.webmanifest',
-  '/favicon.svg',
+  '/favicon.jpg',
+  '/logo.png',
   '/icons/icon-192x192.svg',
   '/icons/icon-512x512.svg',
 ];

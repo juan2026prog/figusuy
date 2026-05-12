@@ -6366,7 +6366,7 @@ textarea:focus-visible {
 }
 .fy-navbar { min-height: 80px; display: flex; align-items: center; justify-content: space-between; gap: 32px; }
 .fy-logo { display: inline-flex; align-items: center; gap: 8px; font: italic 900 2.2rem 'Barlow Condensed', sans-serif; text-transform: uppercase; flex-shrink: 0; }
-.fy-logo img { width: 40px; height: 40px; object-fit: cover; }
+.fy-logo img { height: 40px; width: auto; max-width: 200px; object-fit: contain; }
 .fy-logo strong { color: #ff5a00; }
 .fy-navbar-links { display: flex; gap: 32px; color: rgba(255,255,255,.74); font-size: 1rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
 .fy-navbar-links a { transition: color 0.2s ease; }

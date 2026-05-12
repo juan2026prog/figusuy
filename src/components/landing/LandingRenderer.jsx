@@ -145,9 +145,14 @@ function NavbarBlock({ block, content, preview, onCta }) {
     <header className="fy-navbar-shell" style={{ position: content.sticky ? 'sticky' : 'relative', top: 0, zIndex: 1000 }}>
       <div className="fy-shell fy-navbar">
         <Link to="/" className="fy-logo" onClick={() => setOpen(false)}>
-          {content.logoUrl ? <img src={content.logoUrl} alt={content.logoText || 'FigusUY'} /> : null}
-          <span>{content.logoText || 'FIGUS'}</span>
-          <strong>{content.logoAccent || 'UY'}</strong>
+          {content.logoUrl ? (
+            <img src={content.logoUrl} alt={content.logoText || 'FigusUY'} />
+          ) : (
+            <>
+              <span>{content.logoText || 'FIGUS'}</span>
+              <strong>{content.logoAccent || 'UY'}</strong>
+            </>
+          )}
         </Link>
         <nav className="fy-navbar-links">
           {links.map((link) => (
@@ -831,8 +836,14 @@ function FooterBlock({ block, content, onCta }) {
       <div className="fy-shell fy-footer">
         <div className="fy-footer-brand">
           <Link to="/" className="fy-logo">
-            <span>{content.logoText || 'FIGUS'}</span>
-            <strong>{content.logoAccent || 'UY'}</strong>
+            {content.logoUrl ? (
+              <img src={content.logoUrl} alt={content.logoText || 'FigusUY'} />
+            ) : (
+              <>
+                <span>{content.logoText || 'FIGUS'}</span>
+                <strong>{content.logoAccent || 'UY'}</strong>
+              </>
+            )}
           </Link>
           <p className="fy-legal-text">{content.legal || '© 2026 FigusUY'}</p>
         </div>

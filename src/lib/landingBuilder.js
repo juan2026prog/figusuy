@@ -611,9 +611,9 @@ const OFFICIAL_DEFAULT_BLOCKS = mapDefaultBlocks(LANDING_PAGE_KEY, [
     slug: 'navbar-principal',
     preview_image_url: '',
     draft_content: {
-      logoText: 'FIGUS',
-      logoAccent: 'UY',
-      logoUrl: '',
+      logoText: '',
+      logoAccent: '',
+      logoUrl: '/logo.png',
       background: '#080808',
       sticky: true,
       links: [
@@ -884,8 +884,9 @@ const OFFICIAL_DEFAULT_BLOCKS = mapDefaultBlocks(LANDING_PAGE_KEY, [
     slug: 'footer',
     preview_image_url: '',
     draft_content: {
-      logoText: 'FIGUS',
-      logoAccent: 'UY',
+      logoText: '',
+      logoAccent: '',
+      logoUrl: '/logo.png',
       legal: '© 2026 FigusUY. Todos los derechos reservados.',
       social: [
         { label: 'Instagram', url: 'https://instagram.com' },

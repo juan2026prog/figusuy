@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react'
+import React, { useEffect, useState, useMemo, lazy, Suspense } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { fetchLandingBlocks, trackLandingEvent } from '../../lib/landingApi'
 import { normalizeLandingBlocks, LANDING_DEFAULT_BLOCKS } from '../../lib/landingBuilder'
@@ -12,6 +12,9 @@ import InfluencerApplyModal from '../InfluencerApplyModal'
 import { ErrorBoundary } from '../ErrorBoundary'
 import { useAuthStore } from '../../stores/authStore'
 import { useBusinessPlanStore } from '../../stores/businessPlanStore'
+import { useEarlyAccessEligibility } from '../../hooks/useEarlyAccessEligibility'
+
+const EarlyAccessPopup = lazy(() => import('../EarlyAccessPopup'))
 
 const PENDING_LANDING_ACTION_KEY = 'figusuy.pendingLandingAction'
 
@@ -131,10 +134,38 @@ export default function LandingLayout() {
   const [showInfluencerModal, setShowInfluencerModal] = useState(false)
   const [applyType, setApplyType] = useState('store')
   const [authRedirectTo, setAuthRedirectTo] = useState('/home')
+  const [showEarlyAccess, setShowEarlyAccess] = useState(false)
   
   const location = useLocation()
   const navigate = useNavigate()
+  const user = useAuthStore(state => state.user)
   const profile = useAuthStore(state => state.profile)
+
+  // Early Access popup logic
+  const {
+    shouldShowPopup: earlyAccessEligible,
+    slotsRemaining,
+    dismissTemporarily: dismissEarlyAccess,
+  } = useEarlyAccessEligibility({ user, enabled: location.pathname === '/' })
+
+  // Show popup ~1s after landing loads for unauthenticated users
+  useEffect(() => {
+    if (!earlyAccessEligible || showEarlyAccess) return
+    const timer = setTimeout(() => setShowEarlyAccess(true), 1200)
+    return () => clearTimeout(timer)
+  }, [earlyAccessEligible])
+
+  const handleEarlyAccessClose = () => {
+    setShowEarlyAccess(false)
+    dismissEarlyAccess()
+  }
+
+  const handleEarlyAccessCta = () => {
+    setShowEarlyAccess(false)
+    dismissEarlyAccess()
+    setAuthRedirectTo('/home')
+    setShowAuthModal(true)
+  }
 
   const { plans: dbPlans, userPlans, fetchPlans } = useBusinessPlanStore()
 
@@ -376,6 +407,16 @@ export default function LandingLayout() {
       <BusinessInfoModal isOpen={showInfoModal} onClose={() => setShowInfoModal(false)} />
       <PlansModal isOpen={showPlansModal} onClose={() => setShowPlansModal(false)} />
       <InfluencerApplyModal isOpen={showInfluencerModal} onClose={() => setShowInfluencerModal(false)} />
+
+      {/* Early Access Popup */}
+      <Suspense fallback={null}>
+        <EarlyAccessPopup
+          isOpen={showEarlyAccess}
+          onClose={handleEarlyAccessClose}
+          onCreateProfile={handleEarlyAccessCta}
+          slotsRemaining={slotsRemaining}
+        />
+      </Suspense>
     </div>
   )
 }

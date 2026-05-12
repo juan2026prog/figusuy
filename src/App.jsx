@@ -116,6 +116,7 @@ const OnboardingGuide = lazy(() => import('./components/OnboardingGuide'))
 const ShareModal = lazy(() => import('./components/ShareModal'))
 const SmartNotifications = lazy(() => import('./components/SmartNotifications'))
 const GlobalLogoutDialog = lazy(() => import('./components/GlobalLogoutDialog'))
+const EarlyAccessBadgeHandler = lazy(() => import('./components/EarlyAccessBadgeHandler'))
 
 import { SystemEventEngine } from './components/system/SystemEventEngine'
 import './components/gamification/icons/GamificationIcons.css'
@@ -286,6 +287,7 @@ function AppChrome() {
       <SmartNotifications />
       <GlobalLogoutDialog />
       <GamificationIconDefs />
+      <EarlyAccessBadgeHandler />
     </>
   )
 }

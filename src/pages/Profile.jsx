@@ -28,7 +28,7 @@ export default function ProfilePage() {
   const { profile, user, signOut, updateProfile } = useAuthStore()
   const { favorites, fetchFavorites } = useFavoritesStore()
   const { isPremium, planName } = usePremiumAccess()
-  const { progress, reputation, initialize: initGamification } = useGamificationStore()
+  const { progress, reputation, badges, initialize: initGamification } = useGamificationStore()
   const toast = useToast()
 
   const { openConfirm } = useLogoutStore()
@@ -196,6 +196,19 @@ export default function ProfilePage() {
               {isPremium && <span className="badge orange">💎 {planName === 'gratis' ? 'Premium' : planName}</span>}
               {profile?.is_verified && <span className="badge green">Confiable</span>}
               {mainAlbum && <span className="badge">{mainAlbum.name}</span>}
+              {/* Founding Badge */}
+              {badges?.some(b => b.badge_key === 'desde_el_comienzo') && (
+                <span className="badge" style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '4px',
+                  background: 'linear-gradient(135deg, rgba(255,180,60,0.15), rgba(255,120,30,0.08))',
+                  border: '1px solid rgba(255,160,50,0.3)',
+                  color: '#ffb74d',
+                  padding: '3px 8px 3px 4px',
+                }}>
+                  <img src="/assets/badge-desde-el-comienzo.png" alt="Desde el comienzo" style={{ width: 20, height: 20, objectFit: 'contain' }} />
+                  Desde el comienzo
+                </span>
+              )}
             </div>
             {profile?.username && (
               <div style={{ marginBottom: '12px' }}>

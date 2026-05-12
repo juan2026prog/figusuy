@@ -18,7 +18,7 @@ const applyFavicon = (faviconUrl) => {
 
 export const useBrandingStore = create((set, get) => ({
   settings: {
-    header_logo_url: '',
+    header_logo_url: '/logo.png',
     header_logo_alt: 'FigusUY',
     header_logo_link: '/',
     header_show_logo: true,
@@ -31,7 +31,7 @@ export const useBrandingStore = create((set, get) => ({
     footer_bg_color: '#090909',
     footer_text_color: '#f5f5f5',
     footer_link_color: '#ff5a00',
-    favicon_url: '',
+    favicon_url: '/favicon.jpg',
     header_menu_items: [
       { label: 'Cómo funciona', link: '#como' },
       { label: 'Intercambios', link: '#intercambios' },
