@@ -1,9 +1,13 @@
-import React, { useEffect, useState } from 'react'
+"use client"
+
+import React, { useEffect, useState, Suspense } from 'react'
 import { NavLink, Outlet, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
 import { useInfluencerStore } from '../stores/influencerStore'
 import { formatPercent, getHealthMeta, getTierMeta } from '../lib/influencerDashboard'
 import GamificationIcon from '../components/gamification/icons/GamificationIcon'
+
+export const dynamic = "force-dynamic"
 
 const navItems = [
   { to: '/influencer/dashboard', label: 'Dashboard', icon: 'UserLevelExplorerIcon' },
@@ -66,7 +70,7 @@ function ApplicationStatusView({ application }) {
   )
 }
 
-export default function InfluencerLayout() {
+function InfluencerLayoutContent() {
   const { user, profile } = useAuthStore()
   const { getInfluencerDashboardData, fetchInfluencers, affiliates } = useInfluencerStore()
   const [searchParams, setSearchParams] = useSearchParams()
@@ -138,7 +142,7 @@ export default function InfluencerLayout() {
     )
   }
   
-  // Gating logic â€” solo cuando loading terminó
+  // Gating logic — solo cuando loading terminó
   if (!state.data?.affiliate && !isAdmin) {
     if (state.data?.application) {
       return <ApplicationStatusView application={state.data.application} />
@@ -212,7 +216,7 @@ export default function InfluencerLayout() {
       <section className="affiliate-top-strip">
         <div className="affiliate-strip-card">
           <span>Tier actual</span>
-          <strong>{tierMeta.tier} Â· {tierMeta.label}</strong>
+          <strong>{tierMeta.tier} · {tierMeta.label}</strong>
         </div>
         <div className="affiliate-strip-card">
           <span>Progreso</span>
@@ -220,7 +224,7 @@ export default function InfluencerLayout() {
         </div>
         <div className="affiliate-strip-card">
           <span>Comision actual</span>
-          <strong>{Number(state.data?.stats?.userCommission || 0).toFixed(1)}% users Â· {Number(state.data?.stats?.businessCommission || 0).toFixed(1)}% biz</strong>
+          <strong>{Number(state.data?.stats?.userCommission || 0).toFixed(1)}% users · {Number(state.data?.stats?.businessCommission || 0).toFixed(1)}% biz</strong>
         </div>
         <div className="affiliate-strip-card">
           <span>Salud</span>
@@ -369,3 +373,11 @@ const affiliateStyles = `
     .influencer-hero-actions { flex-direction: column; align-items: stretch; width: 100%; }
   }
 `;
+
+export default function InfluencerLayout() {
+  return (
+    <Suspense fallback={<LoadingView />}>
+      <InfluencerLayoutContent />
+    </Suspense>
+  )
+}

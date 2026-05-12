@@ -1,0 +1,494 @@
+/* ============================================================
+   FigusUY — Mobile Responsive System (Part 1: Foundation)
+   Imported by mobile-fixes.css
+   
+   COMPLETE MOBILE-FIRST REBUILD
+   
+   Strategy: base styles = mobile (360px), then scale UP
+   ============================================================ */
+
+/* === SAFE AREA & VIEWPORT === */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  overscroll-behavior-y: contain;
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
+/* === TOUCH TARGETS (48px minimum per WCAG) === */
+@media (max-width: 1024px) {
+  button,
+  [role="button"],
+  a[href],
+  input,
+  textarea,
+  select,
+  .btn,
+  .sf-btn,
+  .sf-action,
+  .sf-tab,
+  .tab,
+  .tab-btn,
+  .fy-btn,
+  .admin-nav-link,
+  .sidebar-link,
+  .bottom-nav-item,
+  .plan-btn,
+  .pp-btn {
+    min-height: 44px;
+  }
+
+  input, textarea, select {
+    font-size: 16px; /* Prevents iOS auto-zoom */
+  }
+
+  input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea,
+  .input,
+  .sf-field input,
+  .sf-field select {
+    min-height: 48px;
+    font-size: 16px !important; /* Prevents iOS zoom */
+  }
+}
+
+/* === GLOBAL OVERFLOW FIX === */
+.app-layout,
+.app-main,
+.page,
+.wrap,
+.sf-wrap,
+.pp-wrap,
+.profile-final-root,
+.home-panini-wrapper,
+.matches-page,
+.chats-list-page,
+.chat-page-root,
+.panini-page,
+.premium-panini-wrapper,
+.favorites-page-root,
+.pending-panini-wrapper,
+.stores-final-root,
+.landing-layout,
+.fy-landing,
+.album-page-root,
+.admin-dashboard,
+.admin-content,
+.admin-main {
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+/* === BOTTOM NAV SAFE AREA === */
+@media (max-width: 768px) {
+  .bottom-nav {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .app-main {
+    padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* === IMAGES RESPONSIVE === */
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* === TABLES — MOBILE CARD TRANSFORM === */
+@media (max-width: 768px) {
+  /* Force tables in admin to scroll within container, not body */
+  .admin-theme-scope table,
+  .admin-content table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    max-width: 100%;
+  }
+
+  .premium-table-wrapper,
+  .comparison-table,
+  .pp-table {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin-left: -0.5rem;
+    margin-right: -0.5rem;
+    padding: 0 0.5rem;
+  }
+}
+
+/* === MODAL — MOBILE DRAWER PATTERN === */
+@media (max-width: 640px) {
+  .modal-overlay,
+  .system-modal-overlay {
+    padding: 0 !important;
+    align-items: flex-end !important;
+    place-items: end center !important;
+  }
+
+  .modal-card,
+  .system-modal-content {
+    max-width: 100% !important;
+    max-height: 94vh;
+    border-radius: 20px 20px 0 0 !important;
+    width: 100%;
+    animation: slideUp 0.3s ease-out !important;
+  }
+
+  .system-modal-content .fy-template {
+    border-radius: 20px 20px 0 0 !important;
+    border-bottom: none !important;
+    padding-bottom: calc(24px + env(safe-area-inset-bottom, 16px)) !important;
+  }
+
+  /* Smart Notifications Panel */
+  .sn-panel {
+    top: auto !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    max-height: 90vh !important;
+    border-radius: 20px 20px 0 0 !important;
+    border-left: none !important;
+    border-top: 1px solid rgba(255,255,255,.08) !important;
+    transform: translateY(100%) !important;
+  }
+  .sn-panel.open {
+    transform: translateY(0) !important;
+  }
+
+  .modal-body {
+    padding: 1rem;
+    overflow-y: auto;
+    max-height: calc(94vh - 120px);
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .modal-close {
+    width: 2.5rem;
+    height: 2.5rem;
+    font-size: 1.5rem;
+    z-index: 10;
+  }
+
+  /* Album modals */
+  .album-modal-overlay {
+    padding: 0;
+  }
+
+  .album-modal {
+    max-width: 100%;
+    height: 100%;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+
+  .album-modal-body {
+    max-height: calc(100vh - 200px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .album-modal-footer {
+    padding: 12px 16px;
+    position: sticky;
+    bottom: 0;
+    background: var(--color-surface, #121212);
+    border-top: 1px solid var(--color-border, rgba(255,255,255,.08));
+  }
+
+  .album-modal-footer .btn {
+    flex: 1;
+  }
+
+  /* Plans modal */
+  .modal-card[style*="max-width: 1000px"],
+  .modal-card[style*="max-width: 900px"],
+  .modal-card[style*="max-width: 800px"] {
+    max-width: 100% !important;
+  }
+}
+
+/* === TOAST MOBILE === */
+@media (max-width: 640px) {
+  .toast-container {
+    bottom: calc(72px + env(safe-area-inset-bottom, 8px));
+    width: calc(100% - 1rem);
+    max-width: none;
+    left: 0.5rem;
+    transform: none;
+  }
+}
+
+/* === CONFIRM DIALOG MOBILE === */
+@media (max-width: 640px) {
+  .cd-overlay {
+    padding: 12px;
+  }
+
+  .cd-card {
+    max-width: 100%;
+  }
+}
+
+/* === GLOBAL WRAPPER MOBILE PADDING === */
+@media (max-width: 480px) {
+  .wrap,
+  .sf-wrap,
+  .pp-wrap {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+}
+
+/* === DESKTOP-ONLY ELEMENTS === */
+@media (max-width: 768px) {
+  .desktop-only {
+    display: none !important;
+  }
+}
+
+/* === TOPBAR MOBILE === */
+@media (max-width: 640px) {
+  .topbar {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 8px;
+    padding: 12px !important;
+    min-height: auto;
+  }
+
+  .topbar .top-actions {
+    width: 100%;
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .topbar .top-actions .btn {
+    flex: 1;
+    min-width: 0;
+    padding: 8px 10px;
+    font-size: 0.72rem;
+    justify-content: center;
+  }
+
+  .topbar .top-title {
+    font-size: 1.5rem;
+  }
+
+  .topbar .top-kicker {
+    font-size: 0.62rem;
+  }
+
+  .topbar .top-live {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 4px;
+    max-width: 100%;
+  }
+
+  .topbar .top-live::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* === LAYOUT GRIDS — MOBILE STACK === */
+@media (max-width: 768px) {
+  .profile-grid,
+  .content-grid {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+
+  .side-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .layout {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 16px !important;
+  }
+
+  .layout > aside {
+    order: 2;
+  }
+}
+
+/* === HERO SECTIONS — COMPACT MOBILE === */
+@media (max-width: 640px) {
+  .hero,
+  .hero-main {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 16px !important;
+    min-height: auto !important;
+    padding: 16px !important;
+  }
+
+  .hero-stats {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+  }
+
+  .hero-stat {
+    padding: 10px !important;
+    min-height: auto;
+  }
+
+  .hero-stat b {
+    font-size: 1.5rem !important;
+  }
+
+  .hero-title {
+    font-size: clamp(1.5rem, 6vw, 2.2rem) !important;
+  }
+
+  .hero-sub,
+  .hero-desc {
+    font-size: 0.88rem !important;
+    line-height: 1.5;
+  }
+}
+
+/* === STAT CARDS — COMPACT MOBILE === */
+@media (max-width: 480px) {
+  .stat-grid,
+  .live-stat-grid {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+  }
+
+  .stat-card {
+    padding: 10px 8px !important;
+  }
+
+  .stat-value {
+    font-size: 1.4rem !important;
+  }
+
+  .stat-label {
+    font-size: 0.62rem !important;
+  }
+}
+
+/* === BUTTONS — MOBILE FULL WIDTH === */
+@media (max-width: 480px) {
+  .btn.block,
+  .btn.orange.block {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Sticky save button pattern */
+  .btn-sticky-bottom {
+    position: sticky;
+    bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+    z-index: 20;
+  }
+}
+
+/* === SWITCH TOGGLE FIX === */
+@media (max-width: 640px) {
+  .switch {
+    min-width: 48px;
+    min-height: 28px;
+    flex-shrink: 0;
+  }
+}
+
+/* === BADGE ROW — WRAP ON MOBILE === */
+@media (max-width: 640px) {
+  .badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .badge {
+    font-size: 0.65rem;
+    padding: 2px 6px;
+  }
+}
+
+/* === SECTION HEADS — MOBILE === */
+@media (max-width: 640px) {
+  .section-head h2,
+  .section-title h2,
+  .card-head h2 {
+    font-size: 1.5rem !important;
+  }
+
+  .section-head,
+  .section-title {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 8px !important;
+  }
+}
+
+/* === FORM MOBILE NORMALIZATION === */
+@media (max-width: 640px) {
+  .form-group {
+    margin-bottom: 12px;
+  }
+
+  .form-label,
+  .kicker {
+    font-size: 0.72rem;
+  }
+
+  .input,
+  select.input,
+  textarea.input {
+    width: 100%;
+    font-size: 16px;
+    padding: 12px;
+    border-radius: 8px;
+  }
+
+  /* Settings rows */
+  .settings-row,
+  .trust-row {
+    padding: 10px 0;
+    font-size: 0.85rem;
+    gap: 8px;
+  }
+}
+
+/* === EMPTY STATES — COMPACT === */
+@media (max-width: 640px) {
+  .empty-state,
+  .empty {
+    padding: 2rem 1rem;
+  }
+
+  .empty-state-icon,
+  .empty .empty-icon {
+    font-size: 2.5rem;
+  }
+}

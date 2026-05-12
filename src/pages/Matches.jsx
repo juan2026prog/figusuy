@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
 import { useAppStore } from '../stores/appStore'
@@ -48,7 +48,7 @@ export default function MatchesPage() {
     }
   }, [profile?.id, selectedAlbum?.id])
 
-  // â”€â”€ Tab Filtering + Sorting â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Tab Filtering + Sorting ───────────────────────────────
   const filteredMatches = (() => {
     let list = [...matches]
     switch (tab) {
@@ -104,7 +104,7 @@ export default function MatchesPage() {
 
       <header className="topbar">
         <div>
-          <div className="top-kicker">Ãlbum activo Â· {selectedAlbum?.name || 'Ãlbum'}</div>
+          <div className="top-kicker">́lbum activo · {selectedAlbum?.name || '́lbum'}</div>
           <div className="top-title">Intercambios</div>
           <div className="top-live">
             <LiveBadge tone="orange" pulse>{summary.activeNow} activos ahora</LiveBadge>
@@ -115,7 +115,7 @@ export default function MatchesPage() {
         <div className="top-actions">
           <button className="btn" onClick={() => navigate('/album')}>Ir al álbum</button>
           <button className="btn orange" onClick={handleRefresh} disabled={matchesLoading}>
-            {matchesLoading ? 'â³' : 'Actualizar'}
+            {matchesLoading ? '⏳' : 'Actualizar'}
           </button>
         </div>
       </header>
@@ -131,7 +131,7 @@ export default function MatchesPage() {
             <div className="hero-stats">
               <div className="hero-stat orange"><b>{matches.length}</b><span>Oportunidades activas</span></div>
               <div className="hero-stat green"><b>{matches.filter(m => m.isMutual).length}</b><span>Cierran más rápido</span></div>
-              <div className="hero-stat blue"><b>{matches.filter(m => m.distance !== null).length}</b><span>Con cercanÃƒÂ­a hoy</span></div>
+              <div className="hero-stat blue"><b>{matches.filter(m => m.distance !== null).length}</b><span>Con cercan̓­a hoy</span></div>
               <div className="hero-stat yellow">
                 <b>{matches.length > 0 && matches[0]._scoreBreakdown?.compatibility ? Math.round(matches[0]._scoreBreakdown.compatibility) : '-'}</b>
                 <span>Fuerza del mejor cruce</span>
@@ -161,7 +161,7 @@ export default function MatchesPage() {
                     <h2>{topMatch.profile?.name || topMatch.name || 'Usuario'}</h2>
                     <p>
                       {topMatch.profile?.city || topMatch.profile?.department || 'Uruguay'}
-                      {topMatch.distance != null ? ` Â· ${topMatch.distance < 1 ? Math.round(topMatch.distance * 1000) + 'm' : topMatch.distance.toFixed(1) + ' km'}` : ''}
+                      {topMatch.distance != null ? ` · ${topMatch.distance < 1 ? Math.round(topMatch.distance * 1000) + 'm' : topMatch.distance.toFixed(1) + ' km'}` : ''}
                     </p>
                   </div>
                 </div>
@@ -207,7 +207,7 @@ export default function MatchesPage() {
               </div>
             </div>
             <div className="refresh-box">
-              <button className="btn orange" onClick={handleRefresh} disabled={matchesLoading}>ðŸ”„ Actualizar</button>
+              <button className="btn orange" onClick={handleRefresh} disabled={matchesLoading}>🔄 Actualizar</button>
             </div>
           </div>
           <div className="tabs">
@@ -241,14 +241,16 @@ export default function MatchesPage() {
           </div>
         )}
 
-        <section className="premium-notice">
-          <p>
-            {planRules?.match_depth === 'advanced' && 'ðŸš€ Cruces avanzados con mejores oportunidades primero.'}
-            {planRules?.match_depth === 'optimized' && 'âœ¨ Cruces optimizados por cercanía, actividad y reciprocidad.'}
-            {(!planRules?.match_depth || planRules?.match_depth === 'basic') && 'ðŸ‘€ Estás viendo cruces básicos. Plus desbloquea más profundidad de búsqueda y mejores alertas.'}
+        <section className="premium-notice-banner">
+          <p className="premium-notice-text">
+            {planRules?.match_depth === 'advanced' && '🚀 Cruces avanzados con mejores oportunidades primero.'}
+            {planRules?.match_depth === 'optimized' && '✨ Cruces optimizados por cercanía, actividad y reciprocidad.'}
+            {(!planRules?.match_depth || planRules?.match_depth === 'basic') && '👀 Estás viendo cruces básicos. Plus desbloquea más profundidad de búsqueda y mejores alertas.'}
           </p>
           {(!planRules?.match_depth || planRules?.match_depth === 'basic') && (
-            <button className="btn" onClick={() => navigate('/premium')}>Mejorar a Plus</button>
+            <button className="premium-notice-btn" onClick={() => navigate('/premium')}>
+              Mejorar a Plus
+            </button>
           )}
         </section>
 
@@ -265,27 +267,27 @@ export default function MatchesPage() {
             <div className="main-stack">
               {matchesLoading ? (
                 <div className="empty">
-                  <div className="empty-icon">â³</div>
+                  <div className="empty-icon">⏳</div>
                   <h3>Buscando...</h3>
                   <p>Encontrando las mejores oportunidades para tu álbum.</p>
                 </div>
               ) : !selectedAlbum ? (
                 <div className="empty">
-                  <div className="empty-icon">ðŸ“–</div>
+                  <div className="empty-icon">📖</div>
                   <h3>Seleccioná un álbum</h3>
                   <p>Necesitas un álbum activo para buscar intercambios.</p>
-                  <button className="btn orange" onClick={() => navigate('/album')}>Ir al Ãlbum</button>
+                  <button className="btn orange" onClick={() => navigate('/album')}>Ir al ́lbum</button>
                 </div>
               ) : missingStickers.length === 0 && duplicateStickers.length === 0 ? (
                 <div className="empty">
-                  <div className="empty-icon">ðŸ·ï¸</div>
+                  <div className="empty-icon">🏷️</div>
                   <h3>No tenés figuritas marcadas</h3>
                   <p>Marcá tus faltantes y repetidas para encontrar intercambios.</p>
-                  <button className="btn orange" onClick={() => navigate('/album')}>Ir al Ãlbum</button>
+                  <button className="btn orange" onClick={() => navigate('/album')}>Ir al ́lbum</button>
                 </div>
               ) : filteredMatches.length === 0 ? (
                 <div className="empty">
-                  <div className="empty-icon">ðŸ”</div>
+                  <div className="empty-icon">🔍</div>
                   <h3>No hay resultados</h3>
                   <p>
                     {tab === 'mutual'

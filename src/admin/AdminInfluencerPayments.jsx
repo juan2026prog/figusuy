@@ -85,7 +85,7 @@ export default function AdminInfluencerPayments() {
             // Export CSV
             const csv = ['Influencer,Período,Conversiones,Revenue,Comisión,Estado']
             filtered.forEach(p => {
-              csv.push(`${p.affiliates?.name || 'â€”'},${p.period_start} - ${p.period_end},${p.total_conversions},${p.total_revenue},${p.commission_total},${p.status}`)
+              csv.push(`${p.affiliates?.name || '—'},${p.period_start} - ${p.period_end},${p.total_conversions},${p.total_revenue},${p.commission_total},${p.status}`)
             })
             const blob = new Blob([csv.join('\n')], { type: 'text/csv' })
             const url = URL.createObjectURL(blob)
@@ -149,11 +149,11 @@ export default function AdminInfluencerPayments() {
                     onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                   >
                     <td style={{ padding: '0.75rem 1rem' }}>
-                      <p style={{ fontWeight: 700, color: "#f5f5f5", margin: 0 }}>{aff.name || 'â€”'}</p>
+                      <p style={{ fontWeight: 700, color: "#f5f5f5", margin: 0 }}>{aff.name || '—'}</p>
                       <p style={{ fontSize: '0.75rem', color: "var(--admin-muted)", margin: 0 }}>@{aff.handle || '...'}</p>
                     </td>
                     <td style={{ padding: '0.75rem 1rem', fontSize: '0.75rem', color: "var(--admin-muted)" }}>
-                      {p.period_start} â†’ {p.period_end}
+                      {p.period_start} → {p.period_end}
                     </td>
                     <td style={{ padding: '0.75rem 1rem', fontWeight: 800, color: "#f5f5f5" }}>
                       {p.total_conversions}
@@ -174,7 +174,7 @@ export default function AdminInfluencerPayments() {
                       </span>
                     </td>
                     <td style={{ padding: '0.75rem 1rem', fontSize: '0.75rem', color: "var(--admin-muted)" }}>
-                      {p.payment_method || 'â€”'}
+                      {p.payment_method || '—'}
                     </td>
                     <td style={{ padding: '0.75rem 1rem' }}>
                       <div style={{ display: 'flex', gap: '0.25rem', flexWrap: 'wrap' }}>

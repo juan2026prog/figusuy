@@ -5,7 +5,7 @@ import { LEVELS, ACHIEVEMENTS } from '../lib/gamification'
 import GamificationIcon from './gamification/icons/GamificationIcon'
 
 /**
- * GamificationToast â€” Shows elegant, non-intrusive notifications
+ * GamificationToast — Shows elegant, non-intrusive notifications
  * when user unlocks achievements or levels up.
  * No confetti. No gamer aesthetics. Premium and clean.
  */
@@ -22,7 +22,7 @@ export default function GamificationToast() {
       const level = LEVELS[lastUnlock.value]
       setContent({
         iconKey: level?.iconKey,
-        icon: level?.icon || 'â­',
+        icon: level?.icon || '⭐',
         title: '¡Nuevo nivel!',
         message: `Ahora sos ${level?.name || lastUnlock.value}`,
         color: level?.color || '#f59e0b',
@@ -32,7 +32,7 @@ export default function GamificationToast() {
       const def = ACHIEVEMENTS[lastUnlock.key]
       setContent({
         iconKey: def?.iconKey,
-        icon: def?.icon || 'ðŸŽ¯',
+        icon: def?.icon || '🎯',
         title: 'Hito desbloqueado',
         message: lastUnlock.name || def?.name || 'Nuevo logro',
         color: '#22c55e',

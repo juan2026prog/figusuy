@@ -1,4 +1,4 @@
-﻿import React from 'react'
+import React from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useGrowthStore } from '../stores/growthStore'
 import { NOTIFICATION_TRIGGERS, NOTIFICATION_PRIORITIES } from '../lib/growthEngine'
@@ -87,14 +87,14 @@ export default function SmartNotifications() {
           </div>
           <div className="sn-header-actions">
             {unread > 0 && <button className="sn-btn-sm" onClick={handleMarkAll}>Marcar todo</button>}
-            <button className="sn-btn-sm" onClick={toggleNotificationCenter}>âœ•</button>
+            <button className="sn-btn-sm" onClick={toggleNotificationCenter}>✕</button>
           </div>
         </div>
 
         <div className="sn-scroll">
           {notifications.length === 0 ? (
             <div className="sn-empty">
-              <span className="sn-empty-icon">ðŸ””</span>
+              <span className="sn-empty-icon">🔔</span>
               <h3>Sin movimiento nuevo</h3>
               <p>Cuando haya una oportunidad real, te avisamos acá.</p>
             </div>

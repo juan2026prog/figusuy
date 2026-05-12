@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState, useMemo } from 'react'
+import React, { useEffect, useState, useMemo } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { fetchLandingBlocks, trackLandingEvent } from '../../lib/landingApi'
 import { normalizeLandingBlocks, LANDING_DEFAULT_BLOCKS } from '../../lib/landingBuilder'
@@ -68,8 +68,8 @@ const PLAN_METADATA = {
     subtitle: 'Convierte tu local en punto de confianza para validar, otorgar rewards y capturar liquidez premium.',
     features: [
       'Todo Conversion',
-      'Validacion de albumes',
-      'Validacion de usuarios',
+      'Validación de álbumes',
+      'Validación de usuarios',
       'Badge Collector Hub',
       'Prioridad de validacion',
       'Rewards asociados',
@@ -351,7 +351,7 @@ export default function LandingLayout() {
         )}
         
         <main className="landing-main">
-          <Outlet context={{ handleCta, handleVisible, blocks: syncedBlocks }} />
+          <Outlet context={{ handleCta, handleVisible, blocks: syncedBlocks, setShowAuthModal, setAuthRedirectTo }} />
         </main>
 
         {footerBlock && (

@@ -8,9 +8,9 @@ import { useAuthStore } from '../stores/authStore'
  * free for N days since registration, or normal paid mode.
  * 
  * Returns { isPremium, planName, reason }
- *   - isPremium: boolean â€” whether the user has premium access
- *   - planName: string â€” the user's actual plan name
- *   - reason: string â€” 'paid' | 'free_mode' | 'free_trial' | 'none'
+ *   - isPremium: boolean — whether the user has premium access
+ *   - planName: string — the user's actual plan name
+ *   - reason: string — 'paid' | 'free_mode' | 'free_trial' | 'none'
  */
 
 let _cachedFreeMode = null

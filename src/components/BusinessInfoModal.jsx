@@ -24,7 +24,7 @@ const PLAN_PREVIEW = [
     name: 'PartnerStore',
     price: 'UYU 1900/mes',
     accent: '#f59e0b',
-    description: 'Validacion, badge oficial, rewards y visibilidad premium.'
+    description: 'Validación, badge oficial, rewards y visibilidad premium.'
   }
 ]
 
@@ -51,7 +51,7 @@ export default function BusinessInfoModal({ isOpen, onClose }) {
     },
     {
       q: '5. Que cambia con PartnerStore?',
-      a: 'Te convierte en punto de confianza para validar albumes y usuarios, sumar rewards asociados y operar con autoridad dentro del ecosistema.'
+      a: 'Te convierte en punto de confianza para validar álbumes y usuarios, sumar rewards asociados y operar con autoridad dentro del ecosistema.'
     },
     {
       q: '6. Que tiene de especial sugerir puntos?',

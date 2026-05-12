@@ -401,7 +401,7 @@ export default function BusinessPromo() {
         <aside className="bp-side">
           <div className="biz-page-kicker">/ accion</div>
           <h3>Crea una promo nueva</h3>
-          <p>Usa este espacio para comunicar llegada de albumes, sobres, descuentos o disponibilidad especial.</p>
+          <p>Usa este espacio para comunicar llegada de álbumes, sobres, descuentos o disponibilidad especial.</p>
           <button className="biz-btn-primary" style={{ width: '100%', marginTop: '1rem' }} onClick={handleCreate}>Crear promo</button>
         </aside>
       </section>
@@ -429,7 +429,7 @@ export default function BusinessPromo() {
             const dateStatus = getDateStatus(promo)
             const isEditing = editingId === promo.id
             const formatShortDate = (d) => {
-              if (!d) return 'â€”'
+              if (!d) return '—'
               return new Date(d).toLocaleDateString('es-UY', { day: 'numeric', month: 'short' })
             }
 

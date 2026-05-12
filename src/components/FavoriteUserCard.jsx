@@ -86,7 +86,7 @@ export default function FavoriteUserCard({ favorite }) {
             </span>
           </div>
           <p style={{ fontSize: '0.75rem', color: isDark ? 'var(--color-text-secondary)' : 'var(--color-text-muted)', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-            {locationStr} Â· {lastActive || 'Recientemente'}
+            {locationStr} · {lastActive || 'Recientemente'}
           </p>
         </div>
       </div>

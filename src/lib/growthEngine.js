@@ -195,17 +195,17 @@ export const REFERRAL_REWARDS = {
 }
 
 export const GROWTH_ACHIEVEMENTS = {
-  share_album: { name: 'Album abierto', description: 'Compartiste tu album para activar la red', category: 'comunidad', icon: 'ðŸ“¢', target: 1 },
-  share_missing: { name: 'Estoy buscando', description: 'Compartiste tus faltantes para generar liquidez', category: 'comunidad', icon: 'ðŸ”', target: 1, reward: { type: 'boost_visibility', value: '24h', hours: 24 } },
-  share_duplicates: { name: 'Tengo para cambiar', description: 'Compartiste repetidas para mover cruces', category: 'comunidad', icon: 'ðŸ“¦', target: 1, reward: { type: 'boost_visibility', value: '24h', hours: 24 } },
-  invite_friend: { name: 'Trajo a alguien', description: 'Invitaste a una persona a FigusUY', category: 'growth', icon: 'ðŸ¤™', target: 1 },
-  friend_active: { name: 'Intercambio Referido', description: 'Tu referido completo un intercambio', category: 'growth', icon: 'ðŸŽ‰', target: 1, reward: { type: 'plus_days', value: '3 dias', hours: 72 } },
-  share_match: { name: 'Buen ojo', description: 'Compartiste un match con valor real', category: 'comunidad', icon: 'ðŸ‘ï¸', target: 1 },
-  share_album_complete: { name: 'Album terminado', description: 'Compartiste un album ya completado', category: 'partner', icon: 'ðŸ†', target: 1, reward: { type: 'boost_visibility', value: '48h', hours: 48 } },
+  share_album: { name: 'Album abierto', description: 'Compartiste tu album para activar la red', category: 'comunidad', icon: '📢', target: 1 },
+  share_missing: { name: 'Estoy buscando', description: 'Compartiste tus faltantes para generar liquidez', category: 'comunidad', icon: '🔍', target: 1, reward: { type: 'boost_visibility', value: '24h', hours: 24 } },
+  share_duplicates: { name: 'Tengo para cambiar', description: 'Compartiste repetidas para mover cruces', category: 'comunidad', icon: '📦', target: 1, reward: { type: 'boost_visibility', value: '24h', hours: 24 } },
+  invite_friend: { name: 'Trajo a alguien', description: 'Invitaste a una persona a FigusUY', category: 'growth', icon: '🤙', target: 1 },
+  friend_active: { name: 'Intercambio Referido', description: 'Tu referido completo un intercambio', category: 'growth', icon: '🎉', target: 1, reward: { type: 'plus_days', value: '3 dias', hours: 72 } },
+  share_match: { name: 'Buen ojo', description: 'Compartiste un match con valor real', category: 'comunidad', icon: '👁️', target: 1 },
+  share_album_complete: { name: 'Album terminado', description: 'Compartiste un album ya completado', category: 'partner', icon: '🏆', target: 1, reward: { type: 'boost_visibility', value: '48h', hours: 48 } },
   share_partner_verified: { name: 'Verificado en PartnerStore', description: 'Compartiste una validacion de PartnerStore', category: 'partner', icon: 'OK', target: 1 },
 }
 
-export const GROWTH_ACHIEVEMENT_CATEGORY = { key: 'growth', label: 'Growth', icon: 'ðŸš€', color: '#ea580c' }
+export const GROWTH_ACHIEVEMENT_CATEGORY = { key: 'growth', label: 'Growth', icon: '🚀', color: '#ea580c' }
 
 export function buildShareText(type, data = {}) {
   const def = SHARE_TYPES[type]

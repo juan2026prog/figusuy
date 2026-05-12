@@ -1,4 +1,4 @@
-﻿import { create } from 'zustand'
+import { create } from 'zustand'
 import { supabase } from '../lib/supabase'
 import { useFeatureFlagStore } from './featureFlagStore'
 import { useExchangeStore } from './exchangeStore'
@@ -134,6 +134,7 @@ const buildAuthSnapshot = async (session) => {
     session,
     profile: profile ? { ...profile, role: roleData?.role || profile.role || 'user' } : null,
     planRules: planRules || null,
+    isPendingDeletion: profile?.is_deleted || false
   }
 }
 
@@ -144,18 +145,19 @@ export const useAuthStore = create((set, get) => ({
   session: null,
   loading: true,
   initialized: false,
+  isPendingDeletion: false,
 
   syncSession: async (session, options = {}) => {
     const { touchLastActive = true } = options
     const hydrationVersion = ++authHydrationVersion
 
-    // PROTECCIÓN CRÃTICA: Si la sesión es null pero ya teníamos un usuario,
+    // PROTECCIÓN CR͍TICA: Si la sesión es null pero ya teníamos un usuario,
     // NO limpiar el estado. Esto ocurre durante el refresh del token.
     // Solo el evento SIGNED_OUT explícito debe limpiar el estado.
     if (!session?.user) {
       const currentUser = get().user
       if (currentUser) {
-        console.warn('[AuthStore] syncSession received null session but user exists â€” preserving state (token refresh race)')
+        console.warn('[AuthStore] syncSession received null session but user exists — preserving state (token refresh race)')
         set({ loading: false, initialized: true })
         return { user: currentUser, session: get().session, profile: get().profile, planRules: get().planRules }
       }
@@ -176,7 +178,7 @@ export const useAuthStore = create((set, get) => ({
         if (existingProfile && existingProfile.id === session.user.id) {
           return { user: session.user, session, profile: existingProfile, planRules: get().planRules }
         }
-        // Perfil mínimo marcado como degradado â€” NO otorga permisos elevados
+        // Perfil mínimo marcado como degradado — NO otorga permisos elevados
         return {
           user: session.user,
           session,
@@ -274,7 +276,7 @@ export const useAuthStore = create((set, get) => ({
     return authInitializePromise
   },
 
-  signInWithGoogle: async (redirectTo = window.location.origin) => {
+  signInWithGoogle: async (redirectTo = `${window.location.origin}/auth/callback`) => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
@@ -477,5 +479,21 @@ export const useAuthStore = create((set, get) => ({
     if (!user || !profile?.avatar_url) return
 
     await get().updateProfile({ avatar_url: null })
+  },
+
+  requestDeletion: async (reason) => {
+    const { error } = await supabase.rpc('request_account_deletion', { reason })
+    if (error) throw error
+    set({ isPendingDeletion: true })
+    return true
+  },
+
+  cancelDeletion: async () => {
+    const { error } = await supabase.rpc('cancel_account_deletion')
+    if (error) throw error
+    set({ isPendingDeletion: false })
+    const { profile } = get()
+    if (profile) set({ profile: { ...profile, is_deleted: false } })
+    return true
   }
 }))

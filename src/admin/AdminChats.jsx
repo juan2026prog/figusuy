@@ -138,7 +138,7 @@ export default function AdminChats() {
             <div style={{ borderBottom: '1px solid #f1f5f9', paddingBottom: '1rem', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
                 <h3 style={{ fontSize: '1rem', fontWeight: 800 }}>Visor de Conversación</h3>
-                <p style={{ fontSize: '0.75rem', color: "var(--admin-muted2)" }}>Chat ID: {selectedChat.reported_chat_id} â€¢ Estado: <strong>{selectedChat.status}</strong></p>
+                <p style={{ fontSize: '0.75rem', color: "var(--admin-muted2)" }}>Chat ID: {selectedChat.reported_chat_id} • Estado: <strong>{selectedChat.status}</strong></p>
               </div>
               <button onClick={() => setSelectedChat(null)} style={{ background: 'none', border: 'none', color: "var(--admin-muted)", cursor: 'pointer' }}>
                 <span className="material-symbols-outlined">close</span>
@@ -152,7 +152,7 @@ export default function AdminChats() {
                 messages.map(msg => (
                   <div key={msg.id} style={{ alignSelf: 'flex-start', maxWidth: '85%' }}>
                     <div style={{ fontSize: '0.75rem', color: "var(--admin-muted2)", marginBottom: '0.25rem', marginLeft: '0.5rem' }}>
-                      {msg.sender?.name} â€¢ {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      {msg.sender?.name} • {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </div>
                     <div style={{ background: "var(--admin-panel2)", padding: '0.75rem 1rem', borderRadius: '1rem 1rem 1rem 0.25rem', fontSize: '0.875rem', color: "var(--admin-line)" }}>
                       {msg.text}

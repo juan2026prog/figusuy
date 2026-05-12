@@ -1,6 +1,8 @@
-﻿import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { getAnchorId, resolveUrl } from '../../lib/landingBuilder'
+import { supabase } from '../../lib/supabase'
+import './landing-albums.css'
 
 export default function LandingRenderer({
   blocks = [],
@@ -78,6 +80,7 @@ function BlockRenderer({ block, preview, onCta }) {
       return <PromoBlock block={block} content={content} onCta={onCta} />
     case 'how_it_works':
       return <HowItWorksBlock content={content} />
+    case 'influencer_split':
     case 'influencers':
       return <InfluencersBlock block={block} content={content} onCta={onCta} />
     case 'gamification':
@@ -101,6 +104,10 @@ function BlockRenderer({ block, preview, onCta }) {
       return <FAQBlock content={content} />
     case 'footer':
       return <FooterBlock block={block} content={content} onCta={onCta} />
+    case 'referral_section':
+      return <ReferralSection block={block} content={content} onCta={onCta} />
+    case 'referrals':
+      return <ReferralBlock block={block} content={content} onCta={onCta} />
     default:
       return null
   }
@@ -306,47 +313,132 @@ function NowBlock({ block, content, onCta }) {
 }
 
 function AlbumsBlock({ content }) {
-  const items = toItems(content.items)
-  const [active, setActive] = useState(0)
+  const [items, setItems] = useState([])
+  const [loading, setLoading] = useState(true)
+  const navigate = useNavigate()
 
   useEffect(() => {
-    if (!content.autoplay || items.length < 2) return undefined
-    const timer = window.setInterval(() => {
-      setActive((current) => (current + 1) % items.length)
-    }, Number(content.autoplayMs || 4000))
-    return () => window.clearInterval(timer)
-  }, [content.autoplay, content.autoplayMs, items.length])
+    async function loadAlbums() {
+      try {
+        const { data, error } = await supabase
+          .from('albums')
+          .select('*')
+          .eq('is_active', true)
+          .order('sort_order', { ascending: true })
+          .limit(10)
+        
+        if (data && data.length > 0) {
+          setItems(data)
+        } else {
+          setItems(content.items ? toItems(content.items) : [])
+        }
+      } catch (err) {
+        setItems(content.items ? toItems(content.items) : [])
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadAlbums()
+  }, [content.items])
 
-  const current = items[active] || items[0]
+  const handleExplore = (e, item) => {
+    e.stopPropagation()
+    navigate(`/albums/${item.id || item.slug || 'explorar'}`)
+  }
+
+  if (loading) return null
+
+  if (items.length === 0) {
+    return (
+      <div className="fy-shell fy-section">
+        <SectionHeading content={{
+          ...content,
+          title: content.title || 'DESCUBRÍ QUÉ SE ESTÁ MOVIENDO AHORA',
+          subtitle: content.subtitle || 'Todavía no hay colecciones activas. Pronto vas a poder empezar a mover tus álbumes.'
+        }} />
+        <div className="fy-album-empty">
+          Todavía no hay colecciones activas. Pronto vas a poder empezar a mover tus álbumes.
+        </div>
+      </div>
+    )
+  }
 
   return (
-    <div className="fy-shell fy-section">
-      <SectionHeading content={content} />
-      <div className="fy-carousel">
-        <div className="fy-carousel-main" style={{ backgroundImage: `url(${current?.image || ''})` }}>
-          <div className="fy-overlay" />
-          <div className="fy-carousel-copy">
-            <Chip chip={{ label: current?.badge, tone: current?.highlight ? 'orange' : 'blue' }} />
-            <h3>{current?.title}</h3>
-            <p>{current?.activityLabel}</p>
-          </div>
-        </div>
-        <div className="fy-carousel-rail">
-          {items.map((item, index) => (
-            <button
-              key={`${item.title}-${index}`}
-              type="button"
-              className={`fy-cover-card ${index === active ? 'is-active' : ''}`}
-              onClick={() => setActive(index)}
-            >
-              <div className="fy-cover-image" style={{ backgroundImage: `url(${item.image || ''})` }} />
-              <div className="fy-cover-meta">
-                <strong>{item.title}</strong>
-                <span>{item.label}</span>
+    <div className="fy-shell fy-section fy-collections-showcase">
+      <SectionHeading content={{
+        ...content,
+        title: 'DESCUBRÍ QUÉ SE ESTÁ MOVIENDO AHORA'
+      }} />
+      <div className="fy-albums-slider">
+        {items.map((item, index) => {
+          const isDbItem = !!item.id
+          const cover = isDbItem
+            ? (item.cover_url || (item.images && item.images[0]) || '')
+            : (item.image || '')
+          const badge = isDbItem ? item.status : item.badge
+          let badgeText = badge || ''
+          if (badgeText === 'coming_soon') badgeText = 'Nuevo'
+          else if (badgeText === 'active') badgeText = 'Activo'
+          else if (badgeText === 'popular') badgeText = 'Hot'
+          else if (badgeText === 'new') badgeText = 'Nuevo'
+
+          const categoryLabel = isDbItem
+            ? (item.category || 'Colección activa')
+            : (item.label || 'Colección activa')
+
+          return (
+            <article key={item.id || index} className="fy-album-card" onClick={(e) => handleExplore(e, item)}>
+              <div className="fy-cover-wrap">
+                {cover && <img src={cover} alt={item.name || item.title || 'Álbum'} />}
+                {badgeText && <span className={`fy-album-badge ${badgeText.toLowerCase()}`}>{badgeText}</span>}
+                <span className="fy-album-rank">#{index + 1}</span>
               </div>
-            </button>
-          ))}
-        </div>
+              <div className="fy-card-info">
+                <h3 className="fy-card-title">{item.name || item.title}</h3>
+                <div className="fy-card-meta">{categoryLabel}</div>
+
+                <div className="fy-album-stats">
+                  {isDbItem && item.total_stickers > 0 ? (
+                    <>
+                      <div className="fy-album-stat">
+                        <strong>{item.total_stickers}</strong>
+                        <span>Figuritas</span>
+                      </div>
+                      <div className="fy-album-stat">
+                        <strong>+{Math.floor(Math.random() * 20) + 3}</strong>
+                        <span>Matches</span>
+                      </div>
+                    </>
+                  ) : !isDbItem && item.activityLabel ? (
+                    <>
+                      <div className="fy-album-stat">
+                        <strong>{item.activityLabel.match(/\d+/)?.[0] || '—'}</strong>
+                        <span>Cruces</span>
+                      </div>
+                      <div className="fy-album-stat">
+                        <strong>+{Math.floor(Math.random() * 15) + 2}</strong>
+                        <span>Matches</span>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="fy-album-stat">
+                        <strong>—</strong>
+                        <span>Cruces</span>
+                      </div>
+                      <div className="fy-album-stat">
+                        <strong>—</strong>
+                        <span>Matches</span>
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                <button className="fy-album-btn">Explorar colección</button>
+              </div>
+            </article>
+          )
+        })}
       </div>
     </div>
   )
@@ -476,7 +568,7 @@ function PlansBlock({ block, content, onCta }) {
       subtitle: 'Acelerá tus cambios. Encontrá lo que buscás cerca tuyo, rápido y sin perder tiempo.',
       price: '2.49',
       currency: 'USD',
-      priceMeta: 'â‰ˆ $99 UYU aprox.',
+      priceMeta: '≈ $99 UYU aprox.',
       icon: 'diamond',
       badge: 'Acelerador',
       highlight: true,
@@ -488,7 +580,7 @@ function PlansBlock({ block, content, onCta }) {
       subtitle: 'Dominá el intercambio. Prioridad máxima y alertas para las figuritas más difíciles.',
       price: '4.85',
       currency: 'USD',
-      priceMeta: 'â‰ˆ $199 UYU aprox.',
+      priceMeta: '≈ $199 UYU aprox.',
       icon: 'rocket_launch',
       badge: 'Elite',
       benefits: ['Todo lo incluido en Plus', 'Alertas "Radar" instantáneas de escasez', 'Aparecés primero en los matches de otros', 'Modo Fantasma (invisible)', 'Múltiples álbumes con analíticas', 'Soporte VIP y Badge Coleccionista'],
@@ -541,7 +633,7 @@ function PlansBlock({ block, content, onCta }) {
             <div className="features">
               {toItems(plan.benefits).map((benefit) => (
                 <div key={benefit} className="feature">
-                  <span className="check">âœ“</span>
+                  <span className="check">&#x2713;</span>
                   <span>{benefit}</span>
                 </div>
               ))}
@@ -742,7 +834,7 @@ function FooterBlock({ block, content, onCta }) {
             <span>{content.logoText || 'FIGUS'}</span>
             <strong>{content.logoAccent || 'UY'}</strong>
           </Link>
-          <p className="fy-legal-text">{content.legal || 'Â© 2026 FigusUY'}</p>
+          <p className="fy-legal-text">{content.legal || '© 2026 FigusUY'}</p>
         </div>
         <div className="fy-footer-links">
           {links.map((link) => (
@@ -759,6 +851,121 @@ function FooterBlock({ block, content, onCta }) {
     </footer>
   )
 }
+
+function ReferralSection({ block, content, onCta }) {
+  return (
+    <div className="fy-shell fy-section" id="invita-y-gana">
+      <div className="fy-ref-wrap">
+        <div className="fy-ref-eyebrow">{content.kicker || '// CRECÉ CON TU RED'}</div>
+
+        <h2 className="fy-ref-title" dangerouslySetInnerHTML={{ __html: content.title || 'INVITÁ AMIGOS.<br />MOVÉ LA COMUNIDAD.' }} />
+
+        <p className="fy-ref-subtitle">
+          {content.subtitle || 'Compartí tu enlace personal. Cuando tu amigo completa su primer intercambio, ambos ganan 3 días de Plus gratis.'}
+        </p>
+
+        <div className="fy-ref-grid">
+          <article className="fy-ref-card">
+            <img src="/assets/landing/referrals/logo-referidos.png" className="fy-ref-card-logo-top" alt="" />
+            <div className="fy-ref-card-kicker">// LINK DE REFERIDO</div>
+            <h3 className="fy-ref-card-title">TU LINK DE INVITACIÓN</h3>
+            <p className="fy-ref-card-text">
+              Cada usuario tiene un enlace único para invitar coleccionistas reales.
+            </p>
+
+            <div className="fy-ref-link-box">
+              <span className="fy-ref-link">figusuy.com/r/usuario123</span>
+              <span className="fy-ref-copy-mini">Copiar</span>
+            </div>
+
+            <div className="fy-ref-actions">
+              <button className="fy-ref-btn-primary" onClick={() => onCta(block, { url: '/referidos' }, 'copy-link')}>Copiar link</button>
+              <button className="fy-ref-btn-secondary" onClick={() => onCta(block, { url: '/referidos' }, 'share-now')}>Compartir ahora</button>
+            </div>
+
+            <img src="/assets/landing/referrals/logo-referidos.png" className="fy-ref-card-logo-center" alt="" />
+
+            <div className="fy-ref-note">
+              FigusUY premia actividad real, no registros vacíos.
+            </div>
+          </article>
+
+          <article className="fy-ref-card fy-ref-card-reward">
+            <div className="fy-ref-card-kicker">// RECOMPENSAS</div>
+            <h3 className="fy-ref-card-title">RECOMPENSAS DEL CIRCUITO</h3>
+            <p className="fy-ref-card-text">
+              A medida que tu red crece y genera intercambios reales, desbloqueás XP y beneficios.
+            </p>
+
+            <div className="fy-ref-reward-list">
+              <div className="fy-ref-reward-item">
+                <div className="fy-ref-reward-points">+5</div>
+                <div>
+                  <div className="fy-ref-reward-label">Invitación enviada</div>
+                  <div className="fy-ref-reward-desc">Primer paso para mover la comunidad.</div>
+                </div>
+              </div>
+
+              <div className="fy-ref-reward-item">
+                <div className="fy-ref-reward-points">+25</div>
+                <div>
+                  <div className="fy-ref-reward-label">Amigo registrado</div>
+                  <div className="fy-ref-reward-desc">Tu red empieza a crecer.</div>
+                </div>
+              </div>
+
+              <div className="fy-ref-reward-item">
+                <div className="fy-ref-reward-points">+200</div>
+                <div>
+                  <div className="fy-ref-reward-label">Primer cruce completado</div>
+                  <div className="fy-ref-reward-desc">Se activa la recompensa grande.</div>
+                </div>
+              </div>
+
+              <div className="fy-ref-reward-item">
+                <div className="fy-ref-reward-points">72h</div>
+                <div>
+                  <div className="fy-ref-reward-label">Plus para ambos</div>
+                  <div className="fy-ref-reward-desc">Vos y tu amigo ganan 3 días Plus.</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="fy-ref-reward-final">
+              La recompensa grande se activa cuando el invitado completa su primer intercambio.
+            </div>
+          </article>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+
+function ReferralBlock({ block, content, onCta }) {
+  const steps = toItems(content.steps)
+  return (
+    <div className="fy-shell fy-section" id="invita-y-gana">
+      <SectionHeading content={content} />
+      <div className="fy-card-grid fy-steps-grid">
+        {steps.map((step, index) => (
+          <article key={`${step.title}-${index}`} className="fy-editorial-card">
+            <div className="fy-editorial-media" style={{ backgroundImage: `url(${step.image || ''})` }} />
+            <div className="fy-editorial-copy">
+              <span className="fy-step-index">0{index + 1}</span>
+              <h3>{step.title}</h3>
+              <p>{step.description}</p>
+              <div className="fy-actions" style={{ marginTop: 'auto', paddingTop: '1rem' }}>
+                <CtaButton block={block} cta={content.cta} onCta={onCta} />
+              </div>
+            </div>
+          </article>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 
 function SectionHeading({ content, variant = 'default' }) {
   const variantClass = variant === 'program' ? 'is-program' : ''

@@ -91,10 +91,10 @@ export default function AdminNotifications() {
                       <td style={{ padding: '0.75rem', fontWeight: 600, textTransform: 'uppercase', fontSize: '0.75rem' }}>{c.channel}</td>
                       <td style={{ padding: '0.75rem', textTransform: 'capitalize' }}>{c.segment}</td>
                       <td style={{ padding: '0.75rem' }}><span style={badge(sc.bg, sc.color)}>{c.status}</span></td>
-                      <td style={{ padding: '0.75rem', fontWeight: 700 }}>{c.sent_count || 'â€”'}</td>
-                      <td style={{ padding: '0.75rem', fontSize: '0.8125rem' }}>{c.sender?.name || 'â€”'}</td>
+                      <td style={{ padding: '0.75rem', fontWeight: 700 }}>{c.sent_count || '—'}</td>
+                      <td style={{ padding: '0.75rem', fontSize: '0.8125rem' }}>{c.sender?.name || '—'}</td>
                       <td style={{ padding: '0.75rem', color: "var(--admin-muted2)", fontSize: '0.8125rem' }}>
-                        {c.sent_at ? new Date(c.sent_at).toLocaleDateString() : 'â€”'}
+                        {c.sent_at ? new Date(c.sent_at).toLocaleDateString() : '—'}
                       </td>
                     </tr>
                   )

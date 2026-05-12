@@ -1,0 +1,322 @@
+<section class="album-community-profile">
+  <style>
+    .album-community-profile {
+      background:#070707;
+      color:#fff;
+      padding:48px 20px;
+      font-family:Arial,sans-serif;
+    }
+
+    .album-wrap {
+      max-width:1220px;
+      margin:auto;
+    }
+
+    .album-hero {
+      display:grid;
+      grid-template-columns:280px 1fr;
+      gap:32px;
+      padding:30px;
+      border-radius:24px;
+      border:1px solid rgba(255,106,0,.35);
+      background:
+        radial-gradient(circle at top right,rgba(255,106,0,.18),transparent 34%),
+        linear-gradient(180deg,#151515,#080808);
+    }
+
+    .album-cover {
+      width:100%;
+      aspect-ratio:800/1100;
+      object-fit:cover;
+      border-radius:18px;
+      border:1px solid rgba(255,255,255,.15);
+      box-shadow:0 0 32px rgba(255,106,0,.22);
+    }
+
+    .eyebrow {
+      color:#ff6a00;
+      font-size:12px;
+      font-weight:900;
+      letter-spacing:.14em;
+      text-transform:uppercase;
+      margin-bottom:12px;
+    }
+
+    .album-title {
+      font-size:clamp(42px,6vw,78px);
+      line-height:.9;
+      margin:0 0 16px;
+      text-transform:uppercase;
+      font-style:italic;
+      font-weight:1000;
+    }
+
+    .album-desc {
+      color:#cfcfcf;
+      font-size:17px;
+      line-height:1.5;
+      max-width:760px;
+      margin-bottom:22px;
+    }
+
+    .meta-row {
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      margin-bottom:24px;
+    }
+
+    .meta-pill {
+      border:1px solid rgba(255,255,255,.14);
+      background:rgba(255,255,255,.05);
+      padding:9px 12px;
+      border-radius:999px;
+      font-size:12px;
+      font-weight:900;
+      text-transform:uppercase;
+      color:#ddd;
+    }
+
+    .album-actions {
+      display:flex;
+      gap:12px;
+      flex-wrap:wrap;
+    }
+
+    .btn-main,
+    .btn-ghost {
+      padding:14px 18px;
+      border-radius:12px;
+      font-weight:1000;
+      text-transform:uppercase;
+      cursor:pointer;
+      border:0;
+    }
+
+    .btn-main {
+      color:#fff;
+      background:linear-gradient(180deg,#ff6a00,#e44e00);
+      box-shadow:0 0 20px rgba(255,106,0,.35);
+    }
+
+    .btn-ghost {
+      color:#fff;
+      background:rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.16);
+    }
+
+    .stats-grid {
+      margin-top:26px;
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:14px;
+    }
+
+    .stat-card {
+      padding:20px;
+      border-radius:18px;
+      border:1px solid rgba(255,255,255,.12);
+      background:
+        radial-gradient(circle at top right,rgba(255,106,0,.12),transparent 40%),
+        linear-gradient(180deg,#121212,#080808);
+    }
+
+    .stat-card span {
+      color:#aaa;
+      font-size:11px;
+      font-weight:900;
+      text-transform:uppercase;
+    }
+
+    .stat-card b {
+      display:block;
+      margin-top:8px;
+      color:#fff;
+      font-size:34px;
+      line-height:1;
+      font-weight:1000;
+    }
+
+    .stat-card small {
+      display:block;
+      margin-top:8px;
+      color:#ff6a00;
+      font-size:12px;
+      font-weight:900;
+    }
+
+    .album-sections {
+      margin-top:28px;
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:18px;
+    }
+
+    .panel {
+      border:1px solid rgba(255,255,255,.12);
+      border-radius:20px;
+      padding:22px;
+      background:linear-gradient(180deg,#111,#080808);
+    }
+
+    .panel h3 {
+      margin:0 0 16px;
+      font-size:28px;
+      text-transform:uppercase;
+      font-style:italic;
+      font-weight:1000;
+    }
+
+    .chip-list {
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+    }
+
+    .chip {
+      padding:10px 12px;
+      border-radius:10px;
+      border:1px solid rgba(255,106,0,.45);
+      color:#fff;
+      background:rgba(255,106,0,.08);
+      font-weight:1000;
+      font-size:13px;
+    }
+
+    .activity-item {
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      padding:12px 0;
+      border-bottom:1px solid rgba(255,255,255,.08);
+      color:#cfcfcf;
+      font-size:14px;
+    }
+
+    .activity-item b {
+      color:#fff;
+    }
+
+    .empty-safe {
+      color:#888;
+      font-size:14px;
+      line-height:1.5;
+      border:1px dashed rgba(255,255,255,.16);
+      border-radius:14px;
+      padding:16px;
+    }
+
+    @media(max-width:900px){
+      .album-hero{grid-template-columns:1fr}
+      .stats-grid{grid-template-columns:1fr 1fr}
+      .album-sections{grid-template-columns:1fr}
+    }
+  </style>
+
+  <div class="album-wrap">
+    <div class="album-hero">
+      <img class="album-cover" src="/tapaAlbum2026.jpg" alt="Portada del álbum">
+
+      <div>
+        <div class="eyebrow">// PERFIL DE COLECCIÓN</div>
+
+        <h1 class="album-title">Mundial 2026</h1>
+
+        <p class="album-desc">
+          Colección activa dentro de FigusUY. Cargá tus repetidas y faltantes,
+          encontrá matches y seguí el movimiento de la comunidad alrededor de este álbum.
+        </p>
+
+        <div class="meta-row">
+          <span class="meta-pill">Editorial: Panini</span>
+          <span class="meta-pill">Año: 2026</span>
+          <span class="meta-pill">Tipo: Álbum</span>
+          <span class="meta-pill">670 figuritas</span>
+        </div>
+
+        <div class="album-actions">
+          <button class="btn-main">Cargar mis figuritas</button>
+          <button class="btn-ghost">Ver matches</button>
+          <button class="btn-ghost">Ver checklist</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <span>Usuarios coleccionando</span>
+        <b>128</b>
+        <small>dato real desde DB</small>
+      </div>
+
+      <div class="stat-card">
+        <span>Matches totales</span>
+        <b>342</b>
+        <small>cruces generados</small>
+      </div>
+
+      <div class="stat-card">
+        <span>Intercambios confirmados</span>
+        <b>76</b>
+        <small>actividad validada</small>
+      </div>
+
+      <div class="stat-card">
+        <span>Última actividad</span>
+        <b>Hoy</b>
+        <small>actualizado automáticamente</small>
+      </div>
+    </div>
+
+    <div class="album-sections">
+      <section class="panel">
+        <h3>Más buscadas</h3>
+        <div class="chip-list">
+          <span class="chip">#014</span>
+          <span class="chip">#087</span>
+          <span class="chip">M10</span>
+          <span class="chip">ARG-09</span>
+          <span class="chip">FWC-01</span>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h3>Más repetidas</h3>
+        <div class="chip-list">
+          <span class="chip">#022</span>
+          <span class="chip">#105</span>
+          <span class="chip">#211</span>
+          <span class="chip">URU-04</span>
+          <span class="chip">BRA-12</span>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h3>Actividad reciente</h3>
+
+        <div class="activity-item">
+          <b>Nuevo match generado</b>
+          <span>hace 4 min</span>
+        </div>
+
+        <div class="activity-item">
+          <b>Intercambio confirmado</b>
+          <span>hace 22 min</span>
+        </div>
+
+        <div class="activity-item">
+          <b>Usuario cargó repetidas</b>
+          <span>hoy</span>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h3>Validación</h3>
+        <div class="empty-safe">
+          Cuando completes el álbum, podés llevarlo a un Collector Hub oficial
+          para validarlo y desbloquear el logro correspondiente.
+        </div>
+      </section>
+    </div>
+  </div>
+</section>

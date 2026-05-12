@@ -324,7 +324,7 @@ export default function AdminInfluencers() {
                         <div style={{ color: '#f5f5f5', fontWeight: 700 }}>Conversiones {snapshot.conversion_count || 0}</div>
                         <div style={{ color: '#f5f5f5', fontWeight: 700 }}>Calidad {Number(snapshot.quality_score || 0).toFixed(1)}</div>
                         <div style={{ fontSize: '0.75rem', color: 'var(--admin-muted)' }}>
-                          Comision {Number(snapshot.current_user_commission || 0).toFixed(1)}% usuarios Â· {Number(snapshot.current_business_commission || 0).toFixed(1)}% negocios
+                          Comision {Number(snapshot.current_user_commission || 0).toFixed(1)}% usuarios · {Number(snapshot.current_business_commission || 0).toFixed(1)}% negocios
                         </div>
                       </div>
                     </td>
@@ -342,7 +342,7 @@ export default function AdminInfluencers() {
                       </div>
                     </td>
                     <td style={{ padding: '0.75rem 1rem', fontSize: '0.75rem', color: 'var(--admin-muted)' }}>
-                      {affiliate.contact_email || affiliate.contact_phone || 'â€”'}
+                      {affiliate.contact_email || affiliate.contact_phone || '—'}
                     </td>
                     <td style={{ padding: '0.75rem 1rem' }}>
                       <div style={{ display: 'flex', gap: '0.375rem', flexWrap: 'wrap' }}>

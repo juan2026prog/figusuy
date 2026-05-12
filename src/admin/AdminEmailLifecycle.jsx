@@ -233,7 +233,7 @@ export default function AdminEmailLifecycle() {
                 <h2>Preview: {selectedTemplate.template_name || selectedTemplate.slug}</h2>
                 <p>Subject: {selectedTemplate.subject}</p>
               </div>
-              <button className="admin-close-btn" onClick={() => setSelectedTemplate(null)}>Ã—</button>
+              <button className="admin-close-btn" onClick={() => setSelectedTemplate(null)}>͗</button>
             </div>
             
             <div className="admin-modal-content">

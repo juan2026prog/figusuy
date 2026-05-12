@@ -140,7 +140,7 @@ export default function ChatPage() {
   const otherName = otherUser?.name || 'Cargando...'
   const otherInitial = otherName[0]?.toUpperCase() || '?'
   const presenceLabel = getPresenceLabel(otherUser?.last_active)
-  const locationText = otherUser ? `${otherUser.city || otherUser.department || 'Sin ubicacion'} Â· ${exchangeData.albumName}` : 'Cargando...'
+  const locationText = otherUser ? `${otherUser.city || otherUser.department || 'Sin ubicacion'} · ${exchangeData.albumName}` : 'Cargando...'
   const incomingCount = exchangeData.theyCanGiveMe.length
   const outgoingCount = exchangeData.iCanGiveThem.length
   const totalMoves = incomingCount + outgoingCount
@@ -199,8 +199,8 @@ export default function ChatPage() {
           <section className="hero-strip">
             <div className="hero-main">
               <div className="header-kicker">// intercambio activo</div>
-              <h1 className="hero-title">TodavÃƒÂ­a podés cerrar este <span>cruce hoy</span>.</h1>
-              <p className="hero-copy">Usá el chat para confirmar figuritas, fijar lugar y convertir esta ventana activa en intercambio real antes de que se enfrÃƒÂ­e.</p>
+              <h1 className="hero-title">Todav̓­a podés cerrar este <span>cruce hoy</span>.</h1>
+              <p className="hero-copy">Usá el chat para confirmar figuritas, fijar lugar y convertir esta ventana activa en intercambio real antes de que se enfr̓­e.</p>
               <div className="hero-stats">
                 <div className="hero-stat">
                   <b>{incomingCount}</b>
@@ -362,7 +362,7 @@ export default function ChatPage() {
               </div>
               <div>
                 <strong>{otherName}</strong>
-                <span>{otherUser?.city || otherUser?.department || 'Sin ubicacion'}{otherUser?.is_verified ? ' Â· Verificada' : ''}</span>
+                <span>{otherUser?.city || otherUser?.department || 'Sin ubicacion'}{otherUser?.is_verified ? ' · Verificada' : ''}</span>
                 <div style={{ marginTop: '6px' }}>
                   <ReputationStars stars={otherStars} size="sm" showLabel />
                 </div>

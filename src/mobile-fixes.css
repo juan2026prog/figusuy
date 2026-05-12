@@ -1,0 +1,19 @@
+/* ============================================================
+   FigusUY — Master Mobile-First Responsive System
+   ============================================================
+   This file orchestrates the complete mobile responsive layer.
+   It imports 3 specialized modules:
+
+   1. mobile-responsive.css  — Foundation (safe areas, touch, viewport, modals, tables)
+   2. mobile-pages.css       — Page-specific overrides (Home, Profile, Matches, etc.)
+   3. mobile-landing-admin.css — Landing pages + Admin panel + small screens
+
+   RULES:
+   - ONLY CSS overrides. No logic changes.
+   - Progressive enhancement: mobile breakpoints override desktop defaults.
+   - index.css (8,300 lines) remains untouched.
+   ============================================================ */
+
+@import './mobile-responsive.css';
+@import './mobile-pages.css';
+@import './mobile-landing-admin.css';

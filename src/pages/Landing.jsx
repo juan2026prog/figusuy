@@ -1,4 +1,4 @@
-﻿import React, { useMemo } from 'react'
+import React, { useMemo } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { useSEO } from '../hooks/useSEO'
 import LandingRenderer from '../components/landing/LandingRenderer'
@@ -6,7 +6,7 @@ import { ErrorBoundary } from '../components/ErrorBoundary'
 
 export default function Landing() {
   useSEO({
-    title: 'FigusUY | Intercambios, comunidad y albumes en movimiento',
+    title: 'FigusUY | Intercambios, comunidad y álbumes en movimiento',
     description: 'La forma más rápida de completar tu álbum en Uruguay.'
   })
 

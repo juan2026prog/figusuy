@@ -1,5 +1,9 @@
-﻿import React, { useEffect, useState } from 'react'
+"use client"
+
+import React, { useEffect, useState } from 'react'
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
+
+export const dynamic = "force-dynamic"
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../stores/authStore'
 import { getBusinessPlanLabel } from '../lib/businessPlans'
@@ -40,7 +44,7 @@ export default function BusinessLayout() {
     { path: '/business/promo', label: 'Promo activa', icon: 'campaign' },
     { path: '/business/metrics', label: 'Metricas', icon: 'insights' },
     { path: '/business/billing', label: 'Plan y facturacion', icon: 'payments' },
-    ...((location?.business_plan === 'partner_store' || location?.business_plan === 'legend') ? [{ path: '/business/legend', label: 'Validaciones Collector Hub', icon: 'workspace_premium' }] : []),
+    ...((location?.business_plan === 'partner_store' || location?.business_plan === 'legend') ? [{ path: '/business/legend', label: 'Validaciónes Collector Hub', icon: 'workspace_premium' }] : []),
     { path: '/business/help', label: 'Ayuda', icon: 'help' }
   ]
 
@@ -85,7 +89,7 @@ export default function BusinessLayout() {
           <div className="biz-header-copy">
             <div className="biz-page-kicker">/ local activo</div>
             <h1>{location ? location.name : 'Configurando local...'}</h1>
-            <p>{getBusinessPlanLabel(location?.business_plan)} Â· Panel comercial</p>
+            <p>{getBusinessPlanLabel(location?.business_plan)} · Panel comercial</p>
           </div>
           <button className="biz-exit-btn" onClick={() => navigate('/profile')}>
             <span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>logout</span>

@@ -139,13 +139,13 @@ export function SponsoredPointCard({ placement, page }) {
       placementId={placement.id} 
       placementContext="points_featured" 
       page={page}
-      badgeText={placement.badge_text || 'â­ Destacado'}
+      badgeText={placement.badge_text || '⭐ Destacado'}
       badgeIcon="star"
     >
       <SponsoredImageGallery placementId={placement.id} />
       <h3 style={{ fontSize: '1.125rem', fontWeight: 900, marginBottom: '0.25rem' }}>{placement.title}</h3>
       <p style={{ fontSize: '0.8125rem', color: 'var(--color-text-muted)', marginBottom: '0.5rem' }}>
-        {placement.target_neighborhood} Â· {placement.target_department}
+        {placement.target_neighborhood} · {placement.target_department}
       </p>
       <p style={{ fontSize: '0.875rem', marginBottom: '1rem', color: 'var(--color-text-secondary)' }}>
         {placement.description}
@@ -239,7 +239,7 @@ export function ExchangeContextPromo({ page }) {
       placementId={promo.id} 
       placementContext="exchange_contextual" 
       page={page}
-      badgeText="ðŸ“ Punto seguro cerca"
+      badgeText="📍 Punto seguro cerca"
       badgeIcon="location_on"
     >
       <h3 style={{ fontSize: '1rem', fontWeight: 900, marginBottom: '0.25rem' }}>{promo.title}</h3>

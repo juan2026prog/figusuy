@@ -1,4 +1,4 @@
-﻿import React from 'react'
+import React from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useGrowthStore } from '../stores/growthStore'
 import { useAuthStore } from '../stores/authStore'
@@ -43,7 +43,7 @@ export default function OnboardingGuide() {
               <div className="ob-kicker">// TU CAMPAÑA</div>
               <h3>Guía de Influencer</h3>
             </div>
-            <button className="ob-close" onClick={dismissOnboarding}>âœ•</button>
+            <button className="ob-close" onClick={dismissOnboarding}>✕</button>
           </div>
           <div className="ob-steps">
             <div className="ob-step current">
@@ -133,7 +133,7 @@ export default function OnboardingGuide() {
               {location.pathname.startsWith('/business') ? 'Liderá tu zona' : 'Cómo empezar'}
             </h3>
           </div>
-          <button className="ob-close" onClick={dismissOnboarding}>âœ•</button>
+          <button className="ob-close" onClick={dismissOnboarding}>✕</button>
         </div>
 
         <div className="ob-progress">
@@ -156,7 +156,7 @@ export default function OnboardingGuide() {
                   <p>{step.description}</p>
                 </div>
                 {step.done ? (
-                  <span className="ob-step-check">âœ“ Listo</span>
+                  <span className="ob-step-check">✓ Listo</span>
                 ) : isCurrent ? (
                   <button className="ob-step-action" onClick={() => handleStepAction(step)}>
                     {step.action}

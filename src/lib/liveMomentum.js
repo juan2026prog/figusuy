@@ -118,7 +118,7 @@ export function buildMomentumFeed({
     feed.push({
       id: 'albums',
       tone: 'blue',
-      label: 'Ãlbumes cerrados',
+      label: 'Álbumes cerrados',
       message: `${pluralize(summary.completedAlbumsToday, 'álbum')} se completó hoy`
     })
   }

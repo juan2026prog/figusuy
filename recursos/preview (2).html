@@ -1,0 +1,297 @@
+<section class="fy-collections-showcase">
+  <style>
+    .fy-collections-showcase {
+      background: #070707;
+      color: #fff;
+      padding: 80px 20px;
+      font-family: Arial, sans-serif;
+      overflow: hidden;
+    }
+
+    .fy-wrap {
+      max-width: 1240px;
+      margin: 0 auto;
+    }
+
+    .fy-eyebrow {
+      color: #ff5a00;
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+
+    .fy-title {
+      font-size: clamp(38px, 6vw, 74px);
+      line-height: .9;
+      margin: 0 0 16px;
+      font-weight: 1000;
+      font-style: italic;
+      text-transform: uppercase;
+      max-width: 1000px;
+    }
+
+    .fy-subtitle {
+      color: #cfcfcf;
+      font-size: 17px;
+      line-height: 1.5;
+      max-width: 650px;
+      margin: 0 0 34px;
+    }
+
+    .fy-slider {
+      display: flex;
+      gap: 22px;
+      overflow-x: auto;
+      padding: 8px 0 24px;
+      scroll-snap-type: x mandatory;
+    }
+
+    .fy-slider::-webkit-scrollbar {
+      height: 8px;
+    }
+
+    .fy-slider::-webkit-scrollbar-thumb {
+      background: #ff5a00;
+      border-radius: 999px;
+    }
+
+    .fy-album-card {
+      min-width: 260px;
+      max-width: 260px;
+      scroll-snap-align: start;
+      border-radius: 18px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 90, 0, .35);
+      background:
+        radial-gradient(circle at top right, rgba(255,90,0,.16), transparent 35%),
+        linear-gradient(180deg, #151515, #080808);
+      box-shadow: 0 0 28px rgba(255, 90, 0, .08);
+      transition: .25s ease;
+    }
+
+    .fy-album-card:hover {
+      transform: translateY(-6px);
+      border-color: rgba(255, 90, 0, .8);
+      box-shadow: 0 0 34px rgba(255, 90, 0, .22);
+    }
+
+    .fy-cover-wrap {
+      position: relative;
+      aspect-ratio: 800 / 1100;
+      background: #111;
+      overflow: hidden;
+    }
+
+    .fy-cover-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .fy-cover-wrap::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, transparent 45%, rgba(0,0,0,.86));
+    }
+
+    .fy-badge {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      z-index: 2;
+      color: #ff6a00;
+      border: 1px solid rgba(255,90,0,.8);
+      background: rgba(0,0,0,.65);
+      padding: 7px 10px;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 1000;
+      text-transform: uppercase;
+    }
+
+    .fy-rank {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      z-index: 2;
+      color: #fff;
+      background: rgba(255,90,0,.9);
+      padding: 7px 10px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 1000;
+    }
+
+    .fy-card-info {
+      padding: 18px;
+    }
+
+    .fy-card-title {
+      font-size: 25px;
+      line-height: .95;
+      font-style: italic;
+      font-weight: 1000;
+      text-transform: uppercase;
+      margin: 0 0 10px;
+    }
+
+    .fy-card-meta {
+      color: #aaa;
+      font-size: 12px;
+      font-weight: 900;
+      text-transform: uppercase;
+      line-height: 1.4;
+      margin-bottom: 14px;
+    }
+
+    .fy-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .fy-stat {
+      background: rgba(255,255,255,.05);
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 10px;
+      padding: 10px;
+    }
+
+    .fy-stat strong {
+      display: block;
+      color: #fff;
+      font-size: 18px;
+      font-weight: 1000;
+    }
+
+    .fy-stat span {
+      color: #aaa;
+      font-size: 10px;
+      text-transform: uppercase;
+      font-weight: 900;
+    }
+
+    .fy-btn {
+      width: 100%;
+      border: 0;
+      border-radius: 12px;
+      padding: 13px;
+      background: linear-gradient(180deg, #ff6a00, #e44e00);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 1000;
+      text-transform: uppercase;
+      cursor: pointer;
+      box-shadow: 0 0 18px rgba(255,90,0,.3);
+    }
+
+    @media(max-width: 700px) {
+      .fy-album-card {
+        min-width: 220px;
+        max-width: 220px;
+      }
+    }
+  </style>
+
+  <div class="fy-wrap">
+    <div class="fy-eyebrow">// COLECCIONES EN MOVIMIENTO</div>
+
+    <h2 class="fy-title">DESCUBRÍ QUÉ SE ESTÁ MOVIENDO AHORA</h2>
+
+    <p class="fy-subtitle">
+      Álbumes, cards y colecciones activas dentro de la comunidad. Entrá, cargá tus repetidas y encontrá nuevos cruces.
+    </p>
+
+    <div class="fy-slider">
+      <article class="fy-album-card">
+        <div class="fy-cover-wrap">
+          <img src="/PortadaAdrenalynXL26.jpg" alt="Adrenalyn XL Mundial 2026">
+          <span class="fy-badge">Hot</span>
+          <span class="fy-rank">#1</span>
+        </div>
+        <div class="fy-card-info">
+          <h3 class="fy-card-title">Adrenalyn XL 2026</h3>
+          <div class="fy-card-meta">Más activo hoy</div>
+          <div class="fy-stats">
+            <div class="fy-stat"><strong>324</strong><span>Cruces</span></div>
+            <div class="fy-stat"><strong>+18</strong><span>Matches</span></div>
+          </div>
+          <button class="fy-btn">Explorar colección</button>
+        </div>
+      </article>
+
+      <article class="fy-album-card">
+        <div class="fy-cover-wrap">
+          <img src="/tapaAlbum2026.jpg" alt="FIFA World Cup 2026 Sticker Album">
+          <span class="fy-badge">Nuevo</span>
+          <span class="fy-rank">#2</span>
+        </div>
+        <div class="fy-card-info">
+          <h3 class="fy-card-title">Mundial 2026</h3>
+          <div class="fy-card-meta">Colección oficial</div>
+          <div class="fy-stats">
+            <div class="fy-stat"><strong>210</strong><span>Cruces</span></div>
+            <div class="fy-stat"><strong>+11</strong><span>Matches</span></div>
+          </div>
+          <button class="fy-btn">Explorar colección</button>
+        </div>
+      </article>
+
+      <article class="fy-album-card">
+        <div class="fy-cover-wrap">
+          <img src="/tapamario.jpg" alt="Super Mario Sticker Album">
+          <span class="fy-badge">Base</span>
+          <span class="fy-rank">#3</span>
+        </div>
+        <div class="fy-card-info">
+          <h3 class="fy-card-title">Super Mario</h3>
+          <div class="fy-card-meta">Colección activa</div>
+          <div class="fy-stats">
+            <div class="fy-stat"><strong>96</strong><span>Cruces</span></div>
+            <div class="fy-stat"><strong>+7</strong><span>Matches</span></div>
+          </div>
+          <button class="fy-btn">Explorar colección</button>
+        </div>
+      </article>
+
+      <article class="fy-album-card">
+        <div class="fy-cover-wrap">
+          <img src="/TapaOnePiece.jpg" alt="One Piece Sticker Album">
+          <span class="fy-badge">Anime</span>
+          <span class="fy-rank">#4</span>
+        </div>
+        <div class="fy-card-info">
+          <h3 class="fy-card-title">One Piece</h3>
+          <div class="fy-card-meta">Comunidad activa</div>
+          <div class="fy-stats">
+            <div class="fy-stat"><strong>74</strong><span>Cruces</span></div>
+            <div class="fy-stat"><strong>+5</strong><span>Matches</span></div>
+          </div>
+          <button class="fy-btn">Explorar colección</button>
+        </div>
+      </article>
+
+      <article class="fy-album-card">
+        <div class="fy-cover-wrap">
+          <img src="/TapaIntoThe-Marvel-Universe.jpg" alt="Into The Marvel Universe">
+          <span class="fy-badge">Clásico</span>
+          <span class="fy-rank">#5</span>
+        </div>
+        <div class="fy-card-info">
+          <h3 class="fy-card-title">Marvel Universe</h3>
+          <div class="fy-card-meta">Coleccionistas activos</div>
+          <div class="fy-stats">
+            <div class="fy-stat"><strong>58</strong><span>Cruces</span></div>
+            <div class="fy-stat"><strong>+4</strong><span>Matches</span></div>
+          </div>
+          <button class="fy-btn">Explorar colección</button>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>

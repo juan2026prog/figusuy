@@ -70,7 +70,7 @@ export default function AdminAudit() {
           <div>
             <div className="admin-kicker">/ modulo operativo</div>
             <h1 className="ag-title">Centro de Auditoría</h1>
-            <p className="ag-desc" style={{ marginTop: '.8rem', maxWidth: '48rem' }}>Trazabilidad completa â€” {filteredLogs.length} de {auditLog.length} registros.</p>
+            <p className="ag-desc" style={{ marginTop: '.8rem', maxWidth: '48rem' }}>Trazabilidad completa — {filteredLogs.length} de {auditLog.length} registros.</p>
           </div>
           <div className="ag-icon-box">
             <span className="material-symbols-outlined">assignment</span>

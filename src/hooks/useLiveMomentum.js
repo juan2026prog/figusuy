@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { buildMomentumFeed } from '../lib/liveMomentum'
 
@@ -38,7 +38,7 @@ async function fetchMomentumSummary(force = false) {
       completedAlbumsRes,
     ] = await Promise.all([
       supabase.from('profiles').select('id', { count: 'exact', head: true }).gte('last_active', activeCutoff),
-      supabase.from('exchange_completions').select('id', { count: 'exact', head: true }).eq('status', 'completed').gte('completed_at', todayIso),
+      supabase.from('exchange_completions').select('id', { count: 'exact', head: true }).eq('status', 'completed').gte('completion_time', todayIso),
       supabase.from('legend_album_validations').select('id', { count: 'exact', head: true }).gte('created_at', todayIso),
       supabase.from('sponsored_placements').select('id', { count: 'exact', head: true }).eq('is_active', true),
       supabase.from('user_albums').select('id', { count: 'exact', head: true }).eq('progress_state', 'completed').gte('created_at', todayIso),

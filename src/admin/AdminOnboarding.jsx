@@ -1,62 +1,104 @@
-﻿import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { ONBOARDING_STEPS, ACTIVATION_DEFINITION } from '../lib/growthEngine'
 
 export default function AdminOnboarding() {
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [steps, setSteps] = useState(ONBOARDING_STEPS)
+  const [steps] = useState(ONBOARDING_STEPS)
   const [nudgesActive, setNudgesActive] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
 
   useEffect(() => { loadData() }, [])
 
   const loadData = async () => {
     setLoading(true)
     try {
-      const { data: events } = await supabase.from('onboarding_events')
-        .select('step, completed_at, user_id')
-        .order('completed_at', { ascending: false }).limit(500)
-
-      const { data: progress } = await supabase.from('user_progress')
+      // Get aggregate metrics via RPC
+      const { data: rpcMetrics, error: rpcError } = await supabase.rpc('admin_get_onboarding_metrics')
+      
+      // Get raw data for funnel if needed or use RPC summary
+      const { data: prg, error: prgError } = await supabase.from('user_progress')
         .select('user_id, total_albums, total_stickers_loaded, total_chats, total_matches_viewed, created_at')
-        .limit(200)
+        .limit(1000)
 
-      const list = events || []
-      const prg = progress || []
+      if (rpcError || prgError) throw rpcError || prgError
 
-      // Calculate drop-off by step
+      const activated = prg?.filter(p => (p.total_albums||0)>=1 && (p.total_stickers_loaded||0)>=5 && (p.total_chats||0)>=1) || []
+      const activationRate = prg?.length ? Math.round((activated.length / prg.length) * 100) : 0
+
+      // Map RPC step counts to our step definitions
       const stepCounts = {}
-      ONBOARDING_STEPS.forEach(s => { stepCounts[s.key] = list.filter(e => e.step === s.key).length })
-
-      // Avg times (simulated from progress data)
-      const activated = prg.filter(p => (p.total_albums||0)>=1 && (p.total_stickers_loaded||0)>=5 && (p.total_chats||0)>=1)
-      const activationRate = prg.length ? Math.round((activated.length / prg.length) * 100) : 0
+      ONBOARDING_STEPS.forEach(s => {
+        stepCounts[s.key] = rpcMetrics?.by_step?.[s.key] || 0
+      })
 
       setStats({
-        totalUsers: prg.length,
+        totalUsers: prg?.length || 0,
         activated: activated.length,
         activationRate,
         stepCounts,
-        avgTimeToMatch: '~12min',
+        totalEvents: rpcMetrics?.total_events || 0,
+        uniqueUsersInEvents: rpcMetrics?.unique_users || 0,
+        avgTimeToMatch: '~12min', // Placeholder for now
         avgTimeToChat: '~28min',
         avgTimeToTrade: '~2.4h',
       })
-    } catch (err) { console.error(err) }
+    } catch (err) { 
+      console.error('Error loading onboarding data:', err)
+      // Fallback empty state
+      setStats({
+        totalUsers: 0,
+        activated: 0,
+        activationRate: 0,
+        stepCounts: {},
+        totalEvents: 0,
+        uniqueUsersInEvents: 0
+      })
+    }
     setLoading(false)
+  }
+
+  const handleRefresh = async () => {
+    setRefreshing(true)
+    await loadData()
+    setRefreshing(false)
+  }
+
+  const generateTestEvent = async () => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    
+    const randomStep = ONBOARDING_STEPS[Math.floor(Math.random() * ONBOARDING_STEPS.length)].key
+    const { error } = await supabase.from('onboarding_events').insert({
+      user_id: user.id,
+      step: randomStep,
+      completed_at: new Date().toISOString()
+    })
+
+    if (!error) {
+      handleRefresh()
+    } else {
+      alert('Error generating test event: ' + error.message)
+    }
   }
 
   const metrics = [
     { label: 'Usuarios totales', value: stats?.totalUsers || 0, icon: 'group', color: '#ff5a00' },
-    { label: 'Activados', value: stats?.activated || 0, icon: 'check_circle', color: '#22c55e' },
+    { label: 'Eventos Logueados', value: stats?.totalEvents || 0, icon: 'analytics', color: '#8b5cf6' },
     { label: 'Tasa activación', value: `${stats?.activationRate || 0}%`, icon: 'trending_up', color: '#3b82f6' },
     { label: 'Nudges', value: nudgesActive ? 'ON' : 'OFF', icon: 'tips_and_updates', color: nudgesActive ? '#22c55e' : '#64748b' },
   ]
 
   const timeMetrics = [
-    { label: 'Tiempo a primer match', value: stats?.avgTimeToMatch || 'â€”', icon: 'timer' },
-    { label: 'Tiempo a primer chat', value: stats?.avgTimeToChat || 'â€”', icon: 'chat' },
-    { label: 'Tiempo a primer cruce', value: stats?.avgTimeToTrade || 'â€”', icon: 'handshake' },
+    { label: 'Tiempo a primer match', value: stats?.avgTimeToMatch || '—', icon: 'timer' },
+    { label: 'Tiempo a primer chat', value: stats?.avgTimeToChat || '—', icon: 'chat' },
+    { label: 'Tiempo a primer cruce', value: stats?.avgTimeToTrade || '—', icon: 'handshake' },
   ]
+
+  if (loading && !refreshing) {
+    return <div className="admin-loading">Cargando métricas de crecimiento...</div>
+  }
 
   return (
     <div className="admin-generic-page">
@@ -66,10 +108,18 @@ export default function AdminOnboarding() {
         <div className="ag-hero-row">
           <div>
             <div className="admin-kicker">// growth engine</div>
-            <h1 className="ag-title">Onboarding</h1>
-            <p className="ag-desc" style={{marginTop:'.6rem',maxWidth:'600px'}}>Llevar al usuario al primer valor real lo más rápido posible. No tutorial. Resultado.</p>
+            <h1 className="ag-title">Crecimiento</h1>
+            <p className="ag-desc" style={{marginTop:'.6rem',maxWidth:'600px'}}>Monitoreo del embudo de conversión y activación de nuevos usuarios.</p>
           </div>
-          <div className="ag-icon-box"><span className="material-symbols-outlined">rocket_launch</span></div>
+          <div style={{display:'flex', gap:'12px'}}>
+             <button onClick={generateTestEvent} className="ag-btn-secondary" style={{padding:'10px 16px'}}>
+              <span className="material-symbols-outlined">bug_report</span>
+            </button>
+            <button onClick={handleRefresh} className={`ag-btn-primary ${refreshing ? 'ag-pulse' : ''}`}>
+              <span className="material-symbols-outlined">{refreshing ? 'sync' : 'refresh'}</span>
+              {refreshing ? 'Actualizando...' : 'Actualizar'}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -91,28 +141,36 @@ export default function AdminOnboarding() {
         <div className="ag-card">
           <div style={{padding:'18px 20px',borderBottom:'1px solid var(--admin-line)'}}>
             <div className="admin-kicker">// embudo</div>
-            <h3 style={{margin:'.4rem 0 0',font:"italic 900 2rem 'Barlow Condensed'",textTransform:'uppercase'}}>Drop-off por Paso</h3>
+            <h3 style={{margin:'.4rem 0 0',font:"italic 900 2rem 'Barlow Condensed'",textTransform:'uppercase'}}>Conversión por Paso</h3>
           </div>
           <div style={{padding:'16px 20px'}}>
-            {ONBOARDING_STEPS.map((step, i) => {
-              const count = stats?.stepCounts?.[step.key] || 0
-              const maxCount = Math.max(...Object.values(stats?.stepCounts || {1:1}), 1)
-              const pct = Math.round((count / maxCount) * 100)
-              return (
-                <div key={step.key} style={{marginBottom:'16px'}}>
-                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'6px'}}>
-                    <div style={{display:'flex',alignItems:'center',gap:'8px'}}>
-                      <span className="material-symbols-outlined" style={{fontSize:'1rem',color:'var(--admin-orange)'}}>{step.icon}</span>
-                      <span style={{font:"900 .78rem 'Barlow Condensed'",textTransform:'uppercase',color:'#f5f5f5'}}>{step.order}. {step.title}</span>
+            {stats?.totalEvents === 0 ? (
+              <div style={{padding:'40px 20px', textAlign:'center', background:'rgba(255,255,255,.02)', border:'1px dashed var(--admin-line)'}}>
+                <span className="material-symbols-outlined" style={{fontSize:'3rem', color:'var(--admin-muted2)', marginBottom:'12px'}}>data_alert</span>
+                <div style={{font:"900 1.2rem 'Barlow Condensed'", color:'var(--admin-muted)', textTransform:'uppercase'}}>Sin datos de eventos</div>
+                <p style={{fontSize:'.82rem', color:'var(--admin-muted2)', marginTop:'8px'}}>Los eventos de onboarding aparecerán aquí a medida que los usuarios interactúen.</p>
+              </div>
+            ) : (
+              ONBOARDING_STEPS.map((step, i) => {
+                const count = stats?.stepCounts?.[step.key] || 0
+                const maxCount = Math.max(...Object.values(stats?.stepCounts || {1:1}), 1)
+                const pct = Math.round((count / maxCount) * 100)
+                return (
+                  <div key={step.key} style={{marginBottom:'16px'}}>
+                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'6px'}}>
+                      <div style={{display:'flex',alignItems:'center',gap:'8px'}}>
+                        <span className="material-symbols-outlined" style={{fontSize:'1rem',color:'var(--admin-orange)'}}>{step.icon}</span>
+                        <span style={{font:"900 .78rem 'Barlow Condensed'",textTransform:'uppercase',color:'#f5f5f5'}}>{step.order}. {step.title}</span>
+                      </div>
+                      <span style={{font:"italic 900 1.2rem 'Barlow Condensed'",color:'var(--admin-orange)'}}>{count}</span>
                     </div>
-                    <span style={{font:"italic 900 1.2rem 'Barlow Condensed'",color:'var(--admin-orange)'}}>{count}</span>
+                    <div style={{height:'8px',background:'rgba(255,255,255,.04)',border:'1px solid var(--admin-line)'}}>
+                      <div style={{height:'100%',width:`${pct}%`,background:'var(--admin-orange)',transition:'width .5s'}} />
+                    </div>
                   </div>
-                  <div style={{height:'8px',background:'rgba(255,255,255,.04)',border:'1px solid var(--admin-line)'}}>
-                    <div style={{height:'100%',width:`${pct}%`,background:'var(--admin-orange)',transition:'width .5s'}} />
-                  </div>
-                </div>
-              )
-            })}
+                )
+              })
+            )}
           </div>
         </div>
 
@@ -156,7 +214,7 @@ export default function AdminOnboarding() {
           <h3 style={{margin:'.4rem 0 0',font:"italic 900 2rem 'Barlow Condensed'",textTransform:'uppercase'}}>Pasos del Onboarding</h3>
         </div>
         <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:'1px',background:'var(--admin-line)'}}>
-          {steps.map(step => (
+          {ONBOARDING_STEPS.map(step => (
             <div key={step.key} style={{background:'var(--admin-panel)',padding:'20px'}}>
               <div style={{display:'flex',alignItems:'center',gap:'8px',marginBottom:'12px'}}>
                 <div style={{width:'36px',height:'36px',display:'grid',placeItems:'center',border:'1px solid rgba(255,90,0,.3)',background:'rgba(255,90,0,.08)'}}>

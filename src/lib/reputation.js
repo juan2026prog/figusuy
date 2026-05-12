@@ -80,7 +80,7 @@ export function getStarLevel(stars) {
 
 export function renderStars(stars) {
   const n = Math.max(1, Math.min(5, stars || 1))
-  return 'â˜…'.repeat(n) + 'â˜†'.repeat(5 - n)
+  return '★'.repeat(n) + '☆'.repeat(5 - n)
 }
 
 export function getReputationModifier(stars) {

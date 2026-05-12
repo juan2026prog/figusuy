@@ -6,37 +6,37 @@
  * - premium_boost max: 1.20x
  * - sponsor_boost max: 1.15x
  * 
- * Scores are NEVER shown to public users â€” only badges.
+ * Scores are NEVER shown to public users — only badges.
  * Technical scores are visible only in God Admin.
  */
 
 // ===================== USER BADGES =====================
 
 const USER_BADGE_CONFIG = {
-  nuevo:       { label: 'Nuevo',       emoji: 'ðŸ†•', color: '#3b82f6', bg: '#eff6ff', iconKey: 'DefaultBadgeIcon' },
-  activo:      { label: 'Activo',      emoji: 'âš¡', color: '#10b981', bg: '#ecfdf5', iconKey: 'BadgeActiveIcon' },
-  confiable:   { label: 'Confiable',   emoji: 'ðŸ›¡ï¸', color: '#8b5cf6', bg: '#f5f3ff', iconKey: 'BadgeTrustedIcon' },
-  buen_cruce:  { label: 'Buen cruce',  emoji: 'ðŸ¤', color: '#ea580c', bg: '#fff7ed', iconKey: 'BadgeActiveIcon' },
-  top_cruce:   { label: 'Top cruce',   emoji: 'ðŸ†', color: '#f59e0b', bg: '#fffbeb', iconKey: 'BadgeTopTradeIcon' },
-  top_user:    { label: 'Top User',    emoji: 'ðŸ‘‘', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.1)', iconKey: 'BadgeImpactHighIcon' },
+  nuevo:       { label: 'Nuevo',       emoji: '🆕', color: '#3b82f6', bg: '#eff6ff', iconKey: 'DefaultBadgeIcon' },
+  activo:      { label: 'Activo',      emoji: '⚡', color: '#10b981', bg: '#ecfdf5', iconKey: 'BadgeActiveIcon' },
+  confiable:   { label: 'Confiable',   emoji: '🛡️', color: '#8b5cf6', bg: '#f5f3ff', iconKey: 'BadgeTrustedIcon' },
+  buen_cruce:  { label: 'Buen cruce',  emoji: '🤝', color: '#ea580c', bg: '#fff7ed', iconKey: 'BadgeActiveIcon' },
+  top_cruce:   { label: 'Top cruce',   emoji: '🏆', color: '#f59e0b', bg: '#fffbeb', iconKey: 'BadgeTopTradeIcon' },
+  top_user:    { label: 'Top User',    emoji: '👑', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.1)', iconKey: 'BadgeImpactHighIcon' },
 }
 
 const BUSINESS_BADGE_CONFIG = {
-  verificado:          { label: 'Verificado',           emoji: 'âœ…', color: '#10b981', bg: '#ecfdf5', iconKey: 'BadgePartnerVerifiedIcon' },
-  recomendado:         { label: 'Recomendado',           emoji: 'ðŸ‘', color: '#3b82f6', bg: '#eff6ff', iconKey: 'BadgeActiveIcon' },
-  punto_destacado:     { label: 'Punto destacado',       emoji: 'â­', color: '#f59e0b', bg: '#fffbeb', iconKey: 'BadgeTopTradeIcon' },
-  tienda_aliada:       { label: 'Tienda aliada',         emoji: 'ðŸ›ï¸', color: '#8b5cf6', bg: '#f5f3ff', iconKey: 'DefaultBadgeIcon' },
-  patrocinado:         { label: 'Patrocinado',            emoji: 'ðŸ“£', color: '#ea580c', bg: '#fff7ed', iconKey: 'DefaultBadgeIcon' },
-  zona_sugerida:       { label: 'Zona sugerida',         emoji: 'ðŸ“', color: '#06b6d4', bg: '#ecfeff', iconKey: 'DefaultBadgeIcon' },
-  punto_activo:        { label: 'Punto activo',          emoji: 'ðŸ”¥', color: '#ea580c', bg: '#fff7ed', iconKey: 'BadgeActiveIcon' },
-  zona_segura:         { label: 'Zona Segura',          emoji: 'ðŸ›¡ï¸', color: '#8b5cf6', bg: '#f5f3ff', iconKey: 'BadgeTrustedIcon' },
+  verificado:          { label: 'Verificado',           emoji: '✅', color: '#10b981', bg: '#ecfdf5', iconKey: 'BadgePartnerVerifiedIcon' },
+  recomendado:         { label: 'Recomendado',           emoji: '👍', color: '#3b82f6', bg: '#eff6ff', iconKey: 'BadgeActiveIcon' },
+  punto_destacado:     { label: 'Punto destacado',       emoji: '⭐', color: '#f59e0b', bg: '#fffbeb', iconKey: 'BadgeTopTradeIcon' },
+  tienda_aliada:       { label: 'Tienda aliada',         emoji: '🛍️', color: '#8b5cf6', bg: '#f5f3ff', iconKey: 'DefaultBadgeIcon' },
+  patrocinado:         { label: 'Patrocinado',            emoji: '📣', color: '#ea580c', bg: '#fff7ed', iconKey: 'DefaultBadgeIcon' },
+  zona_sugerida:       { label: 'Zona sugerida',         emoji: '📍', color: '#06b6d4', bg: '#ecfeff', iconKey: 'DefaultBadgeIcon' },
+  punto_activo:        { label: 'Punto activo',          emoji: '🔥', color: '#ea580c', bg: '#fff7ed', iconKey: 'BadgeActiveIcon' },
+  zona_segura:         { label: 'Zona Segura',          emoji: '🛡️', color: '#8b5cf6', bg: '#f5f3ff', iconKey: 'BadgeTrustedIcon' },
   // PointScore Badges
-  'Mucha actividad hoy': { label: 'Activo hoy',           emoji: 'âš¡', color: '#f59e0b', bg: '#fffbeb', iconKey: 'BadgeActiveIcon' },
+  'Mucha actividad hoy': { label: 'Activo hoy',           emoji: '⚡', color: '#f59e0b', bg: '#fffbeb', iconKey: 'BadgeActiveIcon' },
 
-  'Zona Segura':        { label: 'Zona Segura',          emoji: 'ðŸ›¡ï¸', color: '#8b5cf6', bg: '#f5f3ff', iconKey: 'BadgeTrustedIcon' },
-  'Partner Store':      { label: 'Partner Store',        emoji: 'ðŸ’Ž', color: '#ea580c', bg: '#fff7ed', iconKey: 'BadgePartnerVerifiedIcon' },
-  'Vende Figus':        { label: 'Vende Figus',          emoji: 'ðŸ·ï¸', color: '#3b82f6', bg: '#eff6ff', iconKey: 'DefaultBadgeIcon' },
-  'Punto de Canje':     { label: 'Punto de Canje',       emoji: 'ðŸ”„', color: '#06b6d4', bg: '#ecfeff', iconKey: 'DefaultBadgeIcon' },
+  'Zona Segura':        { label: 'Zona Segura',          emoji: '🛡️', color: '#8b5cf6', bg: '#f5f3ff', iconKey: 'BadgeTrustedIcon' },
+  'Partner Store':      { label: 'Partner Store',        emoji: '💎', color: '#ea580c', bg: '#fff7ed', iconKey: 'BadgePartnerVerifiedIcon' },
+  'Vende Figus':        { label: 'Vende Figus',          emoji: '🏷️', color: '#3b82f6', bg: '#eff6ff', iconKey: 'DefaultBadgeIcon' },
+  'Punto de Canje':     { label: 'Punto de Canje',       emoji: '🔄', color: '#06b6d4', bg: '#ecfeff', iconKey: 'DefaultBadgeIcon' },
 }
 
 /**
@@ -110,7 +110,7 @@ export function validateAlgorithmConfigValue(key, value) {
  * Format a numeric score for admin display
  */
 export function formatScore(score) {
-  if (score == null) return 'â€”'
+  if (score == null) return '—'
   return Number(score).toFixed(1)
 }
 

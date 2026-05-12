@@ -140,7 +140,7 @@ export default function BusinessProfile() {
     : { text: 'Tienda aliada', className: 'biz-chip green' }
 
   const locParts = [formData.zone, formData.department].filter(Boolean)
-  const locationStr = locParts.length > 0 ? locParts.join(' Â· ') : formData.address
+  const locationStr = locParts.length > 0 ? locParts.join(' · ') : formData.address
 
   return (
     <div className="biz-two-col">
@@ -347,7 +347,7 @@ export default function BusinessProfile() {
             </label>
             <label className="form-checkbox-label">
               <input type="checkbox" name="sells_stickers" checked={formData.sells_stickers} onChange={handleChange} />
-              Venta de Albumes y sobres
+              Venta de Álbumes y sobres
             </label>
           </div>
 
@@ -398,13 +398,13 @@ export default function BusinessProfile() {
                   <div className="sf-point-content-row">
                     <div className="sf-point-info-col">
                       <div className="sf-badges">
-                        <span className="sf-badge sf-store">{formData.allows_exchange ? 'ðŸ› Punto de intercambio' : 'ðŸ› Tienda aliada'}</span>
-                        <span className="sf-badge">âš¡ Activo ahora</span>
-                        {(location?.business_plan === 'partner_store' || location?.business_plan === 'legend') && <span className="sf-badge sf-premium-badge">â­ Punto Oficial</span>}
+                        <span className="sf-badge sf-store">{formData.allows_exchange ? '🛍 Punto de intercambio' : '🛍 Tienda aliada'}</span>
+                        <span className="sf-badge">⚡ Activo ahora</span>
+                        {(location?.business_plan === 'partner_store' || location?.business_plan === 'legend') && <span className="sf-badge sf-premium-badge">⭐ Punto Oficial</span>}
                       </div>
 
                       <h3 className="sf-point-name">{formData.name || 'Nombre del local'}</h3>
-                      <p className="sf-point-loc">{formData.display_type} Â· {locationStr || 'Dirección'}</p>
+                      <p className="sf-point-loc">{formData.display_type} · {locationStr || 'Dirección'}</p>
                       <div className="sf-point-address">
                         <span className="material-symbols-outlined">location_on</span> {formData.address || 'Dirección no definida'}
                       </div>

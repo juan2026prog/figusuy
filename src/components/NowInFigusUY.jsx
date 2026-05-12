@@ -443,7 +443,7 @@ export default function NowInFigusUY({ albums = [], onAuthAction, onScrollToSect
                   <p className="nfy-card-body">{card.body}</p>
                 </div>
                 <button className="nfy-card-btn" onClick={() => handleAction(card.action)}>
-                  {card.cta} â†’
+                  {card.cta} →
                 </button>
               </article>
             ))}
@@ -475,7 +475,7 @@ export default function NowInFigusUY({ albums = [], onAuthAction, onScrollToSect
           <div className="nfy-footer-actions">
             <span className="nfy-mini">{meta.activeNow} activos ahora</span>
             <button className="nfy-btn" onClick={() => onAuthAction?.()}>Ver mas actividad</button>
-            <button className="nfy-btn primary" onClick={() => handleAction({ kind: 'section', target: 'album' })}>Explorar albumes</button>
+            <button className="nfy-btn primary" onClick={() => handleAction({ kind: 'section', target: 'album' })}>Explorar álbumes</button>
           </div>
         </div>
       </div>

@@ -187,7 +187,7 @@ export default function AdminLocations() {
                    <span className="material-symbols-outlined" style={{ fontSize: '1rem', color: '#8b5cf6' }}>leaderboard</span> Ranking Score
                  </p>
                  <button onClick={() => recalcBiz(loc.id)} disabled={scoringBiz === loc.id} style={{ padding: '0.125rem 0.5rem', borderRadius: '0.25rem', background: '#f5f3ff', color: '#8b5cf6', border: "1px solid var(--admin-line)", fontSize: '0.625rem', fontWeight: 700, cursor: 'pointer' }}>
-                   {scoringBiz === loc.id ? '...' : 'ðŸ”„'}
+                   {scoringBiz === loc.id ? '...' : '🔄'}
                  </button>
                </div>
                {bizScores[loc.id] ? (() => {

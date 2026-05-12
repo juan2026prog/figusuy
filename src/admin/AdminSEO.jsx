@@ -80,7 +80,7 @@ export default function AdminSEO() {
             <div style={{ background: 'var(--admin-panel2)', padding: '1rem', borderRadius: '0.5rem', border: '1px solid var(--admin-line)' }}>
               <p style={{ color: '#1a0dab', fontSize: '1.125rem', margin: 0 }}>{seoConfig.siteTitle || 'FigusUY | Intercambio de Figuritas'}</p>
               <p style={{ color: '#006621', fontSize: '0.875rem', margin: '0.125rem 0' }}>https://figusuy.com</p>
-              <p style={{ color: '#545454', fontSize: '0.8125rem', margin: 0 }}>{seoConfig.metaDescription || 'La plataforma numero 1 para completar tus albumes.'}</p>
+              <p style={{ color: '#545454', fontSize: '0.8125rem', margin: 0 }}>{seoConfig.metaDescription || 'La plataforma numero 1 para completar tus álbumes.'}</p>
             </div>
           </div>
         </div>

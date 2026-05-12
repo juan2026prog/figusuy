@@ -1,0 +1,304 @@
+/* ============================================================
+   FigusUY — Mobile Responsive (Part 3: Landing + Admin)
+   COMPLETE MOBILE-FIRST REBUILD
+   ============================================================ */
+
+/* ═══════════════════════════════════════════
+   LANDING — PLANS (Tablet)
+   ═══════════════════════════════════════════ */
+@media (max-width: 1024px) {
+  .fy-block-user_plans .plans,
+  .fy-landing .plans {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+    background: transparent !important;
+    border: none !important;
+  }
+
+  .fy-block-user_plans .plan,
+  .fy-landing .plan {
+    min-height: auto !important;
+    border: 1px solid rgba(255,255,255,.1) !important;
+    border-radius: 12px;
+    padding: 24px 20px !important;
+  }
+
+  .fy-block-user_plans .plan.recommended,
+  .fy-landing .plan.recommended {
+    border-color: rgba(255, 90, 0, 0.5) !important;
+    box-shadow: 0 8px 32px rgba(255, 90, 0, 0.15);
+  }
+
+  .plan-concept { min-height: auto !important; }
+}
+
+/* ═══════════════════════════════════════════
+   LANDING — DYNAMIC SYSTEM (Mobile)
+   ═══════════════════════════════════════════ */
+@media (max-width: 640px) {
+  .fy-landing .fy-shell { width: calc(100% - 20px); }
+  .fy-navbar { min-height: 56px; gap: 12px; padding: 0 12px; }
+  .fy-logo { font-size: 1.4rem; }
+  .fy-logo img { width: 28px; height: 28px; }
+  .fy-hero { padding: 48px 0 32px; gap: 24px; }
+  .fy-hero-copy h1 { font-size: clamp(2rem, 9vw, 3rem); }
+  .fy-copy-lg { font-size: 0.9rem; line-height: 1.5; }
+  .fy-actions { gap: 10px; flex-direction: column; }
+  .fy-btn { width: 100%; justify-content: center; min-height: 48px; }
+  .fy-stat-row { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)) !important; gap: 8px; margin-top: 20px; }
+  .fy-stat-card { padding: 14px 12px; }
+  .fy-stat-card strong { font-size: 1.6rem; }
+  .fy-live-card { padding: 14px; }
+  .fy-live-card h3 { font-size: 1.4rem; }
+  .fy-section { padding: 48px 0; }
+  .fy-section h2 { font-size: clamp(1.8rem, 7vw, 2.8rem); }
+  .fy-card-grid.fy-steps-grid,
+  .fy-card-grid.fy-quad-grid,
+  .fy-card-grid.fy-plan-grid { grid-template-columns: 1fr; }
+  .fy-editorial-copy, .fy-gamify-copy { padding: 14px; }
+  .fy-carousel-main { min-height: 200px; padding: 16px; }
+  .fy-cover-card { grid-template-columns: 64px 1fr; gap: 8px; padding: 8px; }
+  .fy-cover-image { min-height: 72px; }
+  .fy-cover-meta strong { font-size: 1.1rem; }
+  .fy-promo { padding: 20px; border-radius: 10px; }
+  .fy-split-copy { padding: 20px; }
+  .fy-final-cta { padding: 28px 16px; border-radius: 10px; }
+  .fy-plan-card { padding: 20px; }
+  .fy-plan-name { font-size: 2.2rem; }
+  .fy-plan-card.is-highlight { transform: none; }
+  .fy-faq-q { padding: 14px 16px; font-size: 0.95rem; }
+  .fy-faq-item.is-active .fy-faq-a { padding: 0 16px 16px; }
+  .fy-footer { flex-direction: column; align-items: flex-start; gap: 20px; }
+  .fy-footer-links { gap: 14px; flex-direction: column; }
+  .fy-footer-shell { padding: 28px 0; }
+  .fy-wall { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .fy-wall-card { min-height: 80px; padding: 12px; }
+  .fy-wall-card strong { font-size: 1.8rem; }
+
+  /* Plans full mobile */
+  .fy-block-user_plans .plans, .fy-landing .plans, .plans {
+    grid-template-columns: 1fr !important;
+    gap: 14px !important;
+    background: transparent !important;
+    border: none !important;
+  }
+  .fy-block-user_plans .plan, .fy-landing .plan, .plan {
+    min-height: auto !important;
+    border: 1px solid rgba(255,255,255,.1) !important;
+    border-radius: 12px;
+    padding: 20px 16px !important;
+  }
+  .plan-ribbon { right: 10px; top: 10px; padding: 3px 8px; font-size: 0.6rem; }
+  .plan-icon { width: 48px; height: 48px; font-size: 1.3rem; margin-bottom: 12px; }
+  .plan-icon .material-symbols-outlined { font-size: 1.3rem !important; }
+  .plan-tag { font-size: 0.68rem; }
+  .plan-name { font-size: 2.2rem !important; line-height: 0.9; margin-bottom: 6px; }
+  .plan-concept { min-height: auto !important; font-size: 0.85rem; line-height: 1.5; margin-bottom: 14px; }
+  .price b { font-size: 2.6rem !important; }
+  .features { gap: 8px; }
+  .feature { font-size: 0.85rem; line-height: 1.4; gap: 6px; }
+  .check { font-size: 0.95rem; }
+  .btn.block { padding: 0.875rem; font-size: 0.88rem; border-radius: 6px; }
+
+  /* Referral Section */
+  .fy-ref-grid { grid-template-columns: 1fr; gap: 14px; }
+  .fy-ref-card { padding: 18px; border-radius: 12px; }
+  .fy-ref-title { font-size: clamp(22px, 7vw, 34px); }
+  .fy-ref-subtitle { font-size: 13px; margin-bottom: 20px; }
+  .fy-ref-card-title { font-size: 22px; }
+  .fy-ref-card-text { font-size: 12px; }
+  .fy-ref-link-box { padding: 10px; }
+  .fy-ref-link { font-size: 11px; }
+  .fy-ref-actions { flex-direction: column; gap: 8px; }
+  .fy-ref-btn-primary, .fy-ref-btn-secondary { font-size: 14px; padding: 12px 14px; min-width: auto; width: 100%; }
+  .fy-ref-reward-item { grid-template-columns: 48px 1fr; gap: 8px; padding: 10px; }
+
+  /* Programs */
+  .fy-program-hero { padding: 4rem 0 3rem; }
+  .fy-program-title { font-size: clamp(2rem, 10vw, 3rem); }
+  .fy-program-subtitle { font-size: 0.9rem; }
+  .fy-program-section { padding: 3rem 0; }
+  .fy-program-pillar-card, .fy-program-tier-card { padding: 1.5rem 1.25rem; }
+  .fy-program-step-item { grid-template-columns: 1fr; gap: 1rem; }
+}
+
+/* ═══════════════════════════════════════════
+   LANDING — STATIC (OLD SYSTEM)
+   ═══════════════════════════════════════════ */
+@media (max-width: 640px) {
+  .landing-hero { min-height: auto; grid-template-columns: 1fr; }
+  .hero-left { padding: 60px 16px 32px; border-right: none; border-bottom: 1px solid var(--color-border); }
+  .hero-left::before { font-size: 4rem; }
+  .landing-hero h1 { font-size: clamp(2.2rem, 9vw, 3.2rem); }
+  .hero-sub { font-size: 0.88rem; margin: 14px 0 22px; }
+  .hero-actions { flex-direction: column; gap: 10px; }
+  .btn-main { width: 100%; text-align: center; padding: 0.875rem 1.5rem; }
+  .quick-stats { grid-template-columns: 1fr 1fr; }
+  .quick-stat:nth-child(3) { grid-column: span 2; border-right: 0; }
+  .landing-inner { padding: 32px 14px; }
+  .landing-section h2 { font-size: clamp(1.6rem, 5vw, 2.4rem); }
+  .plans-grid, .benefits-grid { grid-template-columns: 1fr; }
+  .plan-card { padding: 18px; }
+  .plan-price { font-size: 2rem; }
+  .benefit-card { padding: 16px; }
+  .landing-cta-final { padding: 1.75rem 1rem; }
+  .landing-nav-inner { padding: 0 10px; }
+  .sticker-wall { grid-template-columns: repeat(3, 72px); gap: 6px; }
+}
+
+/* ═══════════════════════════════════════════
+   ADMIN LAYOUT — MOBILE
+   ═══════════════════════════════════════════ */
+
+/* Tablet */
+@media (max-width: 1100px) {
+  .admin-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 40;
+    transform: translateX(-100%);
+    width: 280px;
+    transition: transform 0.25s ease;
+  }
+  .admin-sidebar.mobile-open { transform: translateX(0); }
+  .admin-main, .admin-main.compact, .admin-main.wide { margin-left: 0; }
+  .admin-mobile-toggle { display: inline-grid; }
+  .admin-desktop-toggle { display: none; }
+}
+
+/* Small tablet & large phone */
+@media (max-width: 720px) {
+  .admin-topbar { padding: 0.75rem; display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+  .admin-topbar h1 { font-size: 1.3rem; }
+  .admin-topbar .admin-kicker { font-size: 0.6rem; }
+  .admin-topbar-actions { margin-top: 0; gap: 8px; flex-wrap: wrap; width: 100%; justify-content: space-between; }
+  .admin-top-status { display: none; }
+  .admin-content { padding: 0.75rem; }
+  .ag-hero-row { flex-direction: column; align-items: stretch; gap: 12px; }
+  .ag-icon-box { align-self: flex-start; }
+  .ag-title { font-size: 1.8rem; }
+}
+
+/* Phone */
+@media (max-width: 480px) {
+  .admin-shell .admin-topbar { padding: 0.625rem 0.75rem; min-height: auto; }
+  .admin-shell .admin-topbar h1 { font-size: 1.15rem; }
+  .admin-shell .admin-topbar .admin-kicker { font-size: 0.55rem; }
+  .admin-shell .admin-topbar-actions { gap: 6px; }
+  .admin-shell .admin-top-user { display: none; }
+  .admin-shell .admin-content { padding: 0.5rem; }
+  .admin-shell .admin-sidebar { width: 100vw !important; max-width: 100vw; }
+
+  /* Admin general grids → 1 col */
+  .admin-theme-scope .ag-hero-row { gap: 10px; }
+  .admin-theme-scope .ag-stat-card { padding: 10px; }
+  .admin-theme-scope table { font-size: 0.75rem; }
+  .admin-theme-scope th,
+  .admin-theme-scope td { padding: 6px 4px; white-space: nowrap; }
+  .admin-action-btn { padding: 0.6rem 0.75rem; font-size: 0.7rem; }
+
+  /* Admin Dashboard specific */
+  .ad-hero { grid-template-columns: 1fr !important; gap: 12px; }
+  .ad-hero-main h1 { font-size: clamp(2rem, 6vw, 3rem); }
+  .ad-hero-main::before { font-size: clamp(3rem, 8vw, 5rem); }
+  .ad-hero-side { padding: 1rem; }
+  .ad-hero-side h2 { font-size: 1.6rem; }
+  .ad-kpi-grid { grid-template-columns: 1fr 1fr !important; gap: 8px; }
+  .ad-kpi { padding: 0.875rem; }
+  .ad-kpi-value { font-size: 1.8rem; }
+  .ad-actions { grid-template-columns: 1fr !important; gap: 8px; }
+  .ad-action-card { padding: 0.875rem; }
+  .ad-bottom-grid { grid-template-columns: 1fr !important; gap: 12px; }
+  .ad-toolbar { display: block; }
+  .ad-toolbar h2 { font-size: 2rem; }
+  .ad-refresh { width: 100%; margin-top: 0.75rem; }
+  .ad-section { padding: 1rem; margin-top: 1rem; }
+  .ad-health-row { flex-direction: column; align-items: flex-start; gap: 6px; padding: 10px 0; }
+  .ad-health-left { gap: 8px; }
+  .ad-health-icon { width: 2.2rem; height: 2.2rem; }
+  .ad-health-card { padding: 1rem; }
+  .ad-health-card h2 { font-size: 1.6rem; }
+
+  /* Admin Users — table to card pattern */
+  .admin-theme-scope [style*="overflowX"] table,
+  .admin-theme-scope [style*="overflow-x"] table {
+    min-width: 600px;
+  }
+
+  /* Admin expanded row — stack columns */
+  .admin-theme-scope [style*="gridTemplateColumns: 'repeat(auto-fit"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Admin inline-style grid overrides */
+  .admin-theme-scope div[style*="grid-template-columns: repeat(auto-fit"],
+  .admin-theme-scope div[style*="gridTemplateColumns: repeat(auto-fit"] {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ═══════════════════════════════════════════
+   PLANS MODAL — MOBILE
+   ═══════════════════════════════════════════ */
+@media (max-width: 640px) {
+  .modal-card[style*="max-width: 1000px"] { max-width: 100% !important; }
+  .premium-table-wrapper .card { min-width: 300px; }
+  .premium-table-wrapper .card > div {
+    grid-template-columns: 1.5fr repeat(3, minmax(44px, 1fr)) !important;
+    gap: 0.2rem !important;
+    padding: 0.35rem !important;
+  }
+}
+
+/* ═══════════════════════════════════════════
+   GLOBAL 360px TIGHTENING
+   ═══════════════════════════════════════════ */
+@media (max-width: 360px) {
+  .wrap, .sf-wrap, .pp-wrap { padding-left: 8px; padding-right: 8px; }
+  .home-panini-wrapper .hero-title { font-size: 1.8rem; }
+  .profile-final-root .profile-name { font-size: 1.5rem; }
+  .profile-final-root .avatar-box { width: 60px; height: 60px; font-size: 1.5rem; }
+  .matches-page .hero-title { font-size: 1.3rem; }
+  .premium-panini-wrapper .plan-name { font-size: 1.6rem; }
+  .premium-panini-wrapper .price b { font-size: 2.2rem; }
+  .fy-hero-copy h1 { font-size: 1.8rem; }
+  .fy-plan-name { font-size: 1.8rem; }
+  .panini-page .hero-title { font-size: 1.6rem; }
+  .chats-list-page .hero-title { font-size: 1.6rem; }
+  .admin-shell .admin-topbar h1 { font-size: 1rem; }
+  .ad-hero-main h1 { font-size: 1.6rem; }
+  .ad-kpi-value { font-size: 1.5rem; }
+  .ad-kpi-grid { grid-template-columns: 1fr !important; }
+
+  /* Album page 360px */
+  .album-page-v2 .album-hero-copy h1 { font-size: 1.4rem; }
+  .album-page-v2 .state-card strong { font-size: 1.3rem; }
+  .album-page-v2 .stickers-grid { grid-template-columns: repeat(auto-fill, minmax(34px, 1fr)) !important; }
+  .album-page-v2 .sticker-cell { width: 34px; height: 34px; font-size: 0.62rem; }
+}
+
+/* ═══════════════════════════════════════════
+   BUSINESS DASHBOARD — MOBILE
+   ═══════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .biz-layout { flex-direction: column; }
+  .biz-sidebar { width: 100%; position: static; height: auto; }
+  .biz-main { padding: 12px; }
+  .biz-grid { grid-template-columns: 1fr !important; }
+  .biz-hero { flex-direction: column; gap: 12px; padding: 16px; }
+  .biz-hero h1 { font-size: 1.8rem; }
+  .biz-stats { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .biz-stat { padding: 12px; }
+}
+
+/* ═══════════════════════════════════════════
+   INFLUENCER DASHBOARD — MOBILE  
+   ═══════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .inf-hero { flex-direction: column; gap: 14px; padding: 16px; }
+  .inf-hero h1 { font-size: 1.6rem; }
+  .inf-stats { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .inf-grid { grid-template-columns: 1fr !important; gap: 12px; }
+}

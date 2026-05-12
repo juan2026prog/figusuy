@@ -112,7 +112,7 @@ export default function AdminSecurity() {
               Intentos Denegados ({deniedAttempts.length})
             </h3>
             {deniedAttempts.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '2rem', color: "var(--admin-muted)", fontSize: '0.875rem' }}>Sin intentos denegados registrados. âœ…</div>
+              <div style={{ textAlign: 'center', padding: '2rem', color: "var(--admin-muted)", fontSize: '0.875rem' }}>Sin intentos denegados registrados. ✅</div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '20rem', overflowY: 'auto' }}>
                 {deniedAttempts.map(attempt => (
@@ -122,7 +122,7 @@ export default function AdminSecurity() {
                       <span style={{ fontSize: '0.6875rem', color: "var(--admin-muted)" }}>{new Date(attempt.created_at).toLocaleString()}</span>
                     </div>
                     <p style={{ fontSize: '0.75rem', color: "var(--admin-muted2)", margin: 0 }}>
-                      Usuario: {attempt.user?.name || 'Desconocido'} ({attempt.user?.email || 'â€”'})
+                      Usuario: {attempt.user?.name || 'Desconocido'} ({attempt.user?.email || '—'})
                     </p>
                   </div>
                 ))}
@@ -135,7 +135,7 @@ export default function AdminSecurity() {
             <h3 style={{ fontSize: '1rem', fontWeight: 800, marginBottom: '0.5rem', color: "var(--admin-panel2)" }}>Tu Sesión Actual</h3>
             <p style={{ fontSize: '0.875rem', color: "var(--admin-muted)" }}>
               Rol activo: <span style={{ color: 'var(--color-primary)', fontWeight: 800, textTransform: 'uppercase' }}>{adminRole}</span>
-              {' '}â€” Nivel de acceso: {adminRole === 'god_admin' ? 'Total' : adminRole === 'admin' ? 'Alto' : 'Restringido'}
+              {' '}— Nivel de acceso: {adminRole === 'god_admin' ? 'Total' : adminRole === 'admin' ? 'Alto' : 'Restringido'}
             </p>
           </div>
         </div>

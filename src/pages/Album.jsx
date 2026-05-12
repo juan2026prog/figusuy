@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import ConfirmDialog from '../components/ConfirmDialog'
 import { LiveBadge, LiveFeed } from '../components/LiveMomentum'
@@ -9,6 +9,61 @@ import { ALBUM_PROGRESS_STATES, getPartnerStoreAlbumState, markAlbumCompleted } 
 import { useAuthStore } from '../stores/authStore'
 import { useAppStore } from '../stores/appStore'
 import { getUserLocation } from '../utils/location'
+
+const POKEMON_TOOLTIP_STYLES = `
+  .pokemon-tooltip {
+    position: fixed;
+    z-index: 10000;
+    background: #0d0d0d;
+    border: 1px solid rgba(249, 115, 22, 0.3);
+    border-radius: 12px;
+    padding: 12px 16px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.8), 0 0 15px rgba(249, 115, 22, 0.1);
+    pointer-events: none;
+    min-width: 180px;
+    max-width: 280px;
+    animation: tooltip-fade 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    transform-origin: bottom center;
+  }
+  @keyframes tooltip-fade {
+    from { opacity: 0; transform: translateY(8px) scale(0.95); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .pokemon-tooltip-name {
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 800;
+    display: block;
+    margin-bottom: 4px;
+    letter-spacing: -0.01em;
+  }
+  .pokemon-tooltip-rarity {
+    color: var(--color-primary);
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .pokemon-tooltip-rarity::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    background: var(--color-primary);
+    border-radius: 50%;
+    box-shadow: 0 0 8px var(--color-primary);
+  }
+  .checklist-num {
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .checklist-num:hover {
+    color: var(--color-primary);
+    text-shadow: 0 0 8px rgba(249, 115, 22, 0.5);
+  }
+`;
 
 const MODE_META = {
   have: { icon: 'check_circle', eyebrow: 'Modo activo', title: 'Tengo', description: 'Marca figuritas que ya estan en tu album.' },
@@ -66,6 +121,18 @@ export default function AlbumPage() {
   const [legendState, setLegendState] = useState({ status: ALBUM_PROGRESS_STATES.IN_PROGRESS })
   const [partnerStoreStateTick, setPartnerStoreStateTick] = useState(0)
   const [isSwitcherOpen, setIsSwitcherOpen] = useState(false)
+  const [pokemonTooltip, setPokemonTooltip] = useState(null)
+
+  // Inject tooltip styles
+  useEffect(() => {
+    const styleId = 'pokemon-tooltip-styles';
+    if (!document.getElementById(styleId)) {
+      const style = document.createElement('style');
+      style.id = styleId;
+      style.innerHTML = POKEMON_TOOLTIP_STYLES;
+      document.head.appendChild(style);
+    }
+  }, [])
 
   // Click outside listener for custom dropdown
   useEffect(() => {
@@ -122,7 +189,10 @@ export default function AlbumPage() {
     }
   }, [isInitializing, selectedAlbum, albums.length])
 
-  const total = selectedAlbum?.total_stickers || 980
+  const total = useMemo(() => {
+    if (selectedAlbum?.name === "Panini´s FIFA World Cup 2026") return 1134
+    return selectedAlbum?.total_stickers || 980
+  }, [selectedAlbum])
 
   const specialGroups = useMemo(() => {
     if (!selectedAlbum?.special_codes) return {}
@@ -252,7 +322,63 @@ export default function AlbumPage() {
   const numbers = useMemo(() => {
     let result = []
 
-    if (activeTab === 'base') result = Array.from({ length: total }, (_, index) => String(index + 1))
+    const isPaniniWC2026 = selectedAlbum?.name === "Panini´s FIFA World Cup 2026"
+
+    if (activeTab === 'base') {
+      if (isPaniniWC2026) {
+        const flagMap = {
+          MEX: { iso: "mx", name: "México" }, RSA: { iso: "za", name: "Sudáfrica" }, KOR: { iso: "kr", name: "Corea del Sur" }, CZE: { iso: "cz", name: "Rep. Checa" },
+          CAN: { iso: "ca", name: "Canadá" }, BIH: { iso: "ba", name: "Bosnia" }, QAT: { iso: "qa", name: "Qatar" }, SUI: { iso: "ch", name: "Suiza" },
+          BRA: { iso: "br", name: "Brasil" }, MAR: { iso: "ma", name: "Marruecos" }, HAI: { iso: "ht", name: "Haití" }, SCO: { iso: "gb-sct", name: "Escocia" },
+          USA: { iso: "us", name: "EE.UU." }, PAR: { iso: "py", name: "Paraguay" }, AUS: { iso: "au", name: "Australia" }, TUR: { iso: "tr", name: "Turquía" },
+          GER: { iso: "de", name: "Alemania" }, CUW: { iso: "cw", name: "Curazao" }, CIV: { iso: "ci", name: "C. Marfil" }, ECU: { iso: "ec", name: "Ecuador" },
+          NED: { iso: "nl", name: "P. Bajos" }, JPN: { iso: "jp", name: "Japón" }, POL: { iso: "pl", name: "Polonia" }, TUN: { iso: "tn", name: "Túnez" },
+          BEL: { iso: "be", name: "Bélgica" }, EGY: { iso: "eg", name: "Egipto" }, IRN: { iso: "ir", name: "Irán" }, NZL: { iso: "nz", name: "N. Zelanda" },
+          ESP: { iso: "es", name: "España" }, URU: { iso: "uy", name: "Uruguay" }, KSA: { iso: "sa", name: "Arabia S." }, CPV: { iso: "cv", name: "Cabo Verde" },
+          FRA: { iso: "fr", name: "Francia" }, SEN: { iso: "sn", name: "Senegal" }, NOR: { iso: "no", name: "Noruega" }, IRQ: { iso: "iq", name: "Irak" },
+          ARG: { iso: "ar", name: "Argentina" }, AUT: { iso: "at", name: "Austria" }, DZA: { iso: "dz", name: "Argelia" }, JOR: { iso: "jo", name: "Jordania" },
+          POR: { iso: "pt", name: "Portugal" }, COL: { iso: "co", name: "Colombia" }, COD: { iso: "cd", name: "RD Congo" }, UZB: { iso: "uz", name: "Uzbekistán" },
+          ENG: { iso: { iso: "gb-eng" }, name: "Inglaterra" }, CRO: { iso: "hr", name: "Croacia" }, PAN: { iso: "pa", name: "Panamá" }, GHA: { iso: "gh", name: "Ghana" }
+        }
+
+        // Correcting the ENG entry which had a nesting error in previous line
+        flagMap.ENG = { iso: "gb-eng", name: "Inglaterra" }
+
+        const groups = [
+          { name: "GRUPO A", teams: ["MEX", "RSA", "KOR", "CZE"] },
+          { name: "GRUPO B", teams: ["CAN", "BIH", "QAT", "SUI"] },
+          { name: "GRUPO C", teams: ["BRA", "MAR", "HAI", "SCO"] },
+          { name: "GRUPO D", teams: ["USA", "PAR", "AUS", "TUR"] },
+          { name: "GRUPO E", teams: ["GER", "CUW", "CIV", "ECU"] },
+          { name: "GRUPO F", teams: ["NED", "JPN", "POL", "TUN"] },
+          { name: "GRUPO G", teams: ["BEL", "EGY", "IRN", "NZL"] },
+          { name: "GRUPO H", teams: ["ESP", "URU", "KSA", "CPV"] },
+          { name: "GRUPO I", teams: ["FRA", "SEN", "NOR", "IRQ"] },
+          { name: "GRUPO J", teams: ["ARG", "AUT", "DZA", "JOR"] },
+          { name: "GRUPO K", teams: ["POR", "COL", "COD", "UZB"] },
+          { name: "GRUPO L", teams: ["ENG", "CRO", "PAN", "GHA"] }
+        ]
+
+        result.push("00")
+        for (let i = 1; i <= 8; i++) result.push(`FWC${i}`)
+        
+        groups.forEach(group => {
+          result.push({ 
+            type: 'subtitle', 
+            label: group.name, 
+            flags: group.teams.map(t => flagMap[t]) 
+          })
+          group.teams.forEach(team => {
+            for (let i = 1; i <= 20; i++) result.push(`${team}${i}`)
+          })
+        })
+
+        for (let i = 9; i <= 19; i++) result.push(`FWC${i}`)
+        for (let i = 1; i <= 14; i++) result.push(`CC${i}`)
+      } else {
+        result = Array.from({ length: total }, (_, index) => String(index + 1))
+      }
+    }
     else if (activeTab === 'missing') result = Array.from(missingSet)
     else if (activeTab === 'duplicates') result = Array.from(duplicateSet)
     else if (activeTab.startsWith('special_')) result = specialGroups[activeTab.replace('special_', '')] || []
@@ -260,7 +386,9 @@ export default function AlbumPage() {
     if (!searchFilter.trim()) return result
 
     const query = searchFilter.trim().toLowerCase()
-    return result.filter((num) => {
+    return result.filter((item) => {
+      const num = typeof item === 'object' ? '' : item
+      if (!num) return false
       const stickerData = albumStickersMap[num]
       return (
         num.toLowerCase().includes(query) ||
@@ -269,7 +397,7 @@ export default function AlbumPage() {
         stickerData?.country?.toLowerCase().includes(query)
       )
     })
-  }, [activeTab, total, missingSet, duplicateSet, searchFilter, specialGroups, albumStickersMap])
+  }, [activeTab, total, missingSet, duplicateSet, searchFilter, specialGroups, albumStickersMap, selectedAlbum?.name])
 
   const mobileGridPageSize = 120
   const shouldPaginateMobileGrid = isMobileGrid && viewMode === 'numbers' && numbers.length > mobileGridPageSize
@@ -335,9 +463,40 @@ export default function AlbumPage() {
 
       if (mode === 'clear') await removeStickerStatus(profile.id, selectedAlbum.id, sticker)
     } catch {
-      toast.error('No se pudo actualizar la figurita')
+      toast.error('Hubo un error al actualizar el estado.')
     }
   }
+
+  const handlePokemonHover = (e, sticker) => {
+    if (!selectedAlbum) return;
+    const isTPC = selectedAlbum.editorial === 'The Pokémon Company';
+    const isTCG = selectedAlbum.name?.toLowerCase().includes('pokémon tcg') || selectedAlbum.name?.toLowerCase().includes('pokemon tcg');
+    
+    if (!isTPC || !isTCG) return;
+
+    const stickerData = albumStickersMap[sticker];
+    const rect = e.currentTarget.getBoundingClientRect();
+    
+    setPokemonTooltip({
+      name: stickerData?.name || 'Información no disponible',
+      rarity: stickerData?.team || 'Información no disponible',
+      x: rect.left + rect.width / 2,
+      y: rect.top - 10
+    });
+  };
+
+  const handlePokemonLeave = () => {
+    setPokemonTooltip(null);
+  };
+
+  const handlePokemonTouch = (e, sticker) => {
+    e.stopPropagation();
+    if (pokemonTooltip) {
+      setPokemonTooltip(null);
+    } else {
+      handlePokemonHover(e, sticker);
+    }
+  };
 
   const handleBulkAdd = async () => {
     if (!bulkInput.trim() || !profile?.id || !selectedAlbum?.id) return
@@ -439,7 +598,7 @@ export default function AlbumPage() {
   const handleSelectAlbum = async (album) => {
     const res = await selectAlbum(album, profile?.id)
     if (!res?.error) return
-    if (res.error.message.toLowerCase().includes('albumes activos')) {
+    if (res.error.message.toLowerCase().includes('álbumes activos')) {
       setShowUpgradePrompt(true)
       return
     }
@@ -523,8 +682,8 @@ export default function AlbumPage() {
 
         <ConfirmDialog
           isOpen={showUpgradePrompt}
-          title="Llegaste al limite de albumes activos"
-          message="Tu plan actual tiene un limite de albumes activos. Si quieres seguir cargando colecciones, revisa los planes premium."
+          title="Llegaste al limite de álbumes activos"
+          message="Tu plan actual tiene un limite de álbumes activos. Si quieres seguir cargando colecciones, revisa los planes premium."
           confirmText="Ver planes"
           cancelText="Ahora no"
           variant="info"
@@ -539,7 +698,20 @@ export default function AlbumPage() {
   }
 
   return (
-    <div className="album-page-root album-page-v2 animate-fade-in">
+    <div className="album-page-root album-page-v2 animate-fade-in" onClick={() => setPokemonTooltip(null)}>
+      {pokemonTooltip && (
+        <div 
+          className="pokemon-tooltip" 
+          style={{ 
+            left: `${pokemonTooltip.x}px`, 
+            top: `${pokemonTooltip.y}px`,
+            transform: 'translate(-50%, -100%)'
+          }}
+        >
+          <span className="pokemon-tooltip-name">{pokemonTooltip.name}</span>
+          <span className="pokemon-tooltip-rarity">{pokemonTooltip.rarity}</span>
+        </div>
+      )}
       <section className="album-hero-panel animate-fade-in-up">
         <div className="album-hero-main">
           <div className="album-cover album-cover-v2">
@@ -554,33 +726,6 @@ export default function AlbumPage() {
           </div>
 
           <div className="album-hero-copy">
-            <div className="album-hero-topline">
-              <span className="album-kicker">Editor de álbum</span>
-              {userAlbums.length > 1 && (
-                <div className="album-switcher-v2" onClick={(e) => e.stopPropagation()}>
-                  <button className="switcher-toggle" onClick={() => setIsSwitcherOpen(!isSwitcherOpen)}>
-                    <span>{selectedAlbum?.name || 'Seleccionar álbum'}</span>
-                    <span className="material-symbols-outlined">expand_more</span>
-                  </button>
-                  {isSwitcherOpen && (
-                    <div className="switcher-menu">
-                      {userAlbums.map(ua => (
-                        <div 
-                          key={ua.album_id} 
-                          className={`switcher-option ${selectedAlbum.id === ua.album_id ? 'active' : ''}`}
-                          onClick={() => {
-                            handleSelectAlbum(ua.album);
-                            setIsSwitcherOpen(false);
-                          }}
-                        >
-                          {ua.album?.name || 'Colección'}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
             <h1>{selectedAlbum.name}</h1>
             <div className="album-hero-tags">
               <span className={`biz-chip ${statusMeta.tone}`}>{statusMeta.label}</span>
@@ -589,6 +734,35 @@ export default function AlbumPage() {
             <p>
               Revisá tu progreso, detectá oportunidades y decidí rápido dónde empujar tus cruces hoy.
             </p>
+
+            {userAlbums.length > 1 && (
+              <div className="album-switcher-v2" onClick={(e) => e.stopPropagation()}>
+                <button className="switcher-toggle" onClick={() => setIsSwitcherOpen(!isSwitcherOpen)}>
+                  <span className="material-symbols-outlined" style={{ fontSize: '1.1rem', opacity: 0.7 }}>swap_horiz</span>
+                  <span>Cambiar álbum</span>
+                  <span className="material-symbols-outlined" style={{ 
+                    transition: 'transform 0.2s', 
+                    transform: isSwitcherOpen ? 'rotate(180deg)' : 'rotate(0deg)' 
+                  }}>expand_more</span>
+                </button>
+                {isSwitcherOpen && (
+                  <div className="switcher-menu animate-dropdown-pop">
+                    {userAlbums.map(ua => (
+                      <div 
+                        key={ua.album_id} 
+                        className={`switcher-option ${selectedAlbum.id === ua.album_id ? 'active' : ''}`}
+                        onClick={() => {
+                          handleSelectAlbum(ua.album);
+                          setIsSwitcherOpen(false);
+                        }}
+                      >
+                        {ua.album?.name || 'Colección'}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
@@ -611,7 +785,7 @@ export default function AlbumPage() {
 
       <section className="album-middle-panels animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
         <div className="album-panel album-state-panel">
-          <span className="album-kicker">ESTADO DEL ÃLBUM</span>
+          <span className="album-kicker">ESTADO DEL ́LBUM</span>
           <div className="album-state-grid">
             <div className="state-card">
               <strong>{ownedCount}</strong>
@@ -680,7 +854,7 @@ export default function AlbumPage() {
         <span className="album-kicker">AHORA EN FIGUSUY</span>
         <div className="live-feed-grid">
           <div className="live-feed-card">
-            <strong>MARTÃN CARGÓ 12 REPETIDAS</strong>
+            <strong>MART͍N CARGÓ 12 REPETIDAS</strong>
             <p>Abrió nuevas oportunidades hace 3 min.</p>
           </div>
           <div className="live-feed-card">
@@ -780,29 +954,80 @@ export default function AlbumPage() {
             {viewMode === 'numbers' ? (
               <>
                 {shouldPaginateMobileGrid ? (
-                  <div className="mobile-grid-toolbar">
-                    <div className="mobile-grid-meta">
-                      <b>Pagina {safeMobileGridPage + 1}</b>
-                      <span>
-                        {safeMobileGridPage * mobileGridPageSize + 1}-{Math.min((safeMobileGridPage + 1) * mobileGridPageSize, numbers.length)} de {numbers.length}
-                      </span>
+                  <div className="mobile-grid-toolbar" style={{ background: 'rgba(255,255,255,0.03)', padding: '1.25rem', borderRadius: '1rem', marginBottom: '1.5rem', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    <div className="mobile-grid-meta" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <b style={{ color: 'var(--color-primary)', textTransform: 'uppercase', letterSpacing: '0.1em', fontSize: '0.875rem', fontStyle: 'italic' }}>Pagina {safeMobileGridPage + 1}</b>
+                        <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.75rem', fontWeight: 600 }}>
+                          {safeMobileGridPage * mobileGridPageSize + 1}-{Math.min((safeMobileGridPage + 1) * mobileGridPageSize, numbers.length)} de {numbers.length}
+                        </span>
+                      </div>
+                      <div style={{ background: 'rgba(249, 115, 22, 0.1)', padding: '0.35rem 0.75rem', borderRadius: '2rem', fontSize: '0.7rem', color: 'var(--color-primary)', fontWeight: 800 }}>
+                        {Math.round(((safeMobileGridPage + 1) / totalMobileGridPages) * 100)}% EXPLORADO
+                      </div>
                     </div>
-                    <div className="mobile-grid-nav">
-                      <button onClick={() => setMobileGridPage((page) => Math.max(page - 1, 0))} disabled={safeMobileGridPage === 0}>Anterior</button>
-                      <button onClick={() => setMobileGridPage((page) => Math.min(page + 1, totalMobileGridPages - 1))} disabled={safeMobileGridPage >= totalMobileGridPages - 1}>Siguiente</button>
+                    <div className="mobile-grid-nav" style={{ display: 'flex', gap: '0.75rem' }}>
+                      <button 
+                        onClick={() => setMobileGridPage((page) => Math.max(page - 1, 0))} 
+                        disabled={safeMobileGridPage === 0}
+                        style={{ 
+                          flex: 1, padding: '1rem', borderRadius: '0.75rem', 
+                          background: 'rgba(255,255,255,0.05)', color: 'white', 
+                          border: '1px solid rgba(255,255,255,0.1)', 
+                          fontWeight: 900, fontSize: '0.8rem', letterSpacing: '0.05em',
+                          opacity: safeMobileGridPage === 0 ? 0.3 : 1,
+                          cursor: 'pointer', transition: 'all 0.2s'
+                        }}
+                      >
+                        ANTERIOR
+                      </button>
+                      <button 
+                        onClick={() => setMobileGridPage((page) => Math.min(page + 1, totalMobileGridPages - 1))} 
+                        disabled={safeMobileGridPage >= totalMobileGridPages - 1}
+                        style={{ 
+                          flex: 1, padding: '1rem', borderRadius: '0.75rem', 
+                          background: 'var(--color-primary)', color: 'white', 
+                          border: 'none', fontWeight: 900, fontSize: '0.8rem', letterSpacing: '0.05em',
+                          opacity: safeMobileGridPage >= totalMobileGridPages - 1 ? 0.3 : 1,
+                          cursor: 'pointer', boxShadow: '0 4px 12px rgba(249, 115, 22, 0.3)',
+                          transition: 'all 0.2s'
+                        }}
+                      >
+                        SIGUIENTE
+                      </button>
                     </div>
                   </div>
                 ) : null}
 
                 <div className="stickers-grid stickers-grid-v2">
-                  {visibleNumbers.map((num) => {
+                  {visibleNumbers.map((item, idx) => {
+                    if (typeof item === 'object' && item.type === 'subtitle') {
+                      return (
+                        <div key={`sub-${idx}`} className="grid-subtitle" style={{ gridColumn: '1 / -1', padding: '1.5rem 0.5rem 0.5rem', display: 'flex', alignItems: 'center', gap: '1rem', borderBottom: '1px solid var(--color-surface-hover)', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
+                          <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--color-primary)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>{item.label}</span>
+                          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                            {item.flags?.map((f, fi) => (
+                              <div key={fi} style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                                <img src={`https://flagcdn.com/w40/${f.iso}.png`} alt={f.name} style={{ height: '12px', borderRadius: '2px', boxShadow: '0 1px 2px rgba(0,0,0,0.3)' }} />
+                                <span style={{ fontSize: '0.65rem', fontWeight: 600, color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>{f.name}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )
+                    }
+
+                    const num = item
                     const status = ownedSet.has(num) ? 'have' : missingSet.has(num) ? 'miss' : duplicateSet.has(num) ? 'dup' : ''
                     return (
                       <button
                         key={num}
                         className={`sticker-cell ${status} animate-scale-in`}
-                        style={{ animationDelay: `${(parseInt(num) % 20) * 0.02}s` }}
+                        style={{ animationDelay: `${(idx % 20) * 0.02}s` }}
                         onClick={() => handleToggle(num)}
+                        onMouseEnter={(e) => handlePokemonHover(e, num)}
+                        onMouseLeave={handlePokemonLeave}
+                        onTouchStart={(e) => handlePokemonTouch(e, num)}
                       >
                         <b>{num}</b>
                       </button>
@@ -812,8 +1037,24 @@ export default function AlbumPage() {
               </>
             ) : (
               <div className="stickers-checklist">
-                {numbers.map((num) => {
-                  const sticker = String(num)
+                {numbers.map((item, idx) => {
+                  if (typeof item === 'object' && item.type === 'subtitle') {
+                    return (
+                      <div key={`sub-chk-${idx}`} className="checklist-subtitle" style={{ gridColumn: '1 / -1', padding: '2rem 1rem 0.5rem', display: 'flex', alignItems: 'center', gap: '1.5rem', borderBottom: '2px solid var(--color-surface-hover)', marginBottom: '1rem', flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: '0.875rem', fontWeight: 900, color: 'var(--color-primary)', textTransform: 'uppercase', letterSpacing: '0.15em' }}>{item.label}</span>
+                        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                          {item.flags?.map((f, fi) => (
+                            <div key={fi} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                              <img src={`https://flagcdn.com/w40/${f.iso}.png`} alt={f.name} style={{ height: '16px', borderRadius: '3px', boxShadow: '0 2px 4px rgba(0,0,0,0.4)' }} />
+                              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-text-secondary)', textTransform: 'uppercase' }}>{f.name}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )
+                  }
+
+                  const sticker = String(item)
                   const isOwned = ownedSet.has(sticker)
                   const isMissing = missingSet.has(sticker)
                   const isDuplicate = duplicateSet.has(sticker)
@@ -855,7 +1096,14 @@ export default function AlbumPage() {
                       </div>
                       <div className="checklist-info">
                         <div className="checklist-header">
-                          <span className="checklist-num">{sticker}</span>
+                          <span 
+                            className="checklist-num"
+                            onMouseEnter={(e) => handlePokemonHover(e, sticker)}
+                            onMouseLeave={handlePokemonLeave}
+                            onTouchStart={(e) => handlePokemonTouch(e, sticker)}
+                          >
+                            {sticker}
+                          </span>
                           {stickerData?.sticker_code ? <span className="checklist-code">{stickerData.sticker_code}</span> : null}
                         </div>
                         {stickerData?.name ? <span className="checklist-name">{stickerData.name}</span> : null}
@@ -1013,8 +1261,8 @@ export default function AlbumPage() {
 
       <ConfirmDialog
         isOpen={showUpgradePrompt}
-        title="Llegaste al limite de albumes activos"
-        message="Tu plan actual tiene un limite de albumes activos. Si quieres seguir cargando colecciones, puedes revisar los planes premium."
+        title="Llegaste al limite de álbumes activos"
+        message="Tu plan actual tiene un limite de álbumes activos. Si quieres seguir cargando colecciones, puedes revisar los planes premium."
         confirmText="Ver planes"
         cancelText="Ahora no"
         variant="info"

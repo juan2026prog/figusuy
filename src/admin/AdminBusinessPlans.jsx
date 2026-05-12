@@ -106,8 +106,8 @@ export default function AdminBusinessPlans() {
                   <>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1.25rem' }}>
                       {[
-                        { label: 'Máx fotos', value: plan.max_photos ?? 'âˆž', icon: 'photo_camera' },
-                        { label: 'Máx promos', value: plan.max_active_promos ?? 'âˆž', icon: 'campaign' },
+                        { label: 'Máx fotos', value: plan.max_photos ?? '∞', icon: 'photo_camera' },
+                        { label: 'Máx promos', value: plan.max_active_promos ?? '∞', icon: 'campaign' },
                         { label: 'Boost elegibilidad', value: `+${((plan.eligibility_boost || 0) * 100).toFixed(0)}%`, icon: 'trending_up' },
                       ].map(item => (
                         <div key={item.label} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0.75rem', background: "var(--admin-panel2)", borderRadius: '0.5rem', fontSize: '0.8125rem' }}>
@@ -130,7 +130,7 @@ export default function AdminBusinessPlans() {
                         <span key={f.key} style={{
                           padding: '0.25rem 0.5rem', borderRadius: '0.375rem', fontSize: '0.6875rem', fontWeight: 700,
                           background: plan[f.key] ? '#ecfdf5' : "var(--admin-panel2)", color: plan[f.key] ? '#10b981' : "var(--admin-muted)"
-                        }}>{plan[f.key] ? 'âœ“' : 'âœ•'} {f.label}</span>
+                        }}>{plan[f.key] ? '✓' : '✕'} {f.label}</span>
                       ))}
                     </div>
                     <button onClick={() => startEdit(plan)} style={{ width: '100%', padding: '0.625rem', borderRadius: '0.5rem', background: `${color}10`, color, border: `1px solid ${color}30`, fontWeight: 700, cursor: 'pointer', fontSize: '0.8125rem' }}>

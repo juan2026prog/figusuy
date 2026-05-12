@@ -54,8 +54,8 @@ const PLANS = [
     icon: 'workspace_premium',
     iconKey: 'CollectorHubIcon',
     concept: 'Validar y liderar',
-    description: 'La capa mas alta: valida albumes y usuarios, suma rewards y se vuelve punto premium del ecosistema.',
-    features: ['Todo Conversion', 'Validacion de albumes', 'Validacion de usuarios', 'Badge Collector Hub', 'Rewards asociados', 'Visibilidad premium'],
+    description: 'La capa mas alta: valida álbumes y usuarios, suma rewards y se vuelve punto premium del ecosistema.',
+    features: ['Todo Conversion', 'Validación de álbumes', 'Validación de usuarios', 'Badge Collector Hub', 'Rewards asociados', 'Visibilidad premium'],
     cta: 'Aplicar ahora',
     action: 'contact'
   }
@@ -65,7 +65,7 @@ const COMPARISON = [
   { label: 'Visibilidad', boost: 'Basica', radar: 'Alta', conversion: 'Prioritaria', partnerstore: 'Premium' },
   { label: 'Promos', boost: 'Simple', radar: 'Destacadas', conversion: 'Promo first', partnerstore: 'Promo + rewards' },
   { label: 'Lugares sugeridos', boost: 'Si', radar: 'Si', conversion: 'Si', partnerstore: 'Si + prioridad' },
-  { label: 'Validacion', boost: '-', radar: '-', conversion: '-', partnerstore: 'Albumes y usuarios' },
+  { label: 'Validación', boost: '-', radar: '-', conversion: '-', partnerstore: 'Álbumes y usuarios' },
   { label: 'Objetivo', boost: 'Existir', radar: 'Ganar radar', conversion: 'Convertir', partnerstore: 'Liderar' }
 ]
 
@@ -140,13 +140,13 @@ export default function PartnerPlans() {
           <div className="pp-kicker">// nuevo valor</div>
           <h1 className="pp-hero-title">No es solo aparecer. <span>Es capturar trafico, validar y convertir.</span></h1>
           <p className="pp-hero-sub">
-            FigusUY ahora mueve lugares sugeridos, albumes, red, validacion y liquidez. Los planes para negocios escalan
+            FigusUY ahora mueve lugares sugeridos, álbumes, red, validacion y liquidez. Los planes para negocios escalan
             visibilidad, promos, autoridad comercial y conversion real.
           </p>
           <div className="pp-hero-badges">
             <span className="pp-badge">Lugares sugeridos por usuarios</span>
             <span className="pp-badge">Promos y trafico local</span>
-            <span className="pp-badge">Validacion y rewards</span>
+            <span className="pp-badge">Validación y rewards</span>
           </div>
         </section>
 

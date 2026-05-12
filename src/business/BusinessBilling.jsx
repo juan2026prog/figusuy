@@ -57,8 +57,8 @@ const PLAN_METADATA = {
     contact: { icon: 'workspace_premium', label: 'Badge Collector Hub', class: 'legend' },
     features: [
       'Todo Conversion',
-      'Validacion de albumes',
-      'Validacion de usuarios',
+      'Validación de álbumes',
+      'Validación de usuarios',
       'Prioridad de validacion',
       'Rewards asociados',
       'Visibilidad premium',
@@ -500,7 +500,7 @@ export default function BusinessBilling() {
               {plan.id === 'turbo' && !isActive && <div className="plan-ribbon">Mas visibilidad</div>}
               {plan.id === 'legend' && !isActive && (
                 <div className="plan-ribbon" style={{ background: 'linear-gradient(90deg, var(--yellow), var(--orange))', color: '#111' }}>
-                  Validacion
+                  Validación
                 </div>
               )}
 
@@ -545,7 +545,7 @@ export default function BusinessBilling() {
                       <b style={{ font: 'italic 900 3.8rem "Barlow Condensed"', lineHeight: '.75', color: '#fff' }}>{plan.priceDisplay?.usd}</b>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginTop: '2px' }}>
                         <span style={{ fontSize: '.78rem', color: 'var(--muted2)', fontWeight: '800', whiteSpace: 'nowrap' }}>
-                          â‰ˆ ${plan.dbRules?.monthly_price || plan.priceDisplay?.uyu} UYU APROX.
+                          ≈ ${plan.dbRules?.monthly_price || plan.priceDisplay?.uyu} UYU APROX.
                         </span>
                         <span style={{ color: 'var(--muted2)', fontSize: '.78rem', fontWeight: '800' }}>/MES</span>
                       </div>
@@ -596,7 +596,7 @@ export default function BusinessBilling() {
             <tbody>
               <tr>
                 <td>Fotos en local</td>
-                {sortedPlans.map(p => <td key={p.id}>{p.dbRules?.max_photos || 'âˆž'}</td>)}
+                {sortedPlans.map(p => <td key={p.id}>{p.dbRules?.max_photos || '∞'}</td>)}
               </tr>
               <tr>
                 <td>Promociones activas</td>

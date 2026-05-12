@@ -1,4 +1,4 @@
-﻿export const LANDING_PAGE_KEY = 'official'
+export const LANDING_PAGE_KEY = 'official'
 export const LANDING_POINTS_PAGE_KEY = 'points'
 export const LANDING_INFLUENCERS_PAGE_KEY = 'influencers'
 
@@ -17,6 +17,7 @@ export const LANDING_PAGE_OPTIONS = [
       'how_it_works',
       'influencers',
       'gamification',
+      'referral_section',
       'user_plans',
       'business_plans',
       'final_cta',
@@ -114,7 +115,7 @@ const planFields = [
 const heroFeed = [
   { title: 'Martin cargo 12 repetidas', detail: 'Abrio nuevas oportunidades', time: 'hace 3 min', tone: 'orange' },
   { title: 'Sofia completo un album', detail: 'Gano reward + badge', time: 'recien', tone: 'green' },
-  { title: 'Collectibles validando ahora', detail: '2 albumes en revision', time: 'live', tone: 'blue' },
+  { title: 'Collectibles validando ahora', detail: '2 álbumes en revision', time: 'live', tone: 'blue' },
 ]
 
 const heroStats = [
@@ -126,7 +127,7 @@ const heroStats = [
 const nowCards = [
   { title: 'Busquedas activas', description: '14 personas buscando cerrar intercambio ahora.', badge: 'Live', tone: 'orange' },
   { title: 'Cambios completados', description: '6 intercambios validados hoy por la comunidad.', badge: 'Hoy', tone: 'green' },
-  { title: 'Zonas calientes', description: 'Pocitos, Centro y Cordon siguen moviendo el mapa.', badge: 'Montevideo', tone: 'blue' },
+  { title: 'Zonas activas', description: 'Pocitos, Centro y Cordon siguen llenos de intercambios.', badge: 'Montevideo', tone: 'blue' },
 ]
 
 const albumItems = [
@@ -179,7 +180,7 @@ const userPlans = [
     badge: 'MAS ELEGIDO',
     highlight: true,
     cta: { label: 'PROBAR 7 DIAS', url: '/login', style: 'primary' },
-    benefits: ['Mas albumes activos', 'Alertas utiles', 'Mayor visibilidad', 'Mas velocidad para completar'],
+    benefits: ['Mas álbumes activos', 'Alertas utiles', 'Mayor visibilidad', 'Mas velocidad para completar'],
   },
   {
     name: 'PRO',
@@ -187,7 +188,7 @@ const userPlans = [
     badge: 'POWER USERS',
     highlight: false,
     cta: { label: 'ELEGIR PRO', url: '/login', style: 'secondary' },
-    benefits: ['Albumes ilimitados', 'Prioridad en cruces', 'Radar extendido', 'Automatches'],
+    benefits: ['Álbumes ilimitados', 'Prioridad en cruces', 'Radar extendido', 'Automatches'],
   },
 ]
 
@@ -214,7 +215,7 @@ const businessPlans = [
     badge: 'DESTACADO',
     highlight: true,
     cta: { label: 'HABLAR CON EL EQUIPO', url: '/business/apply', style: 'primary' },
-    benefits: ['Validacion de intercambios', 'Rewards', 'Badge premium', 'Cobertura extendida'],
+    benefits: ['Validación de intercambios', 'Rewards', 'Badge premium', 'Cobertura extendida'],
   },
 ]
 
@@ -306,7 +307,7 @@ export const LANDING_BLOCK_LIBRARY = [
     ],
   },
   {
-    type: 'influencers',
+    type: 'influencer_split',
     label: 'Influencers',
     description: 'Bloque para reclutar influencers con beneficios y CTAs.',
     preview: 'Influencers',
@@ -333,8 +334,8 @@ export const LANDING_BLOCK_LIBRARY = [
   },
   {
     type: 'albums',
-    label: 'Albumes en movimiento',
-    description: 'Slider editable de albumes destacados.',
+    label: 'Álbumes en movimiento',
+    description: 'Slider editable de álbumes destacados.',
     preview: 'Carousel',
     fields: [
       { key: 'kicker', label: 'Kicker', type: 'text' },
@@ -342,7 +343,7 @@ export const LANDING_BLOCK_LIBRARY = [
       { key: 'subtitle', label: 'Subtitulo', type: 'textarea' },
       { key: 'autoplay', label: 'Autoplay', type: 'toggle' },
       { key: 'autoplayMs', label: 'Intervalo autoplay', type: 'number' },
-      { key: 'items', label: 'Albumes', type: 'list', itemLabel: 'Album', fields: [
+      { key: 'items', label: 'Álbumes', type: 'list', itemLabel: 'Album', fields: [
         { key: 'title', label: 'Titulo', type: 'text' },
         { key: 'label', label: 'Label', type: 'text' },
         { key: 'badge', label: 'Badge', type: 'text' },
@@ -556,6 +557,32 @@ export const LANDING_BLOCK_LIBRARY = [
     ],
   },
   {
+    type: 'referral_section',
+    label: 'Sección de Referidos Premium',
+    description: 'Bloque con cards de link y recompensas sociales.',
+    preview: 'Referidos',
+    fields: [
+      { key: 'kicker', label: 'Kicker', type: 'text' },
+      { key: 'title', label: 'Titulo', type: 'textarea' },
+      { key: 'subtitle', label: 'Subtitulo', type: 'textarea' },
+    ],
+  },
+  {
+    type: 'referrals',
+    label: 'Programa de Referidos',
+    description: 'Bloque para promocionar el sistema de invita y gana para usuarios.',
+    preview: 'Crecimiento',
+    fields: [
+      { key: 'title', label: 'Titulo', type: 'textarea' },
+      { key: 'description', label: 'Descripcion', type: 'textarea' },
+      { key: 'cta', label: 'CTA', type: 'group', fields: ctaGroupFields },
+      { key: 'steps', label: 'Pasos del proceso', type: 'list', itemLabel: 'Paso', fields: [
+        { key: 'title', label: 'Titulo', type: 'text' },
+        { key: 'description', label: 'Descripcion', type: 'textarea' },
+      ] },
+    ],
+  },
+  {
     type: 'footer',
     label: 'Footer',
     description: 'Links legales, social y CTA final.',
@@ -592,6 +619,7 @@ const OFFICIAL_DEFAULT_BLOCKS = mapDefaultBlocks(LANDING_PAGE_KEY, [
       links: [
         { label: 'Como funciona', url: '#como-funciona' },
         { label: 'Influencers', url: '#influencers' },
+        { label: 'Referidos', url: '#invita-y-gana' },
         { label: 'Gamificacion', url: '#gamificacion' },
         { label: 'Planes', url: '#planes-usuario' },
         { label: 'Negocios', url: '#planes-negocio' },
@@ -618,7 +646,7 @@ const OFFICIAL_DEFAULT_BLOCKS = mapDefaultBlocks(LANDING_PAGE_KEY, [
       ],
       stats: heroStats,
       feedTitle: 'Ahora en FigusUY',
-      feedSubtitle: 'Actividad real, albumes, validaciones y oportunidades moviendose ahora.',
+      feedSubtitle: 'Actividad real, álbumes, validaciones y oportunidades moviendose ahora.',
       feedItems: heroFeed,
       wallItems: [
         { number: '18', label: 'Match', tone: 'orange' },
@@ -638,7 +666,7 @@ const OFFICIAL_DEFAULT_BLOCKS = mapDefaultBlocks(LANDING_PAGE_KEY, [
     draft_content: {
       kicker: '// ahora en figusuy',
       title: 'La red se mueve en tiempo real',
-      subtitle: 'Actividad, albumes, zonas calientes y prueba social para entrar cuando la comunidad esta mas activa.',
+      subtitle: 'Actividad, álbumes, zonas calientes y prueba social para entrar cuando la comunidad esta mas activa.',
       chips: [
         { label: 'Live', tone: 'orange' },
         { label: 'Comunidad activa', tone: 'green' },
@@ -647,21 +675,21 @@ const OFFICIAL_DEFAULT_BLOCKS = mapDefaultBlocks(LANDING_PAGE_KEY, [
       liveItems: heroFeed,
       cards: nowCards,
       activityItems: [
-        { title: 'Pocitos sigue caliente', detail: 'Nuevas oportunidades en menos de 1 km.', time: 'ahora', tone: 'orange' },
-        { title: 'Nuevo reward desbloqueado', detail: 'Badge de reputacion para validadores.', time: 'hoy', tone: 'green' },
+        { title: 'Mucho movimiento en Pocitos', detail: 'Se siguen cerrando intercambios cerca tuyo.', time: 'ahora', tone: 'orange' },
+        { title: 'Nueva insignia disponible', detail: 'Nuevo badge para quienes ayudan a mover la comunidad.', time: 'hoy', tone: 'green' },
       ],
       cta: { label: 'Crear cuenta', url: '/login', style: 'primary' },
     },
   },
   {
     block_type: 'albums',
-    internal_title: 'Albumes en movimiento',
-    slug: 'albumes-en-movimiento',
+    internal_title: 'Álbumes en movimiento',
+    slug: 'álbumes-en-movimiento',
     preview_image_url: '',
     draft_content: {
-      kicker: '// albumes en movimiento',
-      title: 'Descubri donde esta la accion',
-      subtitle: 'El admin decide que albumes empujar, cual entra como ultimo agregado y cual esta explotando en actividad.',
+      kicker: '// álbumes en movimiento',
+      title: 'DESCUBRÍ QUÉ SE ESTÁ MOVIENDO AHORA',
+      subtitle: 'Descubrí qué álbumes y colecciones están moviendo más intercambios dentro de la comunidad.',
       autoplay: true,
       autoplayMs: 4200,
       items: albumItems,
@@ -693,23 +721,23 @@ const OFFICIAL_DEFAULT_BLOCKS = mapDefaultBlocks(LANDING_PAGE_KEY, [
     preview_image_url: '',
     draft_content: {
       kicker: '// como funciona',
-      title: 'Todo el sistema en una sola app',
-      subtitle: 'FigusUY no es solo para cambiar figuritas. Es descubrimiento, comunidad, rewards, validacion y crecimiento en una sola red.',
+      title: 'LA RED DE LOS COLECCIONISTAS',
+      subtitle: 'Subí tus repetidas, encontrá matches, descubrí lugares y conectá con una comunidad activa de coleccionistas.',
       steps: [
         {
-          image: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1200&auto=format&fit=crop',
+          image: '/assets/landing/how_it_works/step1.png',
           title: 'Carga tu album',
           description: 'Subi faltantes y repetidas en segundos.',
           ctaLabel: '',
         },
         {
-          image: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?q=80&w=1200&auto=format&fit=crop',
+          image: '/assets/landing/how_it_works/step2.png',
           title: 'Encontra matches',
           description: 'Descubri con quien te conviene hablar primero.',
           ctaLabel: '',
         },
         {
-          image: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1200&auto=format&fit=crop',
+          image: '/assets/landing/how_it_works/step3.png',
           title: 'Cerra intercambios',
           description: 'Valida, rankea y hace crecer tu reputacion.',
           ctaLabel: '',
@@ -759,14 +787,14 @@ const OFFICIAL_DEFAULT_BLOCKS = mapDefaultBlocks(LANDING_PAGE_KEY, [
           icon: 'workspace_premium',
           badge: 'Badges',
           title: 'Badges',
-          description: 'Confiable, rapido y verificado.',
+          description: 'Destacate dentro de la comunidad.',
         },
         {
           image: 'https://images.unsplash.com/photo-1483721310020-03333e577078?q=80&w=1200&auto=format&fit=crop',
           icon: 'redeem',
           badge: 'Rewards',
           title: 'Rewards',
-          description: 'Boosts, visibilidad y perks.',
+          description: 'Más visibilidad, beneficios y mejores oportunidades.',
         },
         {
           image: 'https://images.unsplash.com/photo-1511884642898-4c92249e20b6?q=80&w=1200&auto=format&fit=crop',
@@ -803,14 +831,25 @@ const OFFICIAL_DEFAULT_BLOCKS = mapDefaultBlocks(LANDING_PAGE_KEY, [
     },
   },
   {
+    block_type: 'referral_section',
+    internal_title: 'Sección Referidos (Cards)',
+    slug: 'invita-y-gana',
+    preview_image_url: '',
+    draft_content: {
+      kicker: '// CRECÉ CON TU RED',
+      title: 'INVITÁ AMIGOS. MOVÉ LA COMUNIDAD.',
+      subtitle: 'Compartí tu enlace personal. Cuando tu amigo completa su primer intercambio, ambos ganan 3 días de Plus gratis.'
+    },
+  },
+  {
     block_type: 'user_plans',
     internal_title: 'Planes usuario',
     slug: 'planes-usuario',
     preview_image_url: '',
     draft_content: {
-      kicker: '// planes usuario',
-      title: 'Planes para coleccionistas',
-      subtitle: 'No pagas por usar FigusUY. Pagas por completar mas rapido.',
+      kicker: '// planes',
+      title: 'Elige tu nivel de juego',
+      subtitle: 'No pagás por usar FigusUY. Pagás por encontrar más rápido las que te faltan.',
       plans: userPlans,
     },
   },
@@ -847,7 +886,7 @@ const OFFICIAL_DEFAULT_BLOCKS = mapDefaultBlocks(LANDING_PAGE_KEY, [
     draft_content: {
       logoText: 'FIGUS',
       logoAccent: 'UY',
-      legal: 'Â© 2026 FigusUY. Todos los derechos reservados.',
+      legal: '© 2026 FigusUY. Todos los derechos reservados.',
       social: [
         { label: 'Instagram', url: 'https://instagram.com' },
         { label: 'TikTok', url: 'https://tiktok.com' },
@@ -872,7 +911,7 @@ const POINTS_DEFAULT_BLOCKS = mapDefaultBlocks(LANDING_POINTS_PAGE_KEY, [
       kicker: '// lugares oficiales',
       title: 'Converti tu local en lugar de intercambio',
       description: 'Activa trafico real en tu zona, aparece en el mapa y sumate a la red donde los coleccionistas ya estan buscando ir.',
-      image: 'https://images.unsplash.com/photo-1515169067868-5387ec356754?q=80&w=1200&auto=format&fit=crop',
+      image: '/assets/landing/local_intercambio.png',
       background: '#101010',
       chips: [
         { label: 'Trafico real', tone: 'orange' },
@@ -891,7 +930,7 @@ const POINTS_DEFAULT_BLOCKS = mapDefaultBlocks(LANDING_POINTS_PAGE_KEY, [
       kicker: '// programa de lugares',
       title: 'Tu tienda puede mover la red',
       description: 'No se trata solo de aparecer. Se trata de convertir tu local en una referencia para intercambios, validaciones y nuevas compras.',
-      image: 'https://images.unsplash.com/photo-1556740749-887f6717d7e4?q=80&w=1200&auto=format&fit=crop',
+      image: '/assets/landing/tienda_red.png',
       chips: [
         { label: 'Comercios aliados', tone: 'orange' },
         { label: 'Visibilidad local', tone: 'green' },

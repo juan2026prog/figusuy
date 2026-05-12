@@ -2,7 +2,7 @@
 import { getStarLevel, renderStars } from '../lib/reputation'
 
 /**
- * ReputationStars â€” Visual 5-star reputation badge.
+ * ReputationStars — Visual 5-star reputation badge.
  * 
  * Shows public reputation as filled/empty stars.
  * Used in: profile, matches, chat, user cards.
@@ -90,7 +90,7 @@ export default function ReputationStars({
       `}</style>
       <span
         className="rep-stars-wrap"
-        data-tooltip={showTooltip ? `${level.label} â€” ${level.description}` : undefined}
+        data-tooltip={showTooltip ? `${level.label} — ${level.description}` : undefined}
       >
         <span className="rep-stars">
           {[1, 2, 3, 4, 5].map(i => (
@@ -98,7 +98,7 @@ export default function ReputationStars({
               key={i}
               className={`rep-star ${i <= safeStars ? 'rep-star-filled' : 'rep-star-empty'}`}
             >
-              â˜…
+              ★
             </span>
           ))}
         </span>

@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
 import { useGamificationStore } from '../stores/gamificationStore'
@@ -47,7 +47,7 @@ export default function AchievementsPage() {
           <div className="top-kicker">Progreso / Logros</div>
           <div className="top-title">Mis Logros</div>
         </div>
-        <button className="btn" onClick={() => navigate('/profile')}>â† Perfil</button>
+        <button className="btn" onClick={() => navigate('/profile')}>← Perfil</button>
       </header>
 
       <main className="wrap">
@@ -87,9 +87,9 @@ export default function AchievementsPage() {
         </section>
 
         <nav className="tabs">
-          <button className={`tab ${activeTab === 'overview' ? 'active' : ''}`} onClick={() => setActiveTab('overview')}>â–¦ Resumen</button>
-          <button className={`tab ${activeTab === 'achievements' ? 'active' : ''}`} onClick={() => setActiveTab('achievements')}>ðŸ… Hitos</button>
-          <button className={`tab ${activeTab === 'rewards' ? 'active' : ''}`} onClick={() => setActiveTab('rewards')}>ðŸŽ Rewards</button>
+          <button className={`tab ${activeTab === 'overview' ? 'active' : ''}`} onClick={() => setActiveTab('overview')}>▦ Resumen</button>
+          <button className={`tab ${activeTab === 'achievements' ? 'active' : ''}`} onClick={() => setActiveTab('achievements')}>🏅 Hitos</button>
+          <button className={`tab ${activeTab === 'rewards' ? 'active' : ''}`} onClick={() => setActiveTab('rewards')}>🎁 Rewards</button>
         </nav>
 
         <section className="layout">
@@ -113,8 +113,8 @@ export default function AchievementsPage() {
                         const label = isCurrent ? 'Nivel actual' : isDone ? 'Superado' : (i === levelIdx + 1 ? 'Próximo nivel' : 'Bloqueado');
                         return (
                           <div key={lk} className={`road-step ${isDone ? 'done' : ''} ${isCurrent ? 'current' : ''}`}>
-                            {isDone && <div className="road-mark">âœ“</div>}
-                            {isCurrent && <div className="road-mark">â—</div>}
+                            {isDone && <div className="road-mark">✓</div>}
+                            {isCurrent && <div className="road-mark">●</div>}
                             <b>{lvlName}</b>
                             <span>{label}</span>
                           </div>
@@ -128,7 +128,7 @@ export default function AchievementsPage() {
                       {nextLevel && requirements.length > 0 ? (
                         requirements.map(r => (
                           <div key={r.key} className={`mission ${r.met ? 'done' : ''}`}>
-                            <div className="mission-check">{r.met ? 'âœ“' : 'â—‹'}</div>
+                            <div className="mission-check">{r.met ? '✓' : '○'}</div>
                             <div>
                               <b>{r.label}</b>
                               <span>{r.met ? 'Ya superaste este objetivo.' : 'Sigue trabajando en este objetivo.'}</span>
@@ -138,7 +138,7 @@ export default function AchievementsPage() {
                         ))
                       ) : (
                         <div className="mission done">
-                          <div className="mission-check">âœ“</div>
+                          <div className="mission-check">✓</div>
                           <div>
                             <b>Circuito Referente activo</b>
                             <span>Completá hitos y ganá rewards</span>
@@ -170,7 +170,7 @@ export default function AchievementsPage() {
                   {badges && badges.length > 0 ? (
                     <div className="badges-wrap">
                       {badges.map(b => {
-                        const def = BADGES[b.key] || { name: b.key, icon: 'ðŸ…', color: 'orange' };
+                        const def = BADGES[b.key] || { name: b.key, icon: '🏅', color: 'orange' };
                         let colorClass = 'orange';
                         if (def.color?.includes('green') || def.color === '#22c55e') colorClass = 'green';
                         else if (def.color?.includes('blue') || def.color === '#3b82f6') colorClass = 'blue';
@@ -251,10 +251,10 @@ export default function AchievementsPage() {
                                 </div>
                                 {reward && (
                                   <div className="reward-chip">
-                                    ðŸŽ Reward: {REWARD_TYPES[reward.type]?.name || reward.type} ({reward.value})
+                                    🎁 Reward: {REWARD_TYPES[reward.type]?.name || reward.type} ({reward.value})
                                     {REWARD_MIN_REP[reward.type] && (
                                       <span style={{ marginLeft: '8px', opacity: 0.75 }}>
-                                        Â· {getRequiredRepLabel(REWARD_MIN_REP[reward.type])}
+                                        · {getRequiredRepLabel(REWARD_MIN_REP[reward.type])}
                                       </span>
                                     )}
                                   </div>
@@ -274,8 +274,8 @@ export default function AchievementsPage() {
                                     color: canUnlockMilestone(key, reputation?.star_rating || 1).canUnlock ? 'var(--green)' : 'var(--muted)',
                                   }}>
                                     {canUnlockMilestone(key, reputation?.star_rating || 1).canUnlock
-                                      ? `âœ“ Reputación suficiente (${renderStars(MILESTONE_MIN_REP[key])})`
-                                      : `Requiere ${renderStars(MILESTONE_MIN_REP[key])} â€” ${getStarLevel(MILESTONE_MIN_REP[key]).label}`
+                                      ? `✓ Reputación suficiente (${renderStars(MILESTONE_MIN_REP[key])})`
+                                      : `Requiere ${renderStars(MILESTONE_MIN_REP[key])} — ${getStarLevel(MILESTONE_MIN_REP[key]).label}`
                                     }
                                   </div>
                                 )}
@@ -304,7 +304,7 @@ export default function AchievementsPage() {
                       const isExpired = r.expires_at && new Date(r.expires_at) < new Date()
                       const isConsumed = !!r.consumed_at
                       const isActive = !isExpired && !isConsumed
-                      const typeDef = REWARD_TYPES[r.type] || REWARD_TYPES[r.resolved_as] || { name: r.type, icon: 'ðŸŽ' }
+                      const typeDef = REWARD_TYPES[r.type] || REWARD_TYPES[r.resolved_as] || { name: r.type, icon: '🎁' }
                       
                       const statusClass = isActive ? 'active' : isConsumed ? 'used' : '';
                       const statusLabel = isActive ? 'Activo' : isConsumed ? 'Usado' : 'Expirado';
@@ -315,14 +315,14 @@ export default function AchievementsPage() {
                       return (
                         <article key={r.id} className="reward-card" style={{ marginBottom: '10px' }}>
                           <div className="reward-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            {typeDef.iconKey ? <GamificationIcon icon={typeDef.iconKey} size="md" /> : typeDef.icon || 'ðŸŽ'}
+                            {typeDef.iconKey ? <GamificationIcon icon={typeDef.iconKey} size="md" /> : typeDef.icon || '🎁'}
                           </div>
                           <div>
                             <h3>{typeDef.name}</h3>
                             <p>
                               {r.value}
-                              {r.resolved_as && ` Â· Mejorado a ${REWARD_TYPES[r.resolved_as]?.name || r.resolved_as}`}
-                              {r.source && ` Â· ${r.source.replace('achievement:', 'Hito: ')}`}
+                              {r.resolved_as && ` · Mejorado a ${REWARD_TYPES[r.resolved_as]?.name || r.resolved_as}`}
+                              {r.source && ` · ${r.source.replace('achievement:', 'Hito: ')}`}
                             </p>
                             {!repCheck.canClaim && !isConsumed && (
                               <p style={{
@@ -331,7 +331,7 @@ export default function AchievementsPage() {
                                 fontSize: '0.76rem',
                                 fontWeight: 700,
                               }}>
-                                Te falta reputación para este reward â€” necesitás {renderStars(repCheck.required)}
+                                Te falta reputación para este reward — necesitás {renderStars(repCheck.required)}
                               </p>
                             )}
                           </div>
@@ -348,7 +348,7 @@ export default function AchievementsPage() {
                       <h3>Catálogo de Rewards</h3>
                       <span>Beneficios que puedes desbloquear completando hitos</span>
                     </div>
-                    <div style={{ fontSize: '2rem' }}>ðŸŽ</div>
+                    <div style={{ fontSize: '2rem' }}>🎁</div>
                   </div>
                   {Object.keys(REWARD_TYPES).map(key => {
                     const def = REWARD_TYPES[key];
@@ -373,8 +373,8 @@ export default function AchievementsPage() {
                               color: repOk ? 'var(--green)' : 'var(--muted)',
                             }}>
                               {repOk 
-                                ? `âœ“ Reputación suficiente`
-                                : `Mín. ${renderStars(repReq)} â€” ${getStarLevel(repReq).label}`
+                                ? `✓ Reputación suficiente`
+                                : `Mín. ${renderStars(repReq)} — ${getStarLevel(repReq).label}`
                               }
                             </p>
                           )}

@@ -1,0 +1,341 @@
+<section class="fy-active-collections">
+  <style>
+    .fy-active-collections {
+      background: #060606;
+      color: #fff;
+      padding: 80px 24px;
+      font-family: Arial, sans-serif;
+    }
+
+    .fy-wrap {
+      max-width: 1240px;
+      margin: 0 auto;
+    }
+
+    .fy-eyebrow {
+      color: #ff5a00;
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+
+    .fy-title {
+      font-size: clamp(42px, 6vw, 82px);
+      line-height: .9;
+      margin: 0 0 20px;
+      font-weight: 1000;
+      font-style: italic;
+      text-transform: uppercase;
+      max-width: 980px;
+    }
+
+    .fy-subtitle {
+      color: #cfcfcf;
+      font-size: 17px;
+      line-height: 1.5;
+      max-width: 620px;
+      margin: 0 0 34px;
+    }
+
+    .fy-grid {
+      display: grid;
+      grid-template-columns: 1.15fr .95fr;
+      gap: 30px;
+      align-items: stretch;
+    }
+
+    .fy-hero {
+      min-height: 520px;
+      border-radius: 18px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 90, 0, .55);
+      background:
+        linear-gradient(180deg, rgba(0,0,0,.1), rgba(0,0,0,.88)),
+        url("https://images.unsplash.com/photo-1606167668584-78701c57f13d?q=80&w=1400&auto=format&fit=crop");
+      background-size: cover;
+      background-position: center;
+      position: relative;
+      box-shadow: 0 0 40px rgba(255, 90, 0, .14);
+      display: flex;
+      align-items: flex-end;
+    }
+
+    .fy-hero::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at 20% 20%, rgba(255,90,0,.22), transparent 28%),
+        radial-gradient(circle at 80% 80%, rgba(20,184,166,.12), transparent 30%);
+      pointer-events: none;
+    }
+
+    .fy-hero-content {
+      position: relative;
+      z-index: 2;
+      padding: 34px;
+      width: 100%;
+    }
+
+    .fy-hot {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 90, 0, .16);
+      border: 1px solid rgba(255, 90, 0, .8);
+      color: #ff6a00;
+      padding: 8px 13px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 1000;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+
+    .fy-hero h3 {
+      font-size: 42px;
+      line-height: .95;
+      margin: 0 0 14px;
+      font-weight: 1000;
+      font-style: italic;
+      text-transform: uppercase;
+    }
+
+    .fy-stats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 22px;
+    }
+
+    .fy-stat {
+      background: rgba(0,0,0,.5);
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 10px;
+      padding: 12px 14px;
+    }
+
+    .fy-stat strong {
+      display: block;
+      color: #fff;
+      font-size: 20px;
+      font-weight: 1000;
+    }
+
+    .fy-stat span {
+      color: #aaa;
+      font-size: 12px;
+      text-transform: uppercase;
+      font-weight: 800;
+    }
+
+    .fy-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+
+    .fy-pill {
+      font-size: 12px;
+      color: #adffd4;
+      background: rgba(34,197,94,.1);
+      border: 1px solid rgba(34,197,94,.35);
+      border-radius: 999px;
+      padding: 7px 11px;
+      font-weight: 800;
+    }
+
+    .fy-btn {
+      display: inline-flex;
+      background: linear-gradient(180deg, #ff6a00, #e44e00);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      padding: 15px 22px;
+      text-transform: uppercase;
+      font-weight: 1000;
+      font-size: 13px;
+      box-shadow: 0 0 20px rgba(255, 90, 0, .35);
+      cursor: pointer;
+    }
+
+    .fy-ranking {
+      display: grid;
+      gap: 14px;
+    }
+
+    .fy-rank-card {
+      min-height: 118px;
+      display: grid;
+      grid-template-columns: 86px 1fr auto;
+      gap: 18px;
+      align-items: center;
+      padding: 18px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: linear-gradient(180deg, #131313, #090909);
+      transition: .2s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .fy-rank-card.active {
+      border-color: rgba(255,90,0,.75);
+      background:
+        radial-gradient(circle at top right, rgba(255,90,0,.2), transparent 35%),
+        linear-gradient(180deg, #211006, #0b0b0b);
+      box-shadow: 0 0 28px rgba(255,90,0,.14);
+    }
+
+    .fy-rank-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(255,90,0,.65);
+    }
+
+    .fy-thumb {
+      width: 86px;
+      height: 86px;
+      border-radius: 12px;
+      object-fit: cover;
+      background: #222;
+      border: 1px solid rgba(255,255,255,.12);
+    }
+
+    .fy-rank-num {
+      color: #ff5a00;
+      font-size: 14px;
+      font-weight: 1000;
+      margin-bottom: 4px;
+    }
+
+    .fy-rank-title {
+      font-size: 26px;
+      line-height: .95;
+      text-transform: uppercase;
+      font-style: italic;
+      font-weight: 1000;
+      margin-bottom: 8px;
+    }
+
+    .fy-rank-meta {
+      color: #aaa;
+      font-size: 13px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .fy-live {
+      color: #7cffaa;
+      font-size: 11px;
+      border: 1px solid rgba(34,197,94,.35);
+      background: rgba(34,197,94,.1);
+      border-radius: 999px;
+      padding: 6px 9px;
+      font-weight: 1000;
+      text-transform: uppercase;
+    }
+
+    @media (max-width: 900px) {
+      .fy-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .fy-hero {
+        min-height: 420px;
+      }
+
+      .fy-rank-card {
+        grid-template-columns: 72px 1fr;
+      }
+
+      .fy-thumb {
+        width: 72px;
+        height: 72px;
+      }
+
+      .fy-live {
+        grid-column: 2;
+        width: fit-content;
+      }
+    }
+  </style>
+
+  <div class="fy-wrap">
+    <div class="fy-eyebrow">// COLECCIONES ACTIVAS</div>
+
+    <h2 class="fy-title">DESCUBRÍ QUÉ SE ESTÁ MOVIENDO AHORA</h2>
+
+    <p class="fy-subtitle">
+      Colecciones activas, nuevos cruces y álbumes que están generando movimiento dentro de la comunidad.
+    </p>
+
+    <div class="fy-grid">
+      <article class="fy-hero">
+        <div class="fy-hero-content">
+          <div class="fy-hot">HOT</div>
+          <h3>Mundial 2026</h3>
+
+          <div class="fy-stats">
+            <div class="fy-stat">
+              <strong>324</strong>
+              <span>cruces esta semana</span>
+            </div>
+            <div class="fy-stat">
+              <strong>+18</strong>
+              <span>matches nuevos hoy</span>
+            </div>
+          </div>
+
+          <div class="fy-pills">
+            <span class="fy-pill">● Muy activo</span>
+            <span class="fy-pill">● Comunidad creciendo</span>
+          </div>
+
+          <button class="fy-btn">Ver colección</button>
+        </div>
+      </article>
+
+      <div class="fy-ranking">
+        <article class="fy-rank-card active">
+          <img class="fy-thumb" src="https://images.unsplash.com/photo-1606167668584-78701c57f13d?q=80&w=400&auto=format&fit=crop" />
+          <div>
+            <div class="fy-rank-num">#1</div>
+            <div class="fy-rank-title">Mundial 2026</div>
+            <div class="fy-rank-meta">Más activo hoy · 324 cruces</div>
+          </div>
+          <span class="fy-live">Live</span>
+        </article>
+
+        <article class="fy-rank-card">
+          <img class="fy-thumb" src="https://images.unsplash.com/photo-1610890716171-6b1bb98ffd09?q=80&w=400&auto=format&fit=crop" />
+          <div>
+            <div class="fy-rank-num">#2</div>
+            <div class="fy-rank-title">Panini 2026</div>
+            <div class="fy-rank-meta">Nuevo movimiento · 86 cruces</div>
+          </div>
+        </article>
+
+        <article class="fy-rank-card">
+          <img class="fy-thumb" src="https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?q=80&w=400&auto=format&fit=crop" />
+          <div>
+            <div class="fy-rank-num">#3</div>
+            <div class="fy-rank-title">Champions</div>
+            <div class="fy-rank-meta">Comunidad activa · 41 cruces</div>
+          </div>
+        </article>
+
+        <article class="fy-rank-card">
+          <img class="fy-thumb" src="https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=400&auto=format&fit=crop" />
+          <div>
+            <div class="fy-rank-num">#4</div>
+            <div class="fy-rank-title">Pokémon</div>
+            <div class="fy-rank-meta">Último agregado</div>
+          </div>
+        </article>
+      </div>
+    </div>
+  </div>
+</section>

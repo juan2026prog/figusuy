@@ -198,7 +198,7 @@ export default function AdminInfluencerCampaigns() {
               <div style={{ fontSize: '0.75rem', color: "var(--admin-muted)", marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
                 <span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>calendar_today</span>
                 {c.starts_at ? new Date(c.starts_at).toLocaleDateString('es-UY') : 'Sin inicio'}
-                {' â†’ '}
+                {' → '}
                 {c.ends_at ? new Date(c.ends_at).toLocaleDateString('es-UY') : 'Sin fin'}
                 {c.max_uses && <span style={{ marginLeft: 'auto', fontWeight: 700 }}>Máx: {c.max_uses} usos</span>}
               </div>

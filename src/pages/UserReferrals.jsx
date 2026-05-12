@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react'
+import React, { useState } from 'react'
 import { useAuthStore } from '../stores/authStore'
 import { useGrowthStore } from '../stores/growthStore'
 import { REFERRAL_REWARDS } from '../lib/growthEngine'
@@ -32,7 +32,7 @@ export default function UserReferrals() {
       <header className="topbar">
         <div>
           <div className="top-kicker">GROWTH ENGINE</div>
-          <div className="top-title">Invitar Amigos</div>
+          <div className="top-title" style={{ color: '#fff' }}>Invitar Amigos</div>
         </div>
       </header>
 

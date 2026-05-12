@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
 import { useAppStore } from '../stores/appStore'
@@ -37,7 +37,7 @@ export default function HomePage() {
   const handleSelectAlbum = async (album) => {
     const res = await selectAlbum(album, profile?.id)
     if (res?.error) {
-      if (res.error.message.toLowerCase().includes('albumes activos')) {
+      if (res.error.message.toLowerCase().includes('álbumes activos')) {
         setShowUpgradePrompt(true)
       } else {
         toast.error(res.error.message)
@@ -73,7 +73,7 @@ export default function HomePage() {
         <div className="live-stat-grid">
           <LiveStat value={summary.activeNow} label="Personas activas ahora" tone="orange" detail="La red se está moviendo en este momento" />
           <LiveStat value={summary.exchangesToday} label="Intercambios confirmados hoy" tone="green" detail="Cierres reales registrados hoy" />
-          <LiveStat value={summary.completedAlbumsToday} label="ÃƒÂlbumes cerrados hoy" tone="blue" detail="Coleccionistas completando ahora" />
+          <LiveStat value={summary.completedAlbumsToday} label="Álbumes cerrados hoy" tone="blue" detail="Coleccionistas completando ahora" />
         </div>
 
         {selectedAlbum && (
@@ -103,7 +103,7 @@ export default function HomePage() {
         <section>
           <div className="section-head">
             <span className="kicker">// colecciones</span>
-            <h2>Ãlbumes Disponibles</h2>
+            <h2>Álbumes Disponibles</h2>
           </div>
           <div className="album-list">
             {albums.map(album => (

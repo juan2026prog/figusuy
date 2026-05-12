@@ -1,0 +1,219 @@
+/* ═══════════════════════════════════════════════════
+   Albums Showcase – Horizontal Slider (Reference Design)
+   ═══════════════════════════════════════════════════ */
+
+.fy-collections-showcase {
+  overflow: hidden;
+}
+
+.fy-albums-slider {
+  display: flex;
+  gap: 22px;
+  overflow-x: auto;
+  padding: 8px 0 24px;
+  scroll-snap-type: x mandatory;
+}
+
+/* ── Visible orange scrollbar ── */
+.fy-albums-slider::-webkit-scrollbar {
+  height: 8px;
+}
+
+.fy-albums-slider::-webkit-scrollbar-track {
+  background: rgba(255,255,255,0.06);
+  border-radius: 999px;
+}
+
+.fy-albums-slider::-webkit-scrollbar-thumb {
+  background: #ff5a00;
+  border-radius: 999px;
+}
+
+/* Firefox */
+.fy-albums-slider {
+  scrollbar-width: thin;
+  scrollbar-color: #ff5a00 rgba(255,255,255,0.06);
+}
+
+/* ── Card ── */
+.fy-album-card {
+  min-width: 260px;
+  max-width: 260px;
+  scroll-snap-align: start;
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 90, 0, .35);
+  background:
+    radial-gradient(circle at top right, rgba(255,90,0,.16), transparent 35%),
+    linear-gradient(180deg, #151515, #080808);
+  box-shadow: 0 0 28px rgba(255, 90, 0, .08);
+  transition: .25s ease;
+  cursor: pointer;
+  text-decoration: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.fy-album-card:hover {
+  transform: translateY(-6px);
+  border-color: rgba(255, 90, 0, .8);
+  box-shadow: 0 0 34px rgba(255, 90, 0, .22);
+}
+
+/* ── Cover ── */
+.fy-cover-wrap {
+  position: relative;
+  aspect-ratio: 800 / 1100;
+  background: #111;
+  overflow: hidden;
+}
+
+.fy-cover-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.fy-cover-wrap::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 45%, rgba(0,0,0,.86));
+}
+
+/* ── Badge ── */
+.fy-album-badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 2;
+  color: #ff6a00;
+  border: 1px solid rgba(255,90,0,.8);
+  background: rgba(0,0,0,.65);
+  backdrop-filter: blur(6px);
+  padding: 7px 10px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 1000;
+  text-transform: uppercase;
+}
+
+.fy-album-badge.nuevo {
+  color: #3b82f6;
+  border-color: rgba(59,130,246,.8);
+}
+
+/* ── Rank ── */
+.fy-album-rank {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 2;
+  color: #fff;
+  background: rgba(255,90,0,.9);
+  padding: 7px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 1000;
+}
+
+/* ── Card info ── */
+.fy-card-info {
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.fy-card-title {
+  font-size: 25px;
+  line-height: .95;
+  font-style: italic;
+  font-weight: 1000;
+  text-transform: uppercase;
+  margin: 0 0 10px;
+  color: #fff;
+}
+
+.fy-card-meta {
+  color: #aaa;
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+  line-height: 1.4;
+  margin-bottom: 14px;
+}
+
+/* ── Stats grid (2 cols) ── */
+.fy-album-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.fy-album-stat {
+  background: rgba(255,255,255,.05);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.fy-album-stat strong {
+  display: block;
+  color: #fff;
+  font-size: 18px;
+  font-weight: 1000;
+}
+
+.fy-album-stat span {
+  color: #aaa;
+  font-size: 10px;
+  text-transform: uppercase;
+  font-weight: 900;
+}
+
+/* ── CTA button ── */
+.fy-album-btn {
+  width: 100%;
+  border: 0;
+  border-radius: 12px;
+  padding: 13px;
+  background: linear-gradient(180deg, #ff6a00, #e44e00);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 1000;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: 0 0 18px rgba(255,90,0,.3);
+  margin-top: auto;
+  transition: .2s ease;
+}
+
+.fy-album-btn:hover {
+  box-shadow: 0 0 28px rgba(255,90,0,.5);
+  transform: scale(1.02);
+}
+
+/* ── Empty state ── */
+.fy-album-empty {
+  width: 100%;
+  padding: 60px 20px;
+  text-align: center;
+  background: linear-gradient(180deg, #111 0%, #0a0a0a 100%);
+  border: 1px dashed rgba(255,255,255,.1);
+  border-radius: 16px;
+  color: #888;
+  font-size: 18px;
+  font-weight: 600;
+  margin-top: 32px;
+}
+
+/* ── Responsive ── */
+@media (max-width: 700px) {
+  .fy-album-card {
+    min-width: 220px;
+    max-width: 220px;
+  }
+}

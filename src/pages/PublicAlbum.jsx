@@ -29,7 +29,7 @@ export default function PublicAlbum() {
     return (
       <div className="flex-center flex-col gap-md" style={{ minHeight: '60vh', padding: '2rem', textAlign: 'center' }}>
         <span className="material-symbols-outlined" style={{ fontSize: '4rem', color: 'var(--color-danger)' }}>error</span>
-        <h2 style={{ fontSize: '1.5rem', fontWeight: 800 }}>{error || 'Ãlbum no encontrado'}</h2>
+        <h2 style={{ fontSize: '1.5rem', fontWeight: 800 }}>{error || '́lbum no encontrado'}</h2>
         <button className="btn btn-primary" onClick={() => navigate(-1)}>Volver</button>
       </div>
     )

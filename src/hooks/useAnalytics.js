@@ -1,4 +1,4 @@
-﻿import { useEffect, useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../stores/authStore'
 import { useLocation } from 'react-router-dom'
@@ -9,9 +9,10 @@ export function useAnalytics() {
   const lastPageViewKeyRef = useRef('')
 
   const getSessionId = () => {
+    if (typeof window === 'undefined') return 'ssr-session'
     const existing = localStorage.getItem('session_id')
     if (existing) return existing
-    const next = crypto.randomUUID()
+    const next = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2)
     localStorage.setItem('session_id', next)
     return next
   }

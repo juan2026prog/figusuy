@@ -164,7 +164,7 @@ export default function ChatsListPage() {
                   </div>
                 ) : blockedUsers.length === 0 ? (
                   <div className="empty">
-                    <div className="empty-icon">ðŸ›¡</div>
+                    <div className="empty-icon">🛡</div>
                     <h3>Sin bloqueados</h3>
                     <p>No tenes usuarios bloqueados en este momento.</p>
                   </div>
@@ -190,7 +190,7 @@ export default function ChatsListPage() {
                 )
               ) : filteredChats.length === 0 ? (
                 <div className="empty">
-                  <div className="empty-icon">ðŸ’¬</div>
+                  <div className="empty-icon">💬</div>
                   <h3>Sin conversaciones</h3>
                   <p>No hay chats en esta sección.</p>
                   <button className="btn orange" onClick={() => navigate('/matches')}>Ver intercambios</button>
@@ -218,7 +218,7 @@ export default function ChatsListPage() {
                         <div className="chat-top">
                           <div>
                             <h3 className="chat-name">{other?.name || 'Usuario'}</h3>
-                            <div className="chat-meta">{other?.city || other?.department || 'Sin ubicacion'} Â· {chat.album?.name || 'Intercambio activo'}</div>
+                            <div className="chat-meta">{other?.city || other?.department || 'Sin ubicacion'} · {chat.album?.name || 'Intercambio activo'}</div>
                           </div>
                           <span className="chat-time">{formatTime(chat.last_message_at || chat.created_at)}</span>
                         </div>

@@ -51,7 +51,7 @@ export default function AdminLogs() {
                   <span style={{ fontSize: '0.75rem', color: "var(--admin-muted)" }}>{new Date(log.created_at).toLocaleString()}</span>
                 </div>
                 <p style={{ fontSize: '0.8125rem', color: "var(--admin-muted2)", margin: 0 }}>
-                  Admin: <strong>{log.admin?.name || 'Sistema'}</strong> â€¢ Entidad: {log.entity_type} ({log.entity_id})
+                  Admin: <strong>{log.admin?.name || 'Sistema'}</strong> • Entidad: {log.entity_type} ({log.entity_id})
                 </p>
                 {log.metadata && Object.keys(log.metadata).length > 0 && (
                   <pre style={{ margin: '0.5rem 0 0', fontSize: '0.7rem', color: "var(--admin-muted)", background: "var(--admin-panel2)", padding: '0.5rem', borderRadius: '0.25rem', border: "1px solid var(--admin-line)", overflowX: 'auto' }}>

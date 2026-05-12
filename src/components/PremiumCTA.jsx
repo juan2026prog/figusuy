@@ -27,7 +27,7 @@ export default function PremiumCTA({ variant = 'inline' }) {
         <div className="deco-circle deco-circle-amber-sm" style={{ right: '2rem', bottom: '-0.5rem', width: '3rem', height: '3rem' }} />
 
         <div style={{ position: 'relative', zIndex: 1 }}>
-          <span className="block text-3xl mb-sm">ðŸš€</span>
+          <span className="block text-3xl mb-sm">🚀</span>
           <h3 className="text-lg font-bold mb-xs">
             Anda mas rapido
           </h3>
@@ -60,7 +60,7 @@ export default function PremiumCTA({ variant = 'inline' }) {
         background: 'linear-gradient(135deg, #fef3c7, #fde68a)',
         border: '1px solid #fcd34d',
       }}>
-      <span className="text-xl">ðŸš€</span>
+      <span className="text-xl">🚀</span>
       <div style={{ flex: 1 }}>
         <p className="text-sm font-bold" style={{ color: '#92400e' }}>
           Anda mas rapido

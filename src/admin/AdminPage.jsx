@@ -29,7 +29,7 @@ const pages = {
     icon: 'celebration',
     title: 'Eventos de intercambio',
     desc: 'Ferias, encuentros y activaciones especiales del ecosistema.',
-    features: ['Crear evento', 'Fecha y ubicacion', 'Albumes permitidos', 'Cupos e inscripcion', 'Sponsor', 'Lista de asistentes', 'Intercambios dentro del evento']
+    features: ['Crear evento', 'Fecha y ubicacion', 'Álbumes permitidos', 'Cupos e inscripcion', 'Sponsor', 'Lista de asistentes', 'Intercambios dentro del evento']
   },
   cms: {
     icon: 'article',
@@ -53,7 +53,7 @@ const pages = {
     icon: 'admin_panel_settings',
     title: 'Roles y permisos',
     desc: 'Control granular de acceso y niveles de operacion.',
-    features: ['God Admin', 'Admin', 'Moderador', 'Soporte', 'Creador de albumes', 'Comercial', 'Analista']
+    features: ['God Admin', 'Admin', 'Moderador', 'Soporte', 'Creador de álbumes', 'Comercial', 'Analista']
   },
 }
 

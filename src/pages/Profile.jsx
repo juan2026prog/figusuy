@@ -1,5 +1,9 @@
-﻿import React, { useState, useEffect } from 'react'
+"use client"
+
+import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+
+export const dynamic = "force-dynamic"
 import { useAuthStore } from '../stores/authStore'
 import { useLogoutStore } from '../stores/logoutStore'
 import { useAppStore } from '../stores/appStore'
@@ -17,6 +21,7 @@ import ReputationStars from '../components/ReputationStars'
 import { LEVELS } from '../lib/gamification'
 import { getStarLevel } from '../lib/reputation'
 import GamificationIcon from '../components/gamification/icons/GamificationIcon'
+import AccountDeletionModal from '../components/AccountDeletionModal'
 
 export default function ProfilePage() {
   const navigate = useNavigate()
@@ -45,6 +50,7 @@ export default function ProfilePage() {
   const [addingAlbum, setAddingAlbum] = useState(false)
   const [showPrivacyModal, setShowPrivacyModal] = useState(false)
   const [editingAlbumPrivacy, setEditingAlbumPrivacy] = useState(null)
+  const [showDeletionModal, setShowDeletionModal] = useState(false)
 
   useEffect(() => {
     // Only set initial values once or if they are empty
@@ -54,7 +60,7 @@ export default function ProfilePage() {
       if (!username) setUsername(profile.username || '');
       if (!profileVisibility) setProfileVisibility(profile.profile_visibility || 'public');
       
-      // Check if user has admin role â€” usar profile.role del authStore (ya fue cargado)
+      // Check if user has admin role — usar profile.role del authStore (ya fue cargado)
       const adminRoles = ['god_admin', 'admin', 'moderator', 'support', 'comercial', 'analista']
       if (profile.role && adminRoles.includes(profile.role)) setIsAdmin(true)
       fetchFavorites(profile.id)
@@ -86,7 +92,7 @@ export default function ProfilePage() {
     try {
       const { error } = await selectAlbum(albumToAdd, profile.id)
       if (error) throw error
-      toast.success('Ãlbum agregado correctamente')
+      toast.success('́lbum agregado correctamente')
       setShowAlbumPicker(false)
       setSelectedAlbumId(null)
     } catch (err) {
@@ -180,14 +186,14 @@ export default function ProfilePage() {
                 initial
               )}
               <label className="avatar-edit">
-                ðŸ“·
+                📷
                 <input type="file" hidden accept="image/*" onChange={handleAvatarUpload} disabled={uploadingAvatar} />
               </label>
             </div>
             <div className="profile-name">{name}</div>
-            <div className="profile-meta">{locationName || profile?.department || 'Sin ubicación'} Â· Activo hoy</div>
+            <div className="profile-meta">{locationName || profile?.department || 'Sin ubicación'} · Activo hoy</div>
             <div className="badges">
-              {isPremium && <span className="badge orange">ðŸ’Ž {planName === 'gratis' ? 'Premium' : planName}</span>}
+              {isPremium && <span className="badge orange">💎 {planName === 'gratis' ? 'Premium' : planName}</span>}
               {profile?.is_verified && <span className="badge green">Confiable</span>}
               {mainAlbum && <span className="badge">{mainAlbum.name}</span>}
             </div>
@@ -326,8 +332,7 @@ export default function ProfilePage() {
                 {favorites.length === 0 && <p style={{ fontSize: '0.85rem', color: 'var(--orange)', marginTop: '4px' }}>Guardá los perfiles que te sirvan.</p>}
                 <button className="btn" style={{ marginTop: '16px' }} onClick={() => navigate('/favorites')}>Ver favoritos</button>
               </div>
-              <div className="mini-card" style={{ padding: '22px' }}>
-                <h3 style={{ marginBottom: '16px' }}>Nivel y Progreso</h3>
+              <div className="mini-card" style={{ padding: '0', background: 'transparent', border: 'none', boxShadow: 'none' }}>
                 <ProfileGamification />
               </div>
             </div>
@@ -344,7 +349,7 @@ export default function ProfilePage() {
               <div className="trust-row"><span>Intercambios</span><b>{progress?.completed_exchanges || profile?.completed_exchanges || 0} confirmados</b></div>
               <div className="trust-row"><span>Tasa de cierre</span><b>{Math.round(progress?.completion_rate || profile?.completion_rate || 0)}%</b></div>
               <div className="trust-row"><span>Confiabilidad</span><b>{Math.round(progress?.reliability_score || profile?.reliability_score || 0)}/100</b></div>
-              <div className="trust-row"><span>Miembro desde</span><b>{profile?.created_at ? new Date(profile.created_at).toLocaleDateString('es-UY', { month: 'short', year: 'numeric' }) : 'â€”'}</b></div>
+              <div className="trust-row"><span>Miembro desde</span><b>{profile?.created_at ? new Date(profile.created_at).toLocaleDateString('es-UY', { month: 'short', year: 'numeric' }) : '—'}</b></div>
               <div className="trust-row"><span>Nivel de confianza</span><b style={{ color: getStarLevel(reputation?.star_rating || 1).color }}>{getStarLevel(reputation?.star_rating || 1).label}</b></div>
             </section>
 
@@ -414,17 +419,35 @@ export default function ProfilePage() {
               </div>
             </section>
 
+            <section className="side-card danger-zone-card">
+              <div className="side-title" style={{ color: '#ff4444' }}>Zona de Peligro</div>
+              <p className="muted" style={{ marginBottom: '12px', fontSize: '0.85rem' }}>
+                Acciones irreversibles sobre tu cuenta. Tené cuidado.
+              </p>
+              <button 
+                className="btn red-ghost block" 
+                style={{ 
+                  borderColor: 'rgba(255,68,68,0.2)', 
+                  color: '#ff4444',
+                  fontSize: '0.8rem'
+                }} 
+                onClick={() => setShowDeletionModal(true)}
+              >
+                Eliminar mi cuenta
+              </button>
+            </section>
+
             {(isAdmin || canAccessBusinessDashboard(profile)) && (
               <section className="side-card">
                 <div className="side-title">Accesos Rápidos</div>
                 {isAdmin && (
                   <div className="quick-row">
-                    <button className="admin" onClick={() => navigate('/admin')}>ðŸ” Panel de Administración</button>
+                    <button className="admin" onClick={() => navigate('/admin')}>🔐 Panel de Administración</button>
                   </div>
                 )}
                 {canAccessBusinessDashboard(profile) && (
                   <div className="quick-row">
-                    <button className="business" onClick={() => navigate('/business')}>ðŸª FigusUY Negocios</button>
+                    <button className="business" onClick={() => navigate('/business')}>🏪 FigusUY Negocios</button>
                   </div>
                 )}
               </section>
@@ -456,7 +479,7 @@ export default function ProfilePage() {
                     </div>
                     <div className="album-option-info">
                       <div className="album-option-title">{a.name}</div>
-                      <div className="album-option-sub">{a.editorial} Â· {a.year}</div>
+                      <div className="album-option-sub">{a.editorial} · {a.year}</div>
                     </div>
                   </div>
                 ))
@@ -523,6 +546,11 @@ export default function ProfilePage() {
           </div>
         </div>
       )}
+
+      <AccountDeletionModal 
+        isOpen={showDeletionModal} 
+        onClose={() => setShowDeletionModal(false)} 
+      />
     </div>
   )
 }

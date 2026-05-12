@@ -138,7 +138,7 @@ export default function BusinessApplyModal({ isOpen, onClose, initialType = 'sto
         await supabase.functions.invoke('send-email', {
           body: { 
             to: formData.applicant_email,
-            subject: 'Recibimos tu solicitud de FigusUY Negocios ðŸ“©',
+            subject: 'Recibimos tu solicitud de FigusUY Negocios 📩',
             template: 'business_requested',
             data: {
               name: formData.applicant_name,
@@ -346,13 +346,13 @@ export default function BusinessApplyModal({ isOpen, onClose, initialType = 'sto
       <div className="modal-content" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
           <h2>{isSuggestedRequest ? 'Sugerir Punto' : 'Registrar Local'}</h2>
-          <button className="close-btn" onClick={onClose}>Ã—</button>
+          <button className="close-btn" onClick={onClose}>͗</button>
         </div>
 
         <div className="modal-body">
           {success ? (
             <div className="success-view">
-              <span className="success-icon">ðŸŽ‰</span>
+              <span className="success-icon">🎉</span>
               <h3 style={{ fontSize: '1.5rem', fontWeight: 900, marginBottom: '1rem' }}>
                 {isSuggestedRequest ? 'Sugerencia enviada!' : 'Solicitud enviada!'}
               </h3>

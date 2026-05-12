@@ -1,4 +1,4 @@
-﻿import { create } from 'zustand'
+import { create } from 'zustand'
 import { supabase } from '../lib/supabase'
 
 let settingsPromise = null
@@ -27,7 +27,7 @@ export const useBrandingStore = create((set, get) => ({
     header_primary_color: '#ff5a00',
     header_sticky: true,
     footer_enabled: true,
-    footer_text: 'Â© 2026 FigusUY. Todos los derechos reservados.',
+    footer_text: '© 2026 FigusUY. Todos los derechos reservados.',
     footer_bg_color: '#090909',
     footer_text_color: '#f5f5f5',
     footer_link_color: '#ff5a00',
@@ -62,7 +62,7 @@ export const useBrandingStore = create((set, get) => ({
         // Timeout de seguridad: si el branding falla o tarda, usamos el default
         const { data, error } = await Promise.race([
           supabase.from('app_settings').select('key, value'),
-          new Promise((_, reject) => setTimeout(() => reject(new Error('Branding Timeout')), 3000))
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Branding Timeout')), 15000))
         ]).catch(err => {
           console.warn('[BrandingStore] Timeout fetching settings, using defaults:', err.message)
           return { data: null, error: null }

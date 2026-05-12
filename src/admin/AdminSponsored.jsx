@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useToast } from '../components/Toast';
 
@@ -126,7 +126,7 @@ export default function AdminSponsored() {
             
             {(formData.placement_type === 'album_contextual') && (
               <div className="form-group">
-                <label className="form-label">Ãlbum Relacionado</label>
+                <label className="form-label">Álbum Relacionado</label>
                 <select className="input" value={formData.album_id} onChange={e => setFormData({...formData, album_id: e.target.value})}>
                   <option value="">Ninguno</option>
                   {albums.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
@@ -188,7 +188,7 @@ export default function AdminSponsored() {
               <div>
                 <h3 className="font-bold">{p.title}</h3>
                 <p className="text-sm text-secondary">{p.placement_type} | Expira: {p.ends_at ? new Date(p.ends_at).toLocaleDateString() : 'Nunca'}</p>
-                <p className="text-xs text-muted">Ãlbum ID: {p.album_id || 'N/A'}</p>
+                <p className="text-xs text-muted">Álbum ID: {p.album_id || 'N/A'}</p>
               </div>
               <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                 <button 

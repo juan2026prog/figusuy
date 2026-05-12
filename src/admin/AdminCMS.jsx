@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import LandingRenderer from '../components/landing/LandingRenderer'
 import {
   LANDING_PAGE_KEY,
@@ -19,7 +19,8 @@ import {
   reorderDraftBlocks,
   saveDraftBlock,
 } from '../lib/landingApi'
-import { collectBlockDiagnostics, getFieldGuidance } from '../lib/landingEditor'
+import { collectBlockDiagnostics, getFieldGuidance, getFieldEditorMeta } from '../lib/landingEditor'
+import { supabase } from '../lib/supabase'
 
 const cardStyle = {
   background: 'var(--admin-panel)',
@@ -36,6 +37,8 @@ export default function AdminCMS() {
   const [draggedId, setDraggedId] = useState(null)
   const [status, setStatus] = useState({ type: 'idle', message: '' })
   const [saving, setSaving] = useState(false)
+  const [view, setView] = useState('editor') // 'editor' | 'images'
+  const [uploading, setUploading] = useState(false)
   const pageLibrary = useMemo(() => getLandingPageBlockLibrary(pageKey), [pageKey])
   const pageDefinition = useMemo(() => getLandingPageDefinition(pageKey), [pageKey])
   const [addingType, setAddingType] = useState('')
@@ -77,7 +80,7 @@ export default function AdminCMS() {
       setSharedBlocks(sharedRows)
       setSelectedId((current) => draftRows.find((block) => block.id === current)?.id || draftRows[0]?.id || null)
     } catch (error) {
-      console.error(error)
+      console.error('Error loading Admin CMS:', error)
       setStatus({ type: 'error', message: 'No se pudo cargar el editor de landings.' })
     }
   }
@@ -90,6 +93,89 @@ export default function AdminCMS() {
       })
     )
   }
+
+  const handleImageUpload = async (file, blockId, path) => {
+    if (uploading) return
+    try {
+      setUploading(true)
+      setStatus({ type: 'idle', message: 'Subiendo imagen...' })
+      const fileExt = file.name.split('.').pop()
+      const fileName = `landing_${Date.now()}_${Math.random().toString(36).substring(2)}.${fileExt}`
+      
+      const { error: uploadError } = await supabase.storage.from('branding-assets').upload(fileName, file)
+      if (uploadError) throw uploadError
+      
+      const { data: { publicUrl } } = supabase.storage.from('branding-assets').getPublicUrl(fileName)
+      
+      const blockToUpdate = blocks.find(b => b.id === blockId) || sharedBlocks.find(b => b.id === blockId)
+      if (!blockToUpdate) throw new Error('Bloque no encontrado')
+
+      const nextContent = JSON.parse(JSON.stringify(blockToUpdate.draft_content || {}))
+      let curr = nextContent
+      for (let i = 0; i < path.length - 1; i++) {
+        if (!curr[path[i]]) curr[path[i]] = typeof path[i+1] === 'number' ? [] : {}
+        curr = curr[path[i]]
+      }
+      curr[path[path.length - 1]] = publicUrl
+
+      await saveDraftBlock({ ...blockToUpdate, draft_content: nextContent })
+      
+      if (blocks.some(b => b.id === blockId)) {
+        setBlocks(current => current.map(b => b.id === blockId ? { ...b, draft_content: nextContent } : b))
+      } else {
+        setSharedBlocks(current => current.map(b => b.id === blockId ? { ...b, draft_content: nextContent } : b))
+      }
+
+      setStatus({ type: 'success', message: 'Imagen actualizada y guardada.' })
+    } catch(err) {
+      console.error(err)
+      setStatus({ type: 'error', message: 'Error al subir la imagen.' })
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  const allImages = useMemo(() => {
+    const images = []
+    const allRelevantBlocks = [...blocks, ...sharedBlocks]
+
+    allRelevantBlocks.forEach(block => {
+      const def = getBlockDefinition(block.block_type)
+      if (!def) return
+
+      const extractImages = (fields, value, currentPath = []) => {
+        fields.forEach(field => {
+          const nextPath = [...currentPath, field.key]
+          const val = value?.[field.key]
+
+          if (field.type === 'group') {
+            extractImages(field.fields || [], val || {}, nextPath)
+          } else if (field.type === 'list') {
+            const list = Array.isArray(val) ? val : []
+            list.forEach((item, index) => {
+              extractImages(field.fields || [], item || {}, [...nextPath, index])
+            })
+          } else if (field.type === 'simple-list') {
+             // not images
+          } else {
+            const meta = getFieldEditorMeta(block.block_type, nextPath.filter(p => typeof p === 'string'), field)
+            if (meta?.kind === 'image') {
+              images.push({
+                blockId: block.id,
+                blockTitle: block.internal_title,
+                fieldLabel: field.label,
+                path: nextPath,
+                value: val || '',
+                meta
+              })
+            }
+          }
+        })
+      }
+      extractImages(def.fields, block.draft_content || {}, [])
+    })
+    return images
+  }, [blocks, sharedBlocks])
 
   const saveDrafts = async () => {
     if (!blocks.length) return
@@ -241,13 +327,69 @@ export default function AdminCMS() {
             {status.message || 'Preview del draft actual'}
           </div>
         </div>
+
+        <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem', borderBottom: '1px solid var(--admin-line)' }}>
+          <button
+            onClick={() => setView('editor')}
+            style={{ padding: '0.5rem 1rem', background: 'none', border: 'none', borderBottom: view === 'editor' ? '2px solid var(--color-primary)' : '2px solid transparent', color: view === 'editor' ? '#fff' : 'var(--admin-muted2)', fontWeight: 700, cursor: 'pointer' }}
+          >
+            Editor de Bloques
+          </button>
+          <button
+            onClick={() => setView('images')}
+            style={{ padding: '0.5rem 1rem', background: 'none', border: 'none', borderBottom: view === 'images' ? '2px solid var(--color-primary)' : '2px solid transparent', color: view === 'images' ? '#fff' : 'var(--admin-muted2)', fontWeight: 700, cursor: 'pointer' }}
+          >
+            Gestor de Imágenes
+          </button>
+        </div>
       </section>
 
-      <section style={{ display: 'grid', gridTemplateColumns: '340px minmax(0, 1fr) minmax(380px, 620px)', gap: '1rem', alignItems: 'start' }}>
-        <div style={{ ...cardStyle, padding: '1rem', position: 'sticky', top: '88px' }}>
-          <h3 style={panelTitle}>Bloques</h3>
-          <p style={panelCopy}>Reordena, edita y controla la salud editorial de cada bloque.</p>
-          <div style={{ display: 'grid', gap: '0.75rem', marginTop: '1rem' }}>
+      {view === 'images' ? (
+        <section style={{ ...cardStyle, padding: '1.5rem' }}>
+          <h3 style={panelTitle}>Gestor de Imágenes</h3>
+          <p style={panelCopy}>Todas las imágenes de esta página. Revisa sus resoluciones y sube nuevas directamente.</p>
+          {uploading && <div style={{ color: 'var(--color-primary)', fontWeight: 700, marginTop: '1rem' }}>Subiendo imagen, por favor espera...</div>}
+          
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.5rem', marginTop: '1.5rem' }}>
+            {allImages.map((img, i) => (
+              <div key={i} style={{ ...cardStyle, padding: '1rem', background: 'var(--admin-panel2)', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <div style={{ aspectRatio: img.meta?.aspectRatio ? img.meta.aspectRatio.replace(':', '/') : '16/9', background: '#000', borderRadius: '0.5rem', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(255,255,255,0.05)' }}>
+                  {img.value ? (
+                    <img src={img.value} alt={img.fieldLabel} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    <span style={{ color: 'var(--admin-muted2)', fontSize: '0.75rem' }}>Sin imagen</span>
+                  )}
+                </div>
+                <div>
+                  <div className="admin-kicker">{img.blockTitle}</div>
+                  <strong style={{ color: '#fff', fontSize: '0.875rem' }}>{img.fieldLabel}</strong>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--admin-muted2)', marginTop: '0.25rem' }}>
+                    Recomendado: {img.meta?.recommendedSize || 'Libre'}
+                    {img.meta?.aspectRatio && ` (${img.meta.aspectRatio})`}
+                  </div>
+                </div>
+                <div style={{ marginTop: 'auto' }}>
+                  <label style={{ ...btn('var(--color-primary)', '#fff'), display: 'block', textAlign: 'center', cursor: 'pointer', padding: '0.5rem' }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: '1rem', verticalAlign: 'middle', marginRight: '0.25rem' }}>upload</span>
+                    Subir y reemplazar
+                    <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => {
+                      if (e.target.files && e.target.files[0]) {
+                        handleImageUpload(e.target.files[0], img.blockId, img.path)
+                      }
+                    }} />
+                  </label>
+                </div>
+              </div>
+            ))}
+            {allImages.length === 0 && <div style={{ color: 'var(--admin-muted)' }}>No hay imágenes en los bloques actuales.</div>}
+          </div>
+        </section>
+      ) : (
+        <section style={{ display: 'grid', gridTemplateColumns: '340px minmax(0, 1fr) minmax(380px, 620px)', gap: '1rem', alignItems: 'start' }}>
+          <div style={{ ...cardStyle, padding: '1rem', position: 'sticky', top: '88px' }}>
+            <h3 style={panelTitle}>Bloques</h3>
+            <p style={panelCopy}>Reordena, edita y controla la salud editorial de cada bloque.</p>
+            <div style={{ display: 'grid', gap: '0.75rem', marginTop: '1rem' }}>
             {blocks.map((block, index) => {
               const metrics = computeBlockMetrics(events, block.slug)
               const diagnostics = collectBlockDiagnostics(block)
@@ -351,6 +493,7 @@ export default function AdminCMS() {
                   definition={getBlockDefinition(selectedBlock.block_type)}
                   value={selectedBlock.draft_content || {}}
                   onChange={(nextContent) => updateSelectedBlock((block) => ({ ...block, draft_content: nextContent }))}
+                  onImageUpload={(file, path) => handleImageUpload(file, selectedBlock.id, path)}
                 />
               </div>
             </>
@@ -376,12 +519,13 @@ export default function AdminCMS() {
             </div>
           </div>
         </div>
-      </section>
+        </section>
+      )}
     </div>
   )
 }
 
-function FieldRenderer({ blockType, definition, value, onChange }) {
+function FieldRenderer({ blockType, definition, value, onChange, onImageUpload }) {
   if (!definition) return null
 
   return (
@@ -394,13 +538,14 @@ function FieldRenderer({ blockType, definition, value, onChange }) {
           path={[field.key]}
           value={value[field.key]}
           onChange={(nextValue) => onChange({ ...value, [field.key]: nextValue })}
+          onImageUpload={onImageUpload}
         />
       ))}
     </div>
   )
 }
 
-function FieldNode({ blockType, field, path, value, onChange }) {
+function FieldNode({ blockType, field, path, value, onChange, onImageUpload }) {
   if (field.type === 'group') {
     return (
       <div style={subCard}>
@@ -414,6 +559,7 @@ function FieldNode({ blockType, field, path, value, onChange }) {
               path={[...path, child.key]}
               value={value?.[child.key]}
               onChange={(nextValue) => onChange({ ...(value || {}), [child.key]: nextValue })}
+              onImageUpload={onImageUpload}
             />
           ))}
         </div>
@@ -451,6 +597,7 @@ function FieldNode({ blockType, field, path, value, onChange }) {
                         )
                       )
                     }
+                    onImageUpload={onImageUpload}
                   />
                 ))}
               </div>
@@ -523,7 +670,17 @@ function FieldNode({ blockType, field, path, value, onChange }) {
     return (
       <Field label={field.label} guidance={guidance}>
         <div style={{ display: 'grid', gap: '.75rem' }}>
-          <input type="url" value={value || ''} onChange={(event) => onChange(event.target.value)} placeholder="https://..." />
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <input type="url" value={value || ''} onChange={(event) => onChange(event.target.value)} placeholder="https://..." style={{ flex: 1 }} />
+            <label className="admin-action-btn" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span className="material-symbols-outlined" style={{ fontSize: '1.25rem' }}>upload</span>
+              <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => {
+                 if (e.target.files && e.target.files[0]) {
+                   onImageUpload(e.target.files[0], path)
+                 }
+              }} />
+            </label>
+          </div>
           <div style={{ ...cardStyle, padding: '.6rem', background: 'var(--admin-panel2)' }}>
             <div style={{ aspectRatio: '16 / 9', width: '100%', background: '#0b0b0b', border: '1px solid rgba(255,255,255,.08)', display: 'grid', placeItems: 'center', overflow: 'hidden' }}>
               {value ? <img src={value} alt={field.label} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ color: 'var(--admin-muted2)' }}>Preview</span>}
@@ -627,3 +784,4 @@ const fieldsetTitle = { margin: 0, color: '#fff', font: "italic 900 1.05rem 'Bar
 const twoCol = { display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '0.85rem' }
 const subCard = { ...cardStyle, padding: '0.9rem', background: 'var(--admin-panel2)' }
 const toggleLabel = { display: 'inline-flex', alignItems: 'center', gap: '.5rem', color: '#fff', fontWeight: 600 }
+const btn = (bg, color) => ({ background: bg, color, border: 'none', borderRadius: '0.375rem', fontWeight: 700, fontSize: '0.75rem' })

@@ -50,7 +50,7 @@ export default function BottomNav() {
   }
 
   const navItems = [
-    { path: '/album', icon: 'menu_book', label: 'Ãlbum', feature: 'album' },
+    { path: '/album', icon: 'menu_book', label: '́lbum', feature: 'album' },
     { path: '/matches', icon: 'swap_horiz', label: 'Intercambios', badge: matchCount },
     { path: '/chats', icon: 'chat', label: 'Chats', badge: unreadChats, feature: 'chats' },
     { path: '/favorites', icon: 'favorite', label: 'Favoritos' },

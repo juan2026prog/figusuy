@@ -1,4 +1,6 @@
-﻿import React, { useEffect, useState } from 'react'
+"use client"
+
+import React, { useEffect, useState, Suspense } from 'react'
 import { Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../stores/authStore'
@@ -16,7 +18,7 @@ function AccessState({ title, copy, icon = 'lock' }) {
   )
 }
 
-export default function InfluencerAccessGuard({ children }) {
+function InfluencerAccessGuardContent({ children }) {
   const { user, profile, loading: authLoading } = useAuthStore()
   const checkInfluencerAccess = useInfluencerStore(state => state.checkInfluencerAccess)
   const [searchParams] = useSearchParams()
@@ -146,4 +148,12 @@ export default function InfluencerAccessGuard({ children }) {
   }
 
   return children
+}
+
+export default function InfluencerAccessGuard(props) {
+  return (
+    <Suspense fallback={<AccessState title="Cargando guardián" copy="Preparando validación de acceso..." icon="hourglass_top" />}>
+      <InfluencerAccessGuardContent {...props} />
+    </Suspense>
+  )
 }

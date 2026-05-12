@@ -9,9 +9,9 @@ let flagsStatusPromise = null
  * Feature Flag Store
  * 
  * Provides:
- * - isFeatureEnabled(key) â†’ boolean (frontend gating)
- * - fetchFlags() â†’ load all flags from DB
- * - fetchFlagsStatus(userId) â†’ bulk-check via RPC
+ * - isFeatureEnabled(key) → boolean (frontend gating)
+ * - fetchFlags() → load all flags from DB
+ * - fetchFlagsStatus(userId) → bulk-check via RPC
  * - Admin CRUD operations for God Admin panel
  * - Emergency kill/restore
  * - Audit log

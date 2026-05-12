@@ -101,7 +101,7 @@ export default function AdminPayments() {
                 return (
                   <tr key={p.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
                     <td style={{ padding: '0.75rem' }}>
-                      <p style={{ fontWeight: 700, margin: 0 }}>{p.user?.name || 'â€”'}</p>
+                      <p style={{ fontWeight: 700, margin: 0 }}>{p.user?.name || '—'}</p>
                       <p style={{ fontSize: '0.75rem', color: "var(--admin-muted2)", margin: 0 }}>{p.user?.email}</p>
                     </td>
                     <td style={{ padding: '0.75rem' }}>
@@ -113,9 +113,9 @@ export default function AdminPayments() {
                     <td style={{ padding: '0.75rem', color: "var(--admin-muted2)", fontSize: '0.8125rem' }}>{new Date(p.created_at).toLocaleDateString()}</td>
                     <td style={{ padding: '0.75rem' }}>
                       {p.reviewed_by ? (
-                        <span style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: 600 }}>âœ“ {p.reviewer?.name}</span>
+                        <span style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: 600 }}>✓ {p.reviewer?.name}</span>
                       ) : (
-                        <span style={{ fontSize: '0.75rem', color: "var(--admin-muted)" }}>â€”</span>
+                        <span style={{ fontSize: '0.75rem', color: "var(--admin-muted)" }}>—</span>
                       )}
                     </td>
                     <td style={{ padding: '0.75rem' }}>

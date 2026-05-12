@@ -124,14 +124,14 @@ export default function AdminExchangeCompletion() {
                     </td>
                     <td>
                       <div style={{ color: '#f5f5f5', fontWeight: 700 }}>{row.user_1_name || 'Sin nombre'} / {row.user_2_name || 'Sin nombre'}</div>
-                      <div style={{ fontSize: '.72rem', color: 'var(--admin-muted2)' }}>{row.user_1_email || 'â€”'} Â· {row.user_2_email || 'â€”'}</div>
+                      <div style={{ fontSize: '.72rem', color: 'var(--admin-muted2)' }}>{row.user_1_email || '—'} · {row.user_2_email || '—'}</div>
                     </td>
                     <td>
                       <div style={{ color: '#f5f5f5', fontWeight: 700 }}>{row.album_name || 'Sin album'}</div>
                       <div style={{ fontSize: '.72rem', color: 'var(--admin-muted2)' }}>{row.completion_time ? new Date(row.completion_time).toLocaleString('es-UY') : 'Sin cierre'}</div>
                     </td>
                     <td>
-                      <div style={{ color: '#f5f5f5', fontWeight: 700 }}>{row.user_1_response || 'â€”'} / {row.user_2_response || 'â€”'}</div>
+                      <div style={{ color: '#f5f5f5', fontWeight: 700 }}>{row.user_1_response || '—'} / {row.user_2_response || '—'}</div>
                       <div style={{ fontSize: '.72rem', color: 'var(--admin-muted2)' }}>{row.message_count || 0} msgs</div>
                     </td>
                     <td>

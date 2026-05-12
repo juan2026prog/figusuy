@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
 
 const EMPTY_STATE = {
@@ -52,7 +52,7 @@ function buildAlbumActivity(recentAlbums, albums) {
     current.actions += 1
     current.completions += entry.progress_state === 'completed' || entry.progress_state === 'legend_verified' ? 1 : 0
 
-    const candidateDate = entry.completed_at || entry.created_at
+    const candidateDate = entry.created_at
     if (!current.latestAt || new Date(candidateDate).getTime() > new Date(current.latestAt).getTime()) {
       current.latestAt = candidateDate
     }
@@ -106,7 +106,7 @@ function buildHero({ albumActivity, activeUsers, promos, meta, albums }) {
       ],
       actions: [
         { label: 'Ver oportunidades', kind: 'auth' },
-        { label: 'Explorar albumes', kind: 'section', target: 'album' },
+        { label: 'Explorar álbumes', kind: 'section', target: 'album' },
         { label: 'Empezar a cambiar', kind: 'auth' },
       ],
     }
@@ -123,7 +123,7 @@ function buildHero({ albumActivity, activeUsers, promos, meta, albums }) {
       { value: meta.activePromos, label: 'promos vivas' },
     ],
     actions: [
-      { label: 'Explorar albumes', kind: 'section', target: 'album' },
+      { label: 'Explorar álbumes', kind: 'section', target: 'album' },
       { label: 'Ver oportunidades', kind: 'auth' },
       { label: 'Empezar a cambiar', kind: 'auth' },
     ],
@@ -173,7 +173,7 @@ function buildCards({ albumActivity, activeUsers, recentAlbums, promos, location
         tone: 'green',
         eyebrow: 'Logro',
         title: `${item.profile?.name || 'Un coleccionista'} completo ${item.album?.name || 'un album'}`,
-        detail: item.completed_at || item.created_at,
+        detail: item.created_at,
         body: 'La red tambien se mueve con cierres reales y progreso visible.',
         cta: 'Empezar',
         action: { kind: 'auth' },
@@ -241,7 +241,7 @@ function buildFeed({ recentAlbums, activeUsers, promos, locations, meta }) {
         id: `feed-complete-${item.id}`,
         tone: 'green',
         title: `${item.profile?.name || 'Un coleccionista'} completo ${item.album.name}`,
-        time: item.completed_at || item.created_at,
+        time: item.created_at,
       })
       return
     }
@@ -309,7 +309,7 @@ export function useNowInFigusUY({ albums = [] } = {}) {
         supabase.from('profiles').select('id, name, city, department, last_active').gte('last_active', recentCutoff).order('last_active', { ascending: false }).limit(8),
         supabase.from('sponsored_placements').select('id, title, album_id, location_id, placement_type, priority, starts_at, created_at').eq('is_active', true).order('priority', { ascending: false }).limit(6),
         supabase.from('locations').select('id, name, department, neighborhood, business_plan, activity_score, updated_at').eq('is_active', true).order('activity_score', { ascending: false }).limit(6),
-        supabase.from('user_albums').select('id, user_id, album_id, created_at, completed_at, progress_state, album:albums(id, name, cover_url, year), profile:profiles(id, name, city, department, last_active)').order('created_at', { ascending: false }).limit(24),
+        supabase.from('user_albums').select('id, user_id, album_id, created_at, progress_state, album:albums(id, name, cover_url, year), profile:profiles(id, name, city, department, last_active)').order('created_at', { ascending: false }).limit(24),
       ])
 
       if (cancelled) return

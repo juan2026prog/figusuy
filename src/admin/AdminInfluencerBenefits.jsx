@@ -124,7 +124,7 @@ export default function AdminInfluencerBenefits() {
                   <div>
                     <p style={{ fontWeight: 800, color: "#f5f5f5", margin: 0, fontSize: '0.875rem' }}>{typeInfo.label}</p>
                     <p style={{ fontSize: '0.75rem', color: "var(--admin-muted)", margin: 0 }}>
-                      {aff.name || 'â€”'} â€¢ {camp.code || 'â€”'}
+                      {aff.name || '—'} • {camp.code || '—'}
                     </p>
                   </div>
                 </div>
@@ -199,7 +199,7 @@ export default function AdminInfluencerBenefits() {
                 <select style={inputStyle} value={form.campaign_id} onChange={e => setForm({ ...form, campaign_id: e.target.value })}>
                   <option value="">Seleccionar campaña...</option>
                   {activeCampaigns.map(c => (
-                    <option key={c.id} value={c.id}>{c.code} â€” {c.affiliates?.name || 'Afiliado'}</option>
+                    <option key={c.id} value={c.id}>{c.code} — {c.affiliates?.name || 'Afiliado'}</option>
                   ))}
                 </select>
               </div>

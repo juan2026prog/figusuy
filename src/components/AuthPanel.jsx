@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../stores/authStore'
@@ -535,7 +535,7 @@ export default function AuthPanel({ initialType = null, mode = 'page', onClose =
           <div className="auth-badges">
             <span className="auth-badge green">Acceso gratis</span>
             <span className="auth-badge orange">Cruces mas claros</span>
-            <span className="auth-badge">Chats y albumes</span>
+            <span className="auth-badge">Chats y álbumes</span>
           </div>
 
           <div className="auth-points">
@@ -587,7 +587,7 @@ export default function AuthPanel({ initialType = null, mode = 'page', onClose =
               <div style={{ marginTop: '1rem' }}>
                 {forgotSent ? (
                   <div className="auth-success">
-                    <span style={{ fontSize: '2.5rem' }}>ðŸ“§</span>
+                    <span style={{ fontSize: '2.5rem' }}>📧</span>
                     <strong style={{ font: "italic 900 1.9rem 'Barlow Condensed'", textTransform: 'uppercase' }}>Email enviado</strong>
                     <p style={{ color: 'var(--auth-muted)', lineHeight: 1.55 }}>Revisa tu bandeja de entrada en <b>{forgotEmail}</b>.</p>
                     <button className="auth-btn-primary" onClick={() => { setShowForgot(false); setForgotSent(false) }}>
@@ -630,7 +630,7 @@ export default function AuthPanel({ initialType = null, mode = 'page', onClose =
               <div className="auth-form-head">
                 <div className="auth-kicker">/ {isSignUp ? 'crear cuenta' : 'iniciar sesion'}</div>
                 <h2>{isSignUp ? 'Abre tu cuenta' : 'Entra a tu cuenta'}</h2>
-                <p>{isSignUp ? 'Empieza a cargar albumes, repetidas y faltantes con el nuevo sistema visual.' : 'Retoma tus albumes, tus chats y tus cruces sin perder el hilo.'}</p>
+                <p>{isSignUp ? 'Empieza a cargar álbumes, repetidas y faltantes con el nuevo sistema visual.' : 'Retoma tus álbumes, tus chats y tus cruces sin perder el hilo.'}</p>
               </div>
 
               {initialType === 'business' && (
@@ -648,7 +648,7 @@ export default function AuthPanel({ initialType = null, mode = 'page', onClose =
                   setError('')
                   setLoading(true)
                   signInWithGoogle(
-                    redirectTo ? new URL(redirectTo, window.location.origin).toString() : window.location.href
+                    `${window.location.origin}/auth/callback`
                   ).catch((err) => {
                     setError(err.message || 'Error al iniciar con Google')
                     setLoading(false)
@@ -717,7 +717,7 @@ export default function AuthPanel({ initialType = null, mode = 'page', onClose =
                       onClick={() => setShowPassword(!showPassword)}
                       aria-label={showPassword ? 'Ocultar contrasena' : 'Mostrar contrasena'}
                     >
-                      {showPassword ? 'ðŸ™ˆ' : 'ðŸ‘ï¸'}
+                      {showPassword ? '🙈' : '👁️'}
                     </button>
                   </div>
                 </div>

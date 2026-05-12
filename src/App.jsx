@@ -1,4 +1,4 @@
-﻿import React, { Suspense, lazy, useEffect } from 'react'
+import React, { Suspense, lazy, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useAuthStore } from './stores/authStore'
 // FigusUY - PayPal Integration Final Sync
@@ -20,17 +20,20 @@ import Login from './pages/Login'
 import Points from './pages/Points'
 import InfluencersPage from './pages/InfluencersPage'
 import FAQ from './pages/FAQ'
+import AccountSuspended from './pages/AccountSuspended'
 
 const ReferralLanding = lazy(() => import('./pages/ReferralLanding'))
 const UserReferrals = lazy(() => import('./pages/UserReferrals'))
 const InfluencerJoin = lazy(() => import('./pages/InfluencerJoin'))
 const StaticPage = lazy(() => import('./pages/StaticPage'))
+const ContactHub = lazy(() => import('./pages/ContactHub'))
 
 const Album = lazy(() => import('./pages/Album'))
 const Matches = lazy(() => import('./pages/Matches'))
 const ChatsList = lazy(() => import('./pages/ChatsList'))
 const Chat = lazy(() => import('./pages/Chat'))
 const Profile = lazy(() => import('./pages/Profile'))
+const AuthCallback = lazy(() => import('./pages/AuthCallback'))
 const Premium = lazy(() => import('./pages/Premium'))
 const Stores = lazy(() => import('./pages/Stores'))
 const Favorites = lazy(() => import('./pages/Favorites'))
@@ -38,6 +41,7 @@ const PartnerPlans = lazy(() => import('./pages/PartnerPlans'))
 const Achievements = lazy(() => import('./pages/Achievements'))
 const PublicProfile = lazy(() => import('./pages/PublicProfile'))
 const PublicAlbum = lazy(() => import('./pages/PublicAlbum'))
+const AlbumProfile = lazy(() => import('./pages/AlbumProfile'))
 const HybridLayout = lazy(() => import('./components/HybridLayout'))
 
 const BusinessLayout = lazy(() => import('./business/BusinessLayout'))
@@ -63,6 +67,7 @@ const AdminDashboard = lazy(() => import('./admin/Dashboard'))
 const AdminAlbums = lazy(() => import('./admin/AdminAlbums'))
 const AdminUsers = lazy(() => import('./admin/AdminUsers'))
 const AdminReports = lazy(() => import('./admin/AdminReports'))
+const AdminContactRequests = lazy(() => import('./admin/AdminContactRequests'))
 const AdminSettings = lazy(() => import('./admin/AdminSettings'))
 const AdminAlgorithm = lazy(() => import('./admin/AdminAlgorithm'))
 const AdminPlans = lazy(() => import('./admin/AdminPlans'))
@@ -112,6 +117,7 @@ const ShareModal = lazy(() => import('./components/ShareModal'))
 const SmartNotifications = lazy(() => import('./components/SmartNotifications'))
 const GlobalLogoutDialog = lazy(() => import('./components/GlobalLogoutDialog'))
 
+import { SystemEventEngine } from './components/system/SystemEventEngine'
 import './components/gamification/icons/GamificationIcons.css'
 import { GamificationIconDefs } from './components/gamification/icons/GamificationIconDefs'
 
@@ -137,7 +143,7 @@ function ProtectedRoute({ children }) {
   const { user, loading, initialized } = useAuthStore()
   const [timedOut, setTimedOut] = React.useState(false)
 
-  // Detectar si hay un token almacenado (indica que el usuario SÃ estaba logueado)
+  // Detectar si hay un token almacenado (indica que el usuario SÍ  estaba logueado)
   const hasStoredSession = React.useMemo(() => {
     try {
       for (let i = 0; i < localStorage.length; i++) {
@@ -152,7 +158,7 @@ function ProtectedRoute({ children }) {
 
   React.useEffect(() => {
     // Solo activar timeout si NO hay token guardado (sesión genuinamente inexistente)
-    // Si hay token, darle más tiempo â€” la sesión existe, solo está cargando del servidor
+    // Si hay token, darle más tiempo — la sesión existe, solo está cargando del servidor
     const delay = hasStoredSession ? 20000 : 6000
     const timer = setTimeout(() => {
       if (!user) setTimedOut(true)
@@ -161,7 +167,13 @@ function ProtectedRoute({ children }) {
   }, [user, hasStoredSession])
 
   // Si ya tenemos usuario, permitir acceso inmediato
-  if (user) return children
+  const { isPendingDeletion } = useAuthStore()
+  if (user) {
+    if (isPendingDeletion && window.location.pathname !== '/account-suspended') {
+      return <Navigate to="/account-suspended" replace />
+    }
+    return children
+  }
 
   // Si todavía estamos cargando y no ha pasado el timeout, mostrar loading
   if ((loading || !initialized) && !timedOut) return <LoadingScreen text="Verificando sesión..." />
@@ -174,7 +186,7 @@ function ProtectedRoute({ children }) {
     void initialize()
   }
 
-  // Auth resolvió sin usuario y no hay token guardado â†’ login
+  // Auth resolvió sin usuario y no hay token guardado → login
   return <Navigate to="/login" replace />
 }
 
@@ -191,6 +203,10 @@ function AuthRedirector() {
   if (profile?.account_type === 'business') {
     return <Navigate to="/business" replace />
   }
+  const { isPendingDeletion } = useAuthStore()
+  if (isPendingDeletion) {
+    return <Navigate to="/account-suspended" replace />
+  }
   return <Navigate to="/profile" replace />
 }
 
@@ -198,7 +214,7 @@ function PublicRoute({ children }) {
   const { user, loading, initialized } = useAuthStore()
 
   // Mientras la autenticación no se haya inicializado, mostrar loading breve
-  // Pero NO bloquear indefinidamente â€” si initialized es true, decidir ya
+  // Pero NO bloquear indefinidamente — si initialized es true, decidir ya
   if (!initialized && loading) {
     return <LoadingScreen text="Preparando ingreso..." />
   }
@@ -208,7 +224,7 @@ function PublicRoute({ children }) {
     return <AuthRedirector />
   }
 
-  // No hay usuario â†’ mostrar la página pública (login)
+  // No hay usuario → mostrar la página pública (login)
   return children
 }
 
@@ -276,11 +292,11 @@ function AppChrome() {
 
 function AppLayout({ children }) {
   return (
-    <div className="app-layout">
+    <div className="app-layout" style={{ height: '100vh', overflow: 'hidden' }}>
       <div className="app-sidebar-wrapper">
         <Sidebar />
       </div>
-      <main className="app-main">
+      <main className="app-main" style={{ height: '100%', overflowY: 'auto' }}>
         <PageTransitionWrapper>
           {children || <Outlet />}
         </PageTransitionWrapper>
@@ -334,17 +350,21 @@ export default function App() {
           <Route path="/puntos" element={<Points />} />
           <Route path="/influencers" element={<InfluencersPage />} />
           <Route path="/faq" element={<FAQ />} />
+          <Route path="/p/contacto" element={<ContactHub />} />
           <Route path="/p/:slug" element={<StaticPage />} />
         </Route>
 
         <Route path="/login" element={<PublicRoute><PageTransitionWrapper><Login /></PageTransitionWrapper></PublicRoute>} />
+        <Route path="/account-suspended" element={<ProtectedRoute><AccountSuspended /></ProtectedRoute>} />
+        <Route path="/auth/callback" element={<PageTransitionWrapper><AuthCallback /></PageTransitionWrapper>} />
         <Route path="/r/:code" element={<ReferralLanding />} />
         <Route path="/influencer-join/:code" element={<InfluencerJoin />} />
 
-        {/* Public Profiles */}
+        {/* Public Profiles & Album Hubs */}
         <Route element={<HybridLayout />}>
           <Route path="/u/:username" element={<PageTransitionWrapper><PublicProfile /></PageTransitionWrapper>} />
           <Route path="/u/:username/album/:albumId" element={<PageTransitionWrapper><PublicAlbum /></PageTransitionWrapper>} />
+          <Route path="/albums/:albumId" element={<PageTransitionWrapper><AlbumProfile /></PageTransitionWrapper>} />
         </Route>
 
         {/* App */}
@@ -397,6 +417,7 @@ export default function App() {
           <Route path="albums" element={<AdminAlbums />} />
           <Route path="users" element={<AdminUsers />} />
           <Route path="reports" element={<AdminReports />} />
+          <Route path="contact-requests" element={<AdminContactRequests />} />
           <Route path="settings" element={<AdminSettings />} />
           <Route path="algorithm" element={<AdminAlgorithm />} />
           <Route path="plans" element={<AdminPlans />} />
@@ -441,6 +462,7 @@ export default function App() {
         <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
         <AppChrome />
+        <SystemEventEngine />
       </Suspense>
     </BrowserRouter>
   )

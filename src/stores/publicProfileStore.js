@@ -37,7 +37,7 @@ export const usePublicProfileStore = create((set, get) => ({
       if (!profile) return null
 
       const albumInfo = profile.albums.find(a => a.album_id === albumId)
-      if (!albumInfo) throw new Error('Ãlbum no encontrado o privado')
+      if (!albumInfo) throw new Error('́lbum no encontrado o privado')
 
       // Ahora obtenemos las faltantes y repetidas de ese usuario si están visibles.
       // Necesitamos el user_id.

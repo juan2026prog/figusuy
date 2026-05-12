@@ -13,11 +13,11 @@ const USER_PLAN_COPY = {
     accent: '#6b7280',
     description: 'Todo el core de FigusUY abierto para intercambiar, activar tu red y moverte mas rapido.',
     highlights: [
-      'Albumes ilimitados',
+      'Álbumes ilimitados',
       'Cargar faltantes y repetidas',
       'Matches ilimitados',
       'Chat y mapa',
-      'Cargar nuevos albumes con moderacion',
+      'Cargar nuevos álbumes con moderacion',
       'Perfil publico',
       'Reputacion basica'
     ]
@@ -152,7 +152,7 @@ export default function PlansModal({ isOpen, onClose }) {
       key,
       ...copy,
       priceLabel: key === 'gratis' ? copy.priceLabel : plan ? `USD ${plan.price}` : 'Consultar',
-      uyuApprox: key === 'gratis' ? '' : `â‰ˆ $${uyuApprox} UYU estimados`,
+      uyuApprox: key === 'gratis' ? '' : `≈ $${uyuApprox} UYU estimados`,
       monthlyLabel: key === 'gratis' ? copy.monthlyLabel : '/mes',
       checkoutId: plan?.id || null
     }
@@ -186,7 +186,7 @@ export default function PlansModal({ isOpen, onClose }) {
                 FigusUY ya no es solo intercambiar.
               </p>
               <p className="text-xs" style={{ color: '#fb923c' }}>
-                Tambien activa red, sugiere puntos, carga albumes, valida y genera liquidez en la comunidad.
+                Tambien activa red, sugiere puntos, carga álbumes, valida y genera liquidez en la comunidad.
               </p>
             </div>
           )}

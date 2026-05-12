@@ -4,7 +4,7 @@ export default function BusinessHelp() {
   const faqs = [
     { q: 'Como gano mas visibilidad?', a: 'Radar y Conversion mejoran tu presencia local y tu peso comercial. Completar horarios, fotos y descripcion tambien ayuda a convertir mejor.' },
     { q: 'Para que sirven los puntos sugeridos?', a: 'Los usuarios ayudan a descubrir lugares utiles para intercambiar. Si tu punto entra bien posicionado, capturas trafico y contexto comercial.' },
-    { q: 'Que cambia con Collector Hub?', a: 'Collector Hub agrega validacion de albumes y usuarios, badge oficial, rewards asociados y prioridad premium dentro del ecosistema.' }
+    { q: 'Que cambia con Collector Hub?', a: 'Collector Hub agrega validacion de álbumes y usuarios, badge oficial, rewards asociados y prioridad premium dentro del ecosistema.' }
   ]
 
   return (

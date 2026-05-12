@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useAdminStore } from '../stores/adminStore'
 import { useAuthStore } from '../stores/authStore'
 import { useNavigate } from 'react-router-dom'
@@ -12,7 +12,7 @@ const btn = (bg, color) => ({ padding: '0.375rem 0.75rem', borderRadius: '0.5rem
 export default function AdminUsers() {
   const { 
     users, fetchUsers, toggleUserBlock, toggleUserPremium, toggleUserVerified, 
-    setUserRole, calculateUserRanking, getUserRanking, allAlbums, fetchAllAlbums, addAlbumToUser 
+    setUserRole, setUserPlan, calculateUserRanking, getUserRanking, allAlbums, fetchAllAlbums, addAlbumToUser 
   } = useAdminStore()
   const { user: adminUser } = useAuthStore()
   const navigate = useNavigate()
@@ -57,7 +57,7 @@ export default function AdminUsers() {
     if (!selectedUserForAlbum || !albumToAdd) return
     const error = await addAlbumToUser(selectedUserForAlbum.id, albumToAdd)
     if (!error) {
-      alert('Ãlbum agregado con éxito')
+      alert('Álbum agregado con éxito')
       setShowAlbumModal(false)
       fetchUsers()
     } else {
@@ -226,7 +226,7 @@ export default function AdminUsers() {
                                 <span>ID:</span> <span style={{ fontFamily: 'monospace', color: "#f5f5f5", fontWeight: 600 }}>{user.id.substring(0, 8)}...</span>
                               </p>
                               <p style={{ fontSize: '0.8125rem', color: "var(--admin-muted2)", display: 'flex', justifyContent: 'space-between' }}>
-                                <span>Ciudad:</span> <span style={{ color: "#f5f5f5", fontWeight: 600 }}>{user.city || 'â€”'}</span>
+                                <span>Ciudad:</span> <span style={{ color: "#f5f5f5", fontWeight: 600 }}>{user.city || '—'}</span>
                               </p>
                               <p style={{ fontSize: '0.8125rem', color: "var(--admin-muted2)", display: 'flex', justifyContent: 'space-between' }}>
                                 <span>GPS:</span> <span style={{ color: "#f5f5f5", fontWeight: 600 }}>{user.lat ? `${user.lat.toFixed(4)}, ${user.lng?.toFixed(4)}` : 'Sin ub.'}</span>
@@ -249,15 +249,27 @@ export default function AdminUsers() {
                               <span className="material-symbols-outlined" style={{ fontSize: '1.125rem' }}>bolt</span> Estados Rápidos
                             </p>
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-                              <button onClick={() => toggleUserPremium(user.id, !user.is_premium)} style={user.is_premium ? btn('#fffbeb', '#d97706') : btn("var(--admin-panel2)", "var(--admin-muted2)")}>
-                                <span className="material-symbols-outlined" style={{ fontSize: '1.125rem' }}>workspace_premium</span>
-                                Premium
-                              </button>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', gridColumn: '1 / -1' }}>
+                                <label style={{ fontSize: '0.6875rem', color: "var(--admin-muted2)", fontWeight: 700, textTransform: 'uppercase' }}>Plan de Usuario</label>
+                                <select 
+                                  style={{ ...input, padding: '0.375rem 0.5rem', fontSize: '0.8125rem' }}
+                                  value={user.plan_name || 'gratis'}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    const isPremium = val !== 'gratis';
+                                    setUserPlan(user.id, val, isPremium);
+                                  }}
+                                >
+                                  <option value="gratis">Gratis (No Premium)</option>
+                                  <option value="plus">Plus (Premium)</option>
+                                  <option value="pro">Pro (Premium Elite)</option>
+                                </select>
+                              </div>
                               <button onClick={() => toggleUserVerified(user.id, !user.is_verified)} style={user.is_verified ? btn('#ecfdf5', '#10b981') : btn("var(--admin-panel2)", "var(--admin-muted2)")}>
                                 <span className="material-symbols-outlined" style={{ fontSize: '1.125rem' }}>verified</span>
                                 Verificado
                               </button>
-                              <button onClick={() => toggleUserBlock(user.id, !user.is_blocked)} style={{ ...btn(user.is_blocked ? '#fef2f2' : "var(--admin-panel2)", user.is_blocked ? '#ef4444' : "var(--admin-muted2)"), gridColumn: '1 / -1' }}>
+                              <button onClick={() => toggleUserBlock(user.id, !user.is_blocked)} style={{ ...btn(user.is_blocked ? '#fef2f2' : "var(--admin-panel2)", user.is_blocked ? '#ef4444' : "var(--admin-muted2)") }}>
                                 <span className="material-symbols-outlined" style={{ fontSize: '1.125rem' }}>block</span>
                                 {user.is_blocked ? 'Desbloquear Usuario' : 'Bloquear Usuario'}
                               </button>
@@ -289,13 +301,13 @@ export default function AdminUsers() {
                               {[
                                 { val: 'user', label: 'Usuario Estándar' },
                                 { val: 'influencer', label: 'Influencer / Creador' },
-                                { val: 'album_creator', label: 'Creador de Ãlbumes' },
+                                { val: 'album_creator', label: 'Creador de Álbumes' },
                                 { val: 'commercial', label: 'Comercial / Ventas' },
                                 { val: 'analyst', label: 'Analista de Datos' },
                                 { val: 'support', label: 'Soporte Técnico' },
                                 { val: 'moderator', label: 'Moderador' },
                                 { val: 'admin', label: 'Administrador' },
-                                { val: 'god_admin', label: 'âš¡ God Admin' },
+                                { val: 'god_admin', label: '⚡ God Admin' },
                               ].map(r => (
                                 <option key={r.val} value={r.val}>{r.label}</option>
                               ))}
@@ -316,19 +328,19 @@ export default function AdminUsers() {
                              <p style={{ fontSize: '0.75rem', fontWeight: 800, color: "var(--admin-muted)", textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '1rem' }}>Resumen de Actividad</p>
                              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(10rem, 1fr))', gap: '1rem' }}>
                                 <div style={{ background: "var(--admin-panel2)", padding: '0.75rem', borderRadius: '0.5rem', textAlign: 'center' }}>
-                                   <p style={{ fontSize: '1.25rem', fontWeight: 900, color: "#f5f5f5" }}>{user.user_albums_count ?? 'â€”'}</p>
-                                   <p style={{ fontSize: '0.625rem', fontWeight: 700, color: "var(--admin-muted2)", textTransform: 'uppercase' }}>Ãlbumes Activos</p>
+                                   <p style={{ fontSize: '1.25rem', fontWeight: 900, color: "#f5f5f5" }}>{user.user_albums_count ?? '—'}</p>
+                                   <p style={{ fontSize: '0.625rem', fontWeight: 700, color: "var(--admin-muted2)", textTransform: 'uppercase' }}>Álbumes Activos</p>
                                 </div>
                                 <div style={{ background: "var(--admin-panel2)", padding: '0.75rem', borderRadius: '0.5rem', textAlign: 'center' }}>
-                                   <p style={{ fontSize: '1.25rem', fontWeight: 900, color: "#f5f5f5" }}>{user.trades_count ?? 'â€”'}</p>
+                                   <p style={{ fontSize: '1.25rem', fontWeight: 900, color: "#f5f5f5" }}>{user.trades_count ?? '—'}</p>
                                    <p style={{ fontSize: '0.625rem', fontWeight: 700, color: "var(--admin-muted2)", textTransform: 'uppercase' }}>Matches Exitosos</p>
                                 </div>
                                 <div style={{ background: "var(--admin-panel2)", padding: '0.75rem', borderRadius: '0.5rem', textAlign: 'center' }}>
-                                   <p style={{ fontSize: '1.25rem', fontWeight: 900, color: "#f5f5f5" }}>{user.favorites_count ?? 'â€”'}</p>
+                                   <p style={{ fontSize: '1.25rem', fontWeight: 900, color: "#f5f5f5" }}>{user.favorites_count ?? '—'}</p>
                                    <p style={{ fontSize: '0.625rem', fontWeight: 700, color: "var(--admin-muted2)", textTransform: 'uppercase' }}>Puntos Favoritos</p>
                                 </div>
                                 <div style={{ background: "var(--admin-panel2)", padding: '0.75rem', borderRadius: '0.5rem', textAlign: 'center' }}>
-                                   <p style={{ fontSize: '1.25rem', fontWeight: 900, color: "#f5f5f5" }}>{user.sticker_count ?? 'â€”'}</p>
+                                   <p style={{ fontSize: '1.25rem', fontWeight: 900, color: "#f5f5f5" }}>{user.sticker_count ?? '—'}</p>
                                    <p style={{ fontSize: '0.625rem', fontWeight: 700, color: "var(--admin-muted2)", textTransform: 'uppercase' }}>Figuritas en Colección</p>
                                 </div>
                                 <button 
@@ -340,7 +352,7 @@ export default function AdminUsers() {
                                   style={{ ...btn("var(--color-primary)", "white"), gridColumn: '1 / -1', marginTop: '0.5rem', justifyContent: 'center' }}
                                 >
                                   <span className="material-symbols-outlined">add_circle</span>
-                                  Asignar Nuevo Ãlbum
+                                  Asignar Nuevo Álbum
                                 </button>
                              </div>
                           </div>
@@ -352,7 +364,7 @@ export default function AdminUsers() {
                                  <span className="material-symbols-outlined" style={{ fontSize: '1.125rem', color: 'var(--color-primary)' }}>leaderboard</span> Ranking Score
                                </p>
                                <button onClick={() => recalcUser(user.id)} disabled={scoringUser === user.id} style={{ padding: '0.25rem 0.625rem', borderRadius: '0.375rem', background: "rgba(249, 115, 22, 0.1)", color: 'var(--color-primary)', border: '1px solid #fed7aa', fontSize: '0.6875rem', fontWeight: 700, cursor: 'pointer', opacity: scoringUser === user.id ? 0.5 : 1 }}>
-                                 {scoringUser === user.id ? 'â³ ...' : 'ðŸ”„ Recalcular'}
+                                 {scoringUser === user.id ? '⏳ ...' : '🔄 Recalcular'}
                                </button>
                              </div>
                              {userScores[user.id] ? (() => {
@@ -379,9 +391,9 @@ export default function AdminUsers() {
                                      ))}
                                    </div>
                                    {sc.penalties && Object.keys(sc.penalties).length > 0 && (
-                                     <p style={{ fontSize: '0.6875rem', color: '#ef4444', marginTop: '0.5rem', fontWeight: 600 }}>âš ï¸ Penalizaciones: {JSON.stringify(sc.penalties)}</p>
+                                     <p style={{ fontSize: '0.6875rem', color: '#ef4444', marginTop: '0.5rem', fontWeight: 600 }}>⚠️ Penalizaciones: {JSON.stringify(sc.penalties)}</p>
                                    )}
-                                   <p style={{ fontSize: '0.5625rem', color: "var(--admin-muted)", marginTop: '0.375rem' }}>Último cálculo: {sc.last_scored_at ? new Date(sc.last_scored_at).toLocaleString() : 'â€”'}</p>
+                                   <p style={{ fontSize: '0.5625rem', color: "var(--admin-muted)", marginTop: '0.375rem' }}>Último cálculo: {sc.last_scored_at ? new Date(sc.last_scored_at).toLocaleString() : '—'}</p>
                                  </>
                                )
                              })() : (
@@ -410,7 +422,7 @@ export default function AdminUsers() {
       {showAlbumModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
           <div style={{ ...card, width: '100%', maxWidth: '28rem', border: '1px solid var(--color-primary)' }}>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 900, color: '#fff', marginBottom: '0.5rem' }}>Asignar Ãlbum</h2>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 900, color: '#fff', marginBottom: '0.5rem' }}>Asignar Álbum</h2>
             <p style={{ fontSize: '0.875rem', color: 'var(--admin-muted2)', marginBottom: '1.5rem' }}>Elegí un álbum para asignar a <strong>{selectedUserForAlbum?.name || 'este usuario'}</strong></p>
             
             <select 

@@ -29,7 +29,7 @@ const PLAN_METADATA = {
     stage: 'Validar y liderar',
     icon: 'workspace_premium',
     subtitle: 'Convierte tu local en lugar de confianza para validar y otorgar rewards.',
-    features: ['Todo Conversion', 'Validacion de albumes', 'Validacion de usuarios', 'Badge Collector Hub', 'Rewards asociados', 'Visibilidad premium'],
+    features: ['Todo Conversion', 'Validación de álbumes', 'Validación de usuarios', 'Badge Collector Hub', 'Rewards asociados', 'Visibilidad premium'],
   },
 }
 
@@ -74,7 +74,7 @@ export default function Points() {
                  dbKey === 'partner_store' ? '71.99' :
                  String(premiumPlan?.price || '0'),
           currency: dbKey === 'gratis' ? '' : 'USD',
-          priceMeta: dbKey === 'gratis' ? 'siempre' : `â‰ˆ $${dbPlan.monthly_price.toLocaleString()} UYU aprox.`,
+          priceMeta: dbKey === 'gratis' ? 'siempre' : `≈ $${dbPlan.monthly_price.toLocaleString()} UYU aprox.`,
           badge: meta.stage,
           icon: meta.icon,
           subtitle: meta.subtitle,

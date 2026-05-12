@@ -166,7 +166,7 @@ export default function UniversalAddressAutocomplete({
     if (addr.state) parts.push(normalizeDepartment(addr.state));
     if (addr.country) parts.push(addr.country);
     
-    return parts.filter(Boolean).join(' Â· ');
+    return parts.filter(Boolean).join(' · ');
   };
 
   return (

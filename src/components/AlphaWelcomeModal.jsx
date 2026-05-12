@@ -182,7 +182,7 @@ export default function AlphaWelcomeModal({ forceOpen = false, onClose }) {
               color: 'var(--color-text-secondary)',
               fontWeight: 600,
             }}>
-              Gracias por probarla primero. ðŸ™Œ
+              Gracias por probarla primero. 🙌
             </p>
           </div>
 
@@ -237,7 +237,7 @@ export default function AlphaWelcomeModal({ forceOpen = false, onClose }) {
                 e.target.style.color = 'var(--color-text-muted)'
               }}
             >
-              ðŸ› Reportar un problema
+              🐛 Reportar un problema
             </button>
           </div>
         </div>

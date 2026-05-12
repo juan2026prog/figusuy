@@ -54,8 +54,8 @@ export default function BusinessPartnerStoreValidations() {
     return (
       <div className="biz-page">
         <div className="biz-empty-state">
-          <h2>Validaciones Collector Hub</h2>
-          <p>Este modulo solo se activa para puntos con plan Collector Hub. Una Tienda Collector Hub convierte tu local en referencia para validar albumes completos y verificar colecciones.</p>
+          <h2>Validaciónes Collector Hub</h2>
+          <p>Este modulo solo se activa para puntos con plan Collector Hub. Una Tienda Collector Hub convierte tu local en referencia para validar álbumes completos y verificar colecciones.</p>
         </div>
       </div>
     )
@@ -225,7 +225,7 @@ export default function BusinessPartnerStoreValidations() {
         <div className="biz-section-head">
           <div>
             <div className="biz-page-kicker">/ pendientes</div>
-            <h2>Albumes listos para revisar</h2>
+            <h2>Álbumes listos para revisar</h2>
             <p>La validación sigue siendo manual. Revisá la colección, confirmá que esté completa y aprobá cuando corresponda.</p>
           </div>
         </div>
@@ -298,7 +298,7 @@ export default function BusinessPartnerStoreValidations() {
                 <div className="legend-card-head">
                   <div>
                     <h3 className="legend-card-title">{item.album_name}</h3>
-                    <div className="legend-meta">{item.user_name} Â· Collector Hub Verified</div>
+                    <div className="legend-meta">{item.user_name} · Collector Hub Verified</div>
                   </div>
                   <span className="legend-chip" style={{ color: 'var(--green)', borderColor: 'rgba(34,197,94,.3)', background: 'rgba(34,197,94,.08)' }}>Validado</span>
                 </div>

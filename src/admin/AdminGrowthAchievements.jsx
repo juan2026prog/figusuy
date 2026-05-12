@@ -115,7 +115,7 @@ export default function AdminGrowthAchievements() {
                 {/* Reward */}
                 {def.reward ? (
                   <div style={{padding:'8px 10px',border:'1px solid rgba(255,90,0,.2)',background:'rgba(255,90,0,.05)',fontSize:'.72rem',fontWeight:800,color:'var(--admin-orange)'}}>
-                    ðŸŽ Reward: {def.reward.type} ({def.reward.value})
+                    🎁 Reward: {def.reward.type} ({def.reward.value})
                   </div>
                 ) : (
                   <div style={{padding:'8px 10px',border:'1px solid var(--admin-line)',fontSize:'.72rem',color:'var(--admin-muted2)'}}>Sin reward asociado</div>

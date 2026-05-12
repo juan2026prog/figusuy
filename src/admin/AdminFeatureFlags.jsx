@@ -85,8 +85,8 @@ function FlagCard({ flag, onToggle, onKillSwitch, onUpdate, parentFlag }) {
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
               <span style={{ fontWeight: 800, fontSize: '0.9375rem', color: "#f5f5f5" }}>{flag.name}</span>
               <span style={badge(sc.c, sc.bg)}>{flag.scope}</span>
-              {flag.beta_only && <span style={badge('#b45309', '#fef3c7')}>Î² Beta</span>}
-              {flag.kill_switch && <span style={badge('#dc2626', '#fef2f2')}>ðŸš¨ Kill</span>}
+              {flag.beta_only && <span style={badge('#b45309', '#fef3c7')}>β Beta</span>}
+              {flag.kill_switch && <span style={badge('#dc2626', '#fef2f2')}>🚨 Kill</span>}
               <span style={{ ...badge(statusColor, statusColor + '15'), fontWeight: 800 }}>{statusLabel}</span>
             </div>
             <span style={{ fontSize: '0.75rem', color: "var(--admin-muted)", fontFamily: 'monospace' }}>{flag.feature_key}</span>
@@ -132,7 +132,7 @@ function FlagCard({ flag, onToggle, onKillSwitch, onUpdate, parentFlag }) {
           {/* Kill Switch */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem', background: isKilled ? '#fef2f2' : "var(--admin-panel2)", borderRadius: '0.75rem', border: `1px solid ${isKilled ? '#fecaca' : "var(--admin-line)"}` }}>
             <div>
-              <p style={{ fontSize: '0.8125rem', fontWeight: 700, color: isKilled ? '#dc2626' : "#f5f5f5" }}>ðŸš¨ Kill Switch</p>
+              <p style={{ fontSize: '0.8125rem', fontWeight: 700, color: isKilled ? '#dc2626' : "#f5f5f5" }}>🚨 Kill Switch</p>
               <p style={{ fontSize: '0.75rem', color: "var(--admin-muted)" }}>Apaga la feature inmediatamente, ignorando todo</p>
             </div>
             <Toggle checked={isKilled} onChange={v => onKillSwitch(flag.feature_key, v)} color="#dc2626" />
@@ -186,7 +186,7 @@ export default function AdminFeatureFlags() {
   const handleKillSwitch = async (key, killed) => {
     const err = await toggleKillSwitch(key, killed, profile?.id)
     if (err) toast.error('Error en Kill Switch: ' + err.message)
-    else toast.success(killed ? 'ðŸš¨ Feature desactivada (Kill)' : 'âœ… Feature restaurada')
+    else toast.success(killed ? '🚨 Feature desactivada (Kill)' : '✅ Feature restaurada')
     fetchAuditLog()
   }
 
@@ -201,7 +201,7 @@ export default function AdminFeatureFlags() {
     try {
       const err = await emergencyKillAll()
       if (err) throw err
-      toast.success('ðŸš¨ EMERGENCIA: Todas las funciones apagadas')
+      toast.success('🚨 EMERGENCIA: Todas las funciones apagadas')
     } catch (err) {
       toast.error('Fallo al activar emergencia: ' + err.message)
     }
@@ -213,7 +213,7 @@ export default function AdminFeatureFlags() {
     try {
       const err = await restoreAll()
       if (err) throw err
-      toast.success('âœ… Sistema restaurado correctamente')
+      toast.success('✅ Sistema restaurado correctamente')
     } catch (err) {
       toast.error('Fallo al restaurar: ' + err.message)
     }
@@ -279,7 +279,7 @@ export default function AdminFeatureFlags() {
             <span className="material-symbols-outlined" style={{ color: '#dc2626', fontSize: '1.5rem' }}>emergency</span>
             <div>
               <p style={{ fontWeight: 800, fontSize: '0.9375rem', color: "#f5f5f5" }}>Emergency Controls</p>
-              <p style={{ fontSize: '0.75rem', color: "var(--admin-muted)" }}>Kill switch global â€” apaga todo inmediatamente</p>
+              <p style={{ fontSize: '0.75rem', color: "var(--admin-muted)" }}>Kill switch global — apaga todo inmediatamente</p>
             </div>
           </div>
           <div style={{ display: 'flex', gap: '0.5rem' }}>
@@ -293,7 +293,7 @@ export default function AdminFeatureFlags() {
             ) : (
               <div style={{ display: 'flex', gap: '0.375rem', alignItems: 'center' }}>
                 <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#dc2626' }}>¿CONFIRMAR?</span>
-                <button onClick={handleEmergencyKillAll} style={{ background: '#dc2626', color: 'white', border: 'none', padding: '0.375rem 0.75rem', borderRadius: '0.375rem', fontWeight: 700, fontSize: '0.6875rem', cursor: 'pointer' }}>SÃ, MATAR TODO</button>
+                <button onClick={handleEmergencyKillAll} style={{ background: '#dc2626', color: 'white', border: 'none', padding: '0.375rem 0.75rem', borderRadius: '0.375rem', fontWeight: 700, fontSize: '0.6875rem', cursor: 'pointer' }}>S͍, MATAR TODO</button>
                 <button onClick={() => setConfirmKillAll(false)} style={{ background: "var(--admin-line)", color: "var(--admin-muted)", border: 'none', padding: '0.375rem 0.75rem', borderRadius: '0.375rem', fontWeight: 700, fontSize: '0.6875rem', cursor: 'pointer' }}>Cancelar</button>
               </div>
             )}
@@ -383,7 +383,7 @@ export default function AdminFeatureFlags() {
                   <span style={{ fontWeight: 700, color: "#f5f5f5", fontFamily: 'monospace', fontSize: '0.75rem' }}>{entry.feature_key}</span>
                   <span style={{ color: "var(--admin-muted)", flex: 1 }}>{entry.reason || ''}</span>
                   <span style={{ fontSize: '0.6875rem', color: "var(--admin-muted)", whiteSpace: 'nowrap' }}>
-                    {entry.changer?.name || 'System'} Â· {new Date(entry.created_at).toLocaleString('es-UY', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                    {entry.changer?.name || 'System'} · {new Date(entry.created_at).toLocaleString('es-UY', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
                   </span>
                 </div>
               ))}

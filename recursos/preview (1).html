@@ -1,0 +1,295 @@
+<section class="figus-profile-widgets">
+  <style>
+    .figus-profile-widgets {
+      background:#070707;
+      color:#fff;
+      font-family:Arial,sans-serif;
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:24px;
+      padding:24px;
+    }
+
+    .fy-widget {
+      border:1px solid rgba(255,106,0,.35);
+      border-radius:18px;
+      padding:26px;
+      background:
+        radial-gradient(circle at top right,rgba(255,106,0,.12),transparent 35%),
+        linear-gradient(180deg,#151515,#090909);
+      box-shadow:0 0 30px rgba(255,106,0,.08);
+    }
+
+    .fy-title {
+      font-size:28px;
+      font-weight:1000;
+      font-style:italic;
+      text-transform:uppercase;
+      margin:0 0 20px;
+    }
+
+    .level-card {
+      display:flex;
+      gap:22px;
+      align-items:center;
+      padding:22px;
+      border-radius:18px;
+      border:1px solid rgba(255,106,0,.25);
+      background:linear-gradient(135deg,#211006,#101010);
+    }
+
+    .level-icon {
+      width:130px;
+      height:130px;
+      border-radius:28px;
+      display:grid;
+      place-items:center;
+      font-size:54px;
+      background:#111;
+      border:2px solid #ff6a00;
+      box-shadow:0 0 30px rgba(255,106,0,.45);
+    }
+
+    .level-name {
+      font-size:42px;
+      font-weight:1000;
+      font-style:italic;
+      text-transform:uppercase;
+      margin:0;
+    }
+
+    .level-desc {
+      color:#bbb;
+      font-size:17px;
+      margin:8px 0 14px;
+    }
+
+    .stars {
+      color:#ff6a00;
+      font-size:26px;
+      letter-spacing:4px;
+    }
+
+    .xp-row {
+      display:flex;
+      justify-content:space-between;
+      margin:24px 0 8px;
+      font-size:20px;
+      font-weight:900;
+    }
+
+    .xp-row span:last-child {
+      color:#ff6a00;
+    }
+
+    .bar {
+      height:12px;
+      background:#242424;
+      border-radius:999px;
+      overflow:hidden;
+    }
+
+    .bar-fill {
+      width:52%;
+      height:100%;
+      background:linear-gradient(90deg,#ff5a00,#ffb000);
+      border-radius:999px;
+      box-shadow:0 0 18px rgba(255,106,0,.55);
+    }
+
+    .next-level {
+      margin-top:22px;
+      padding:18px;
+      border-radius:14px;
+      border:1px solid rgba(139,92,246,.35);
+      background:rgba(139,92,246,.08);
+    }
+
+    .next-level strong {
+      display:block;
+      font-size:24px;
+      text-transform:uppercase;
+      font-style:italic;
+    }
+
+    .progress-grid {
+      margin-top:24px;
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:12px;
+    }
+
+    .progress-box {
+      padding:16px 10px;
+      text-align:center;
+      border-radius:14px;
+      background:#111;
+      border:1px solid rgba(255,255,255,.12);
+    }
+
+    .progress-box b {
+      display:block;
+      font-size:30px;
+      color:#fff;
+    }
+
+    .progress-box span {
+      color:#aaa;
+      font-size:12px;
+      text-transform:uppercase;
+      font-weight:800;
+    }
+
+    .zone-header {
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-bottom:24px;
+    }
+
+    .switch {
+      background:#ff6a00;
+      border-radius:999px;
+      padding:8px 14px;
+      font-weight:1000;
+      box-shadow:0 0 20px rgba(255,106,0,.45);
+    }
+
+    .zone-input {
+      width:100%;
+      padding:18px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,.18);
+      background:#090909;
+      color:#fff;
+      font-size:18px;
+      margin:12px 0 18px;
+    }
+
+    .radar-stats {
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:12px;
+      padding:20px;
+      border-radius:18px;
+      background:#101010;
+      border:1px solid rgba(255,255,255,.1);
+      text-align:center;
+    }
+
+    .radar-stats b {
+      font-size:32px;
+      display:block;
+    }
+
+    .radar-stats span {
+      font-size:12px;
+      color:#aaa;
+      text-transform:uppercase;
+      font-weight:900;
+    }
+
+    .mini-map {
+      height:230px;
+      margin:20px 0;
+      border-radius:18px;
+      background:
+        radial-gradient(circle at center,rgba(255,106,0,.65),transparent 7%),
+        radial-gradient(circle at center,rgba(255,106,0,.25),transparent 18%),
+        radial-gradient(circle at 70% 35%,rgba(20,184,166,.55),transparent 5%),
+        radial-gradient(circle at 25% 60%,rgba(20,184,166,.5),transparent 5%),
+        linear-gradient(135deg,#111,#050505);
+      border:1px solid rgba(255,106,0,.25);
+      position:relative;
+      overflow:hidden;
+    }
+
+    .mini-map:before {
+      content:"";
+      position:absolute;
+      inset:0;
+      background:
+        linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),
+        linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px);
+      background-size:34px 34px;
+      opacity:.3;
+    }
+
+    .radar-btn {
+      width:100%;
+      padding:18px;
+      border:0;
+      border-radius:14px;
+      background:linear-gradient(180deg,#ff6a00,#e44e00);
+      color:#fff;
+      font-size:18px;
+      font-weight:1000;
+      text-transform:uppercase;
+      box-shadow:0 0 22px rgba(255,106,0,.35);
+    }
+
+    @media(max-width:900px){
+      .figus-profile-widgets{grid-template-columns:1fr;padding:16px}
+      .level-card{flex-direction:column;text-align:center}
+      .progress-grid,.radar-stats{grid-template-columns:1fr 1fr}
+    }
+  </style>
+
+  <article class="fy-widget">
+    <h2 class="fy-title">Nivel y progreso</h2>
+
+    <div class="level-card">
+      <div class="level-icon">🧭</div>
+      <div>
+        <p style="color:#ff6a00;font-weight:900;text-transform:uppercase">Nivel actual</p>
+        <h3 class="level-name">Explorador</h3>
+        <p class="level-desc">Enfrentate al álbum y empezá a mover tu colección.</p>
+        <div class="stars">★★★☆☆</div>
+      </div>
+    </div>
+
+    <div class="xp-row">
+      <span>420 / 800 XP</span>
+      <span>52%</span>
+    </div>
+    <div class="bar"><div class="bar-fill"></div></div>
+
+    <div class="next-level">
+      <small style="color:#aaa;text-transform:uppercase;font-weight:900">Próximo nivel</small>
+      <strong>Coleccionista</strong>
+      <p style="color:#bbb;margin:6px 0 0">Te faltan 3 intercambios para subir.</p>
+    </div>
+
+    <div class="progress-grid">
+      <div class="progress-box"><b>12</b><span>Racha</span></div>
+      <div class="progress-box"><b>47</b><span>Intercambios</span></div>
+      <div class="progress-box"><b>6</b><span>Álbumes</span></div>
+      <div class="progress-box"><b>4.8</b><span>Reputación</span></div>
+    </div>
+  </article>
+
+  <article class="fy-widget">
+    <div class="zone-header">
+      <div>
+        <h2 class="fy-title" style="margin-bottom:4px">Radar activo</h2>
+        <p style="color:#bbb;margin:0">Actividad cerca tuyo</p>
+      </div>
+      <div class="switch">ON</div>
+    </div>
+
+    <label style="color:#aaa;font-weight:900;text-transform:uppercase">Buscar zona o ciudad</label>
+    <input class="zone-input" value="Montevideo" />
+
+    <p style="color:#bbb">Seleccionada: <b style="color:#ff6a00">Montevideo</b></p>
+
+    <div class="radar-stats">
+      <div><b>8</b><span>Matches cerca</span></div>
+      <div><b>Pocitos</b><span>Zona activa</span></div>
+      <div><b>2</b><span>Collector Hubs</span></div>
+    </div>
+
+    <div class="mini-map"></div>
+
+    <button class="radar-btn">Actualizar radar</button>
+  </article>
+</section>

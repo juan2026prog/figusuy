@@ -115,7 +115,7 @@ export default function AdminBlocks() {
                   <span>Bloqueó: {block.blocker?.name || 'Sistema'}</span>
                   <span>{new Date(block.created_at).toLocaleDateString()}</span>
                   {block.expires_at && <span>Expira: {new Date(block.expires_at).toLocaleDateString()}</span>}
-                  {!block.is_active && <span>Desbloqueó: {block.unblocker?.name} â€” "{block.unblock_reason}"</span>}
+                  {!block.is_active && <span>Desbloqueó: {block.unblocker?.name} — "{block.unblock_reason}"</span>}
                 </div>
                 {block.is_active && (
                   <button onClick={() => setUnblockId(block.id)} style={{ marginTop: '0.75rem', padding: '0.375rem 0.75rem', borderRadius: '0.5rem', background: "rgba(16, 185, 129, 0.1)", color: '#10b981', border: '1px solid #a7f3d0', fontSize: '0.8125rem', fontWeight: 700, cursor: 'pointer' }}>
@@ -140,9 +140,9 @@ export default function AdminBlocks() {
               {searchTerm && matchedUsers.length > 0 && (
                 <div style={{ border: "1px solid var(--admin-line)", borderRadius: '0.5rem', maxHeight: '8rem', overflowY: 'auto' }}>
                   {matchedUsers.map(u => (
-                    <div key={u.id} onClick={() => { setBlockForm({ ...blockForm, userId: u.id }); setSearchTerm(u.name + ' â€” ' + u.email) }}
+                    <div key={u.id} onClick={() => { setBlockForm({ ...blockForm, userId: u.id }); setSearchTerm(u.name + ' — ' + u.email) }}
                       style={{ padding: '0.5rem 0.75rem', cursor: 'pointer', fontSize: '0.8125rem', borderBottom: '1px solid #f1f5f9' }}>
-                      {u.name} â€” <span style={{ color: "var(--admin-muted)" }}>{u.email}</span>
+                      {u.name} — <span style={{ color: "var(--admin-muted)" }}>{u.email}</span>
                     </div>
                   ))}
                 </div>

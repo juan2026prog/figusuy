@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../stores/authStore'
 
@@ -29,9 +29,9 @@ export function usePushNotifications() {
 
         await supabase.from('user_events').insert({
           user_id: user.id,
-          session_id: localStorage.getItem('session_id') || crypto.randomUUID(),
+          session_id: (typeof window !== 'undefined' ? localStorage.getItem('session_id') : null) || (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2)),
           event: 'push_granted',
-          page: window.location.pathname,
+          page: typeof window !== 'undefined' ? window.location.pathname : '/',
           properties: { timestamp: new Date().toISOString() }
         })
       }

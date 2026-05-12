@@ -219,9 +219,9 @@ export default function PremiumPage() {
                 <div className="current-side-title">{isPremium ? 'Mantené la ventaja y completá más rápido.' : 'Acelerá tus cambios sin perder el ritmo.'}</div>
               </div>
               <div className="plan-nudge-list">
-                <div className="plan-nudge-item"><span className="check">?</span><span><strong>Filtros por distancia</strong> para no viajar de más y cambiar cerca.</span></div>
-                <div className="plan-nudge-item"><span className="check">?</span><span><strong>Confirmación de lectura</strong> para no perder tiempo con fantasmas.</span></div>
-                <div className="plan-nudge-item"><span className="check">?</span><span><strong>Radar de difíciles</strong> para que el sistema trabaje por vos.</span></div>
+                <div className="plan-nudge-item"><span className="check">&#x2713;</span><span><strong>Filtros por distancia</strong> para no viajar de más y cambiar cerca.</span></div>
+                <div className="plan-nudge-item"><span className="check">&#x2713;</span><span><strong>Confirmación de lectura</strong> para no perder tiempo con fantasmas.</span></div>
+                <div className="plan-nudge-item"><span className="check">&#x2713;</span><span><strong>Radar de difíciles</strong> para que el sistema trabaje por vos.</span></div>
               </div>
               <a className="btn orange block" href="#planes">Ver aceleradores</a>
             </aside>
@@ -254,10 +254,10 @@ export default function PremiumPage() {
               </div>
               <div className="feature-lead"><strong>Tu punto de partida.</strong><span>Todo lo que necesitás para completar el álbum con paciencia.</span></div>
               <div className="features">
-                <div className="feature"><span className="check">?</span><span>Cargar figuritas <strong>sin límite</strong></span></div>
-                <div className="feature"><span className="check">?</span><span>Ver <strong>todos</strong> tus matches</span></div>
-                <div className="feature"><span className="check">?</span><span>Chat <strong>ilimitado</strong> con matches</span></div>
-                <div className="feature"><span className="check">?</span><span>Completar tu álbum <strong>gratis</strong></span></div>
+                <div className="feature"><span className="check">&#x2713;</span><span>Cargar figuritas <strong>sin límite</strong></span></div>
+                <div className="feature"><span className="check">&#x2713;</span><span>Ver <strong>todos</strong> tus matches</span></div>
+                <div className="feature"><span className="check">&#x2713;</span><span>Chat <strong>ilimitado</strong> con matches</span></div>
+                <div className="feature"><span className="check">&#x2713;</span><span>Completar tu álbum <strong>gratis</strong></span></div>
               </div>
               <button className={`btn ${cta.tone === 'current' ? '' : 'secondary'} block`} disabled={cta.disabled} onClick={() => setShowPlans(true)}>{cta.label}</button>
               <p className="plan-cta-note">{cta.note}</p>
@@ -283,19 +283,19 @@ export default function PremiumPage() {
                   <b>{plusPrice}</b>
                 </div>
                 <div className="price-meta">
-                  <span className="price-uyu">˜ $99 UYU aprox.</span>
+                  <span className="price-uyu">≈ $99 UYU aprox.</span>
                   <span className="price-period">/mes</span>
                 </div>
               </div>
               <div className="feature-lead"><strong>El salto para activos.</strong><span>Filtros, confirmaciones y limpieza de ruido.</span></div>
               <div className="features">
-                <div className="feature"><span className="check">?</span><span>Filtro de matches <strong>por distancia</strong></span></div>
-                <div className="feature"><span className="check">?</span><span>Filtro por <strong>figurita específica</strong></span></div>
-                <div className="feature"><span className="check">?</span><span><strong>Doble check azul</strong> (leyeron tu mensaje)</span></div>
-                <div className="feature"><span className="check">?</span><span>Ver el estado <strong>"Última vez online"</strong></span></div>
-                <div className="feature"><span className="check">?</span><span>Experiencia <strong>sin publicidad</strong></span></div>
-                <div className="feature"><span className="check">?</span><span>Saber <strong>quién vio tu perfil</strong></span></div>
-                <div className="feature"><span className="check">?</span><span>Badge Plus destacado</span></div>
+                <div className="feature"><span className="check">&#x2713;</span><span>Filtro de matches <strong>por distancia</strong></span></div>
+                <div className="feature"><span className="check">&#x2713;</span><span>Filtro por <strong>figurita específica</strong></span></div>
+                <div className="feature"><span className="check">&#x2713;</span><span><strong>Doble check azul</strong> (leyeron tu mensaje)</span></div>
+                <div className="feature"><span className="check">&#x2713;</span><span>Ver el estado <strong>"Última vez online"</strong></span></div>
+                <div className="feature"><span className="check">&#x2713;</span><span>Experiencia <strong>sin publicidad</strong></span></div>
+                <div className="feature"><span className="check">&#x2713;</span><span>Saber <strong>quién vio tu perfil</strong></span></div>
+                <div className="feature"><span className="check">&#x2713;</span><span>Badge Plus destacado</span></div>
               </div>
               <button className={`btn ${cta.tone === 'upgrade' ? 'orange' : cta.tone === 'change' ? 'secondary' : ''} block ${cta.tone === 'current' ? 'is-current' : ''}`} onClick={() => handleSubscribe('Plus')} disabled={cta.disabled || subscribingPlan === plusPlan?.id}>
                 {subscribingPlan === plusPlan?.id ? 'Procesando...' : cta.label}
@@ -323,18 +323,18 @@ export default function PremiumPage() {
                   <b>{proPrice}</b>
                 </div>
                 <div className="price-meta">
-                  <span className="price-uyu">˜ $199 UYU aprox.</span>
+                  <span className="price-uyu">≈ $199 UYU aprox.</span>
                   <span className="price-period">/mes</span>
                 </div>
               </div>
               <div className="feature-lead"><strong>Para las últimas 10.</strong><span>El sistema caza por vos y te pone en el centro de atención.</span></div>
               <div className="features">
-                <div className="feature"><span className="check">?</span><span>Todo lo incluido en <strong>Plus</strong></span></div>
-                <div className="feature"><span className="check">?</span><span><strong>Alertas "Radar"</strong> instantáneas de escasez</span></div>
-                <div className="feature"><span className="check">?</span><span><strong>Aparecés primero</strong> en los matches de otros</span></div>
-                <div className="feature"><span className="check">?</span><span><strong>Modo Fantasma</strong> (navegar sin ser visto)</span></div>
-                <div className="feature"><span className="check">?</span><span>Múltiples álbumes con analíticas</span></div>
-                <div className="feature"><span className="check">?</span><span>Soporte prioritario y Badge Coleccionista</span></div>
+                <div className="feature"><span className="check">&#x2713;</span><span>Todo lo incluido en <strong>Plus</strong></span></div>
+                <div className="feature"><span className="check">&#x2713;</span><span><strong>Alertas "Radar"</strong> instantáneas de escasez</span></div>
+                <div className="feature"><span className="check">&#x2713;</span><span><strong>Aparecés primero</strong> en los matches de otros</span></div>
+                <div className="feature"><span className="check">&#x2713;</span><span><strong>Modo Fantasma</strong> (navegar sin ser visto)</span></div>
+                <div className="feature"><span className="check">&#x2713;</span><span>Múltiples álbumes con analíticas</span></div>
+                <div className="feature"><span className="check">&#x2713;</span><span>Soporte prioritario y Badge Coleccionista</span></div>
               </div>
               <button className={`btn ${cta.tone === 'upgrade' ? 'orange' : cta.tone === 'change' ? 'secondary' : ''} block ${cta.tone === 'current' ? 'is-current' : ''}`} onClick={() => handleSubscribe('Pro')} disabled={cta.disabled || subscribingPlan === proPlan?.id}>
                 {subscribingPlan === proPlan?.id ? 'Procesando...' : cta.label}

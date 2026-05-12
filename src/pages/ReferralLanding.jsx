@@ -48,7 +48,7 @@ export default function ReferralLanding() {
       <div className="ref-landing-container">
         <div className="ref-glow-orb" />
         <div className="ref-card" style={{ textAlign: 'center' }}>
-          <div className="animate-celebrate" style={{ fontSize: '3rem', marginBottom: '1rem' }}>âš½</div>
+          <div className="animate-celebrate" style={{ fontSize: '3rem', marginBottom: '1rem' }}>⚽</div>
           <p style={{ color: '#a8a29e', fontWeight: 600 }}>Verificando invitación...</p>
         </div>
       </div>

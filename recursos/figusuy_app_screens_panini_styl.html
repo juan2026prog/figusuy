@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FigusUY — App Screens Panini Style</title>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;0,900;1,700;1,900&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root{
+      --bg:#0b0b0b;--panel:#121212;--panel2:#181818;--panel3:#202020;
+      --line:rgba(255,255,255,.08);--line2:rgba(255,255,255,.14);
+      --text:#f5f5f5;--muted:rgba(245,245,245,.52);--muted2:rgba(245,245,245,.32);
+      --orange:#ff5a00;--orange2:#cc4800;--green:#22c55e;--red:#ef4444;--yellow:#facc15;
+    }
+    *{box-sizing:border-box;margin:0;padding:0} body{font-family:Barlow,sans-serif;background:var(--bg);color:var(--text)} a{text-decoration:none;color:inherit} button,input,select{font-family:inherit}
+    .app{min-height:100vh;display:grid;grid-template-columns:230px 1fr;background:var(--bg)}
+    .side{border-right:1px solid var(--line);background:#0a0a0a;position:sticky;top:0;height:100vh;display:flex;flex-direction:column}
+    .brand{height:72px;display:flex;align-items:center;gap:10px;padding:0 18px;border-bottom:1px solid var(--line)}
+    .mark{width:32px;height:32px;background:var(--orange);display:grid;place-items:center;font-weight:900}.brand b{font:900 1.28rem 'Barlow Condensed';letter-spacing:.04em}.brand b span{color:var(--orange)}.brand small{display:block;color:var(--muted2);font-size:.72rem;margin-top:1px}
+    .nav{padding:16px 10px;display:grid;gap:4px;flex:1}.nav a{height:42px;display:flex;align-items:center;gap:10px;padding:0 12px;font:800 .9rem 'Barlow Condensed';letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-left:2px solid transparent}.nav a.active{background:rgba(255,90,0,.1);border-left-color:var(--orange);color:#fff}.nav a:hover{background:rgba(255,255,255,.04);color:#fff}.badge{margin-left:auto;background:var(--red);min-width:20px;height:20px;display:grid;place-items:center;font-size:.7rem;color:#fff}
+    .main{min-width:0}.top{height:72px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;border-bottom:1px solid var(--line);background:rgba(11,11,11,.94);position:sticky;top:0;z-index:10;backdrop-filter:blur(8px)}
+    .top p{font:800 .72rem 'Barlow Condensed';letter-spacing:.14em;text-transform:uppercase;color:var(--orange)}.top h1{font:italic 900 2rem 'Barlow Condensed';line-height:1;text-transform:uppercase}.top-actions{display:flex;gap:10px;align-items:center}.btn{border:1px solid var(--line2);background:transparent;color:#fff;padding:.75rem 1rem;font:800 .86rem 'Barlow Condensed';letter-spacing:.08em;text-transform:uppercase;cursor:pointer}.btn.orange{border-color:var(--orange);background:var(--orange)}.btn.dark{background:var(--panel2)}
+    .screen{padding:24px;max-width:1480px;margin:auto}.page{display:none}.page.active{display:block}.section{border:1px solid var(--line);background:var(--panel);margin-bottom:18px}.section-head{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px 20px;border-bottom:1px solid var(--line);background:var(--panel2)}.section-head h2{font:italic 900 2.3rem 'Barlow Condensed';line-height:.95;text-transform:uppercase}.section-head p{color:var(--muted);font-size:.9rem;margin-top:4px}.kicker{font:800 .72rem 'Barlow Condensed';letter-spacing:.16em;text-transform:uppercase;color:var(--orange)}
+    .grid-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line)}.stat{background:var(--panel);padding:18px}.stat b{display:block;font:italic 900 2.4rem 'Barlow Condensed';color:#fff;line-height:1}.stat span{font-size:.72rem;text-transform:uppercase;color:var(--muted2);font-weight:700}.stat.orange{background:var(--orange)}.stat.green b{color:var(--green)}.stat.red b{color:var(--red)}
+    .progress-box{padding:18px 20px}.progress-info{display:flex;justify-content:space-between;font:800 .9rem 'Barlow Condensed';text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px}.bar{height:18px;border:1px solid var(--line2);background:#090909;position:relative;overflow:hidden}.bar div{height:100%;background:var(--orange)}.bar:before,.bar:after{content:"";position:absolute;top:0;bottom:0;width:1px;background:rgba(255,255,255,.45)}.bar:before{left:50%}.bar:after{left:75%}
+    .album-card{display:grid;grid-template-columns:120px 1fr;gap:22px;padding:24px}.cover{aspect-ratio:3/4;border:1px solid var(--line2);background:linear-gradient(180deg,#232323,#111);display:grid;place-items:center;text-align:center;min-height:140px}.cover b{font:italic 900 2.8rem 'Barlow Condensed';color:var(--orange)}.cover span{font:800 .55rem 'Barlow Condensed';letter-spacing:.12em;text-transform:uppercase;color:var(--muted2)}
+    .filters{display:flex;gap:1px;background:var(--line);border:1px solid var(--line);width:max-content;max-width:100%;overflow:auto}.filters button{border:0;background:var(--panel);color:var(--muted);padding:.7rem 1rem;font:800 .82rem 'Barlow Condensed';letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}.filters button.active{background:var(--orange);color:#fff}
+    .stickers{display:grid;grid-template-columns:repeat(auto-fill,minmax(86px,1fr));gap:10px;padding:10px;background:#0d0d0d;border:1px solid var(--line)}.sticker{aspect-ratio:3/4;position:relative;overflow:hidden;border:1px solid rgba(255,255,255,.14);background:#1a1a1a;display:block;min-height:118px;box-shadow:0 10px 18px rgba(0,0,0,.22)}.sticker::before{content:"";position:absolute;inset:0;background:linear-gradient(135deg,#1d4ed8,#60a5fa 45%,#f97316)}.sticker::after{content:"";position:absolute;left:0;right:0;bottom:0;height:28%;background:linear-gradient(to top,rgba(0,0,0,.78),transparent)}.sticker b{position:absolute;top:8px;left:8px;z-index:2;font:italic 900 1.15rem 'Barlow Condensed';color:#fff;background:rgba(0,0,0,.72);padding:2px 6px}.sticker span{position:absolute;left:8px;bottom:8px;z-index:2;font:800 .58rem 'Barlow Condensed';text-transform:uppercase;color:#fff;letter-spacing:.08em;background:rgba(0,0,0,.72);padding:4px 6px}.sticker.have::before{background:linear-gradient(135deg,#1d4ed8,#93c5fd 45%,#f97316)}.sticker.dup::before{background:linear-gradient(135deg,#15803d,#86efac 45%,#14532d)}.sticker.miss::before{background:linear-gradient(135deg,#111827,#4b5563 45%,#030712)}.sticker.miss b{color:#d1d5db}.sticker.miss span{color:#d1d5db}
+    .two{display:grid;grid-template-columns:1fr 360px;gap:18px}.convert-layout{display:block}.convert-shell{padding:0;overflow:hidden}.convert-topbar{display:grid;grid-template-columns:1fr 280px;gap:1px;background:var(--line);border-bottom:1px solid var(--line)}.convert-search,.convert-proof{background:var(--panel2);padding:16px}.convert-kicker{display:block;font:800 .68rem 'Barlow Condensed';letter-spacing:.14em;text-transform:uppercase;color:var(--orange);margin-bottom:8px}.convert-search{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:end}.convert-search input{height:48px;background:#0d0d0d;border:1px solid var(--line2);padding:0 14px;color:#fff;font-weight:700}.convert-proof{display:flex;flex-direction:column;justify-content:center}.convert-proof b{font:italic 900 1.8rem 'Barlow Condensed';color:var(--orange);line-height:.9}.convert-proof span{color:var(--muted);font-size:.82rem;margin-top:4px}.convert-modes{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border-bottom:1px solid var(--line)}.convert-mode{border:0;background:var(--panel);padding:14px;text-align:left;color:#fff;cursor:pointer}.convert-mode small{display:block;font:800 .62rem 'Barlow Condensed';letter-spacing:.12em;text-transform:uppercase;color:var(--muted2)}.convert-mode b{display:block;font:italic 900 1.35rem 'Barlow Condensed';text-transform:uppercase;line-height:.95;margin-top:6px}.convert-mode span{display:block;font-size:.76rem;color:var(--muted);margin-top:6px}.convert-mode.active{background:var(--orange)}.convert-mode.green b{color:var(--green)}.convert-mode.red b{color:var(--red)}.convert-body{display:grid;grid-template-columns:1fr 300px;gap:0}.convert-main{padding:18px}.convert-tabs{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:16px}.micro-help{font-size:.8rem;color:var(--muted)}.convert-side{border-left:1px solid var(--line);background:#101010;padding:18px;display:flex;flex-direction:column;gap:14px}.next-win{border:1px solid var(--line);background:var(--panel);padding:16px}.next-win h3{font:italic 900 2rem 'Barlow Condensed';text-transform:uppercase;line-height:.9;margin-top:6px}.next-win p{color:var(--muted);font-size:.88rem;line-height:1.5;margin-top:8px}.quick-win-list{border:1px solid var(--line);background:var(--panel)}.q-item{display:flex;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--line)}.q-item:last-child{border-bottom:0}.q-item span{font:800 .72rem 'Barlow Condensed';text-transform:uppercase;color:var(--muted2)}.q-item b{font:900 1.1rem 'Barlow Condensed'}.panel{border:1px solid var(--line);background:var(--panel);padding:18px}.panel h3{font:italic 900 1.65rem 'Barlow Condensed';text-transform:uppercase}.panel p{color:var(--muted);font-size:.9rem;line-height:1.6}.match{border:1px solid var(--line);background:var(--panel);display:grid;grid-template-columns:250px 1fr 1fr 150px;gap:1px;margin-bottom:10px}.match>div{padding:16px;border-right:1px solid var(--line)}.match>div:last-child{border-right:0}.avatar{width:44px;height:44px;background:var(--orange);display:grid;place-items:center;font:900 1.15rem 'Barlow Condensed';float:left;margin-right:12px}.name{font:900 1.25rem 'Barlow Condensed';text-transform:uppercase}.meta{font-size:.78rem;color:var(--muted2)}.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.chip{border:1px solid var(--line2);padding:5px 8px;font:800 .8rem 'Barlow Condensed';background:#0d0d0d}.chip.green{color:var(--green);border-color:rgba(34,197,94,.3)}.chip.orange{color:var(--orange);border-color:rgba(255,90,0,.3)}.score{font:italic 900 2rem 'Barlow Condensed';color:var(--orange)}
+    .profile{display:grid;grid-template-columns:330px 1fr;gap:18px}.profile-card{border:1px solid var(--line);background:var(--panel);padding:20px}.photo{width:92px;height:92px;background:var(--orange);display:grid;place-items:center;font:900 2.4rem 'Barlow Condensed';margin-bottom:16px}.profile-card h2{font:italic 900 2.1rem 'Barlow Condensed';text-transform:uppercase;line-height:.95}.tagline{color:var(--muted);margin:8px 0 14px}.badges{display:flex;gap:6px;flex-wrap:wrap}.tag{border:1px solid var(--line2);padding:5px 8px;font:800 .72rem 'Barlow Condensed';letter-spacing:.08em;text-transform:uppercase}.list{border:1px solid var(--line);background:var(--panel)}.row{display:flex;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--line)}.row:last-child{border-bottom:0}.row span{color:var(--muted2);font-weight:700;text-transform:uppercase;font-size:.75rem}.row b{font-weight:800}
+    .plans{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line)}.plan{background:var(--panel);padding:28px;display:flex;flex-direction:column}.plan.featured{background:var(--panel2);border-top:3px solid var(--orange)}.plan .n{font:800 .78rem 'Barlow Condensed';letter-spacing:.14em;text-transform:uppercase;color:var(--orange)}.price{font:italic 900 3.3rem 'Barlow Condensed';margin:10px 0}.plan ul{list-style:none;display:grid;gap:10px;margin:20px 0 26px}.plan li{color:var(--muted);font-size:.9rem}.plan li:before{content:"— ";color:var(--orange)}.plan button{margin-top:auto;width:100%;padding:1rem;border:1px solid var(--line2);background:transparent;color:#fff;font:800 .9rem 'Barlow Condensed';letter-spacing:.08em;text-transform:uppercase}.plan.featured button{background:var(--orange);border-color:var(--orange)}
+    .table{border:1px solid var(--line);background:var(--panel);overflow:auto}.table table{width:100%;border-collapse:collapse;min-width:760px}.table th,.table td{padding:15px 16px;border-bottom:1px solid var(--line);text-align:left}.table th{font:800 .86rem 'Barlow Condensed';text-transform:uppercase;color:var(--muted2)}.table td{font-size:.9rem;color:var(--muted)}.table b{color:#fff}
+    @media(max-width:900px){.app{grid-template-columns:1fr}.side{display:none}.top{height:auto;padding:16px;align-items:flex-start}.top-actions{display:none}.screen{padding:14px}.two,.profile{grid-template-columns:1fr}.grid-stats{grid-template-columns:repeat(2,1fr)}.match{grid-template-columns:1fr}.match>div{border-right:0;border-bottom:1px solid var(--line)}.plans{grid-template-columns:1fr}.section-head{align-items:flex-start;flex-direction:column}.album-card{grid-template-columns:70px 1fr}}
+  </style>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="brand"><div class="mark">⚽</div><div><b>FIGUS<span>UY</span></b><small>Coleccioná mejor</small></div></div>
+    <nav class="nav">
+      <a class="active" onclick="showPage('album',this)">📚 Álbumes</a>
+      <a onclick="showPage('matches',this)">🔄 Cruces <span class="badge">7</span></a>
+      <a onclick="showPage('profile',this)">👤 Perfil</a>
+      <a onclick="showPage('plans',this)">👑 Planes</a>
+      <a onclick="showPage('premium',this)">⚡ Premium</a>
+      <a>📍 Puntos</a>
+      <a>⚙️ Ajustes</a>
+    </nav>
+  </aside>
+  <main class="main">
+    <header class="top"><div><p id="top-k">Álbum activo</p><h1 id="top-title">FIFA World Cup 2026</h1></div><div class="top-actions"><button class="btn dark">Cambiar álbum</button><button class="btn orange">Ver cruces</button></div></header>
+    <div class="screen">
+      <section id="album" class="page active">
+        <div class="section">
+          <div class="album-card">
+            <div class="cover"><div><b>26</b><span>Album</span></div></div>
+            <div>
+              <span class="kicker">Mundial 2026 · Álbum principal</span>
+              <div class="section-head" style="padding:10px 0 0;border:0;background:transparent"><div><h2>FIFA WORLD CUP 2026</h2><p>Marcá tus figuritas, repetidas y faltantes desde una sola plantilla.</p></div></div>
+              <div class="grid-stats" style="margin-top:18px"><div class="stat"><b>968</b><span>Tengo</span></div><div class="stat green"><b>15</b><span>Repetidas</span></div><div class="stat red"><b>12</b><span>Faltantes</span></div><div class="stat orange"><b>99%</b><span>Completo</span></div></div>
+            </div>
+          </div>
+          <div class="progress-box"><div class="progress-info"><span>Progreso del álbum</span><span style="color:var(--orange)">968 / 980</span></div><div class="bar"><div style="width:99%"></div></div></div>
+        </div>
+        <div class="two convert-layout">
+          <div class="section convert-shell">
+            <div class="convert-topbar">
+              <div class="convert-search">
+                <span class="convert-kicker">Carga rápida</span>
+                <input placeholder="Ej: 10, 45, 89, M1..." />
+                <button class="btn orange">Guardar</button>
+              </div>
+              <div class="convert-proof">
+                <b>3 matches nuevos</b>
+                <span>si cargás tus repetidas ahora</span>
+              </div>
+            </div>
+
+            <div class="convert-modes">
+              <button class="convert-mode active"><small>Modo activo</small><b>✓ Tengo</b><span>Ya la tengo</span></button>
+              <button class="convert-mode green"><small>Modo</small><b>⊕ Repetida</b><span>La puedo cambiar</span></button>
+              <button class="convert-mode red"><small>Modo</small><b>✕ Faltante</b><span>La estoy buscando</span></button>
+              <button class="convert-mode"><small>Modo</small><b>⌫ Borrar</b><span>Quitar marca</span></button>
+            </div>
+
+            <div class="convert-body">
+              <div class="convert-main">
+                <div class="convert-tabs">
+                  <div class="filters"><button class="active">Base 1-980</button><button>Especiales M</button><button>Promos</button><button>Faltantes</button></div>
+                  <div class="micro-help">Tocá una figurita para marcarla más rápido.</div>
+                </div>
+                <div class="stickers" id="albumGrid"></div>
+              </div>
+
+              <aside class="convert-side">
+                <div class="next-win">
+                  <span class="kicker">Siguiente mejora</span>
+                  <h3>Te faltan 12</h3>
+                  <p>Marcá tus repetidas y desbloqueá los mejores cruces cerca tuyo.</p>
+                  <button class="btn orange" style="width:100%;margin-top:14px">Ver cruces</button>
+                </div>
+
+                <div class="quick-win-list">
+                  <div class="q-item"><span>Más cerca</span><b>350m</b></div>
+                  <div class="q-item"><span>Cerrás hoy</span><b>5 figus</b></div>
+                  <div class="q-item"><span>Mejor score</span><b>92</b></div>
+                </div>
+              </aside>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="matches" class="page">
+        <div class="section"><div class="section-head"><div><span class="kicker">Cruces encontrados</span><h2>Matches que sí sirven</h2><p>Ordenados por compatibilidad, distancia y valor real del intercambio.</p></div><div class="filters"><button class="active">Todos 7</button><button>Mutuos 3</button><button>Cercanos</button></div></div></div>
+        <div id="matchList"></div>
+      </section>
+
+      <section id="profile" class="page">
+        <div class="profile">
+          <div class="profile-card"><div class="photo">J</div><h2>Juan Castillo</h2><p class="tagline">Coleccionista · Montevideo · Activo hoy</p><div class="badges"><span class="tag">Activo</span><span class="tag">Confiable</span><span class="tag">Mundial 2026</span></div><button class="btn orange" style="width:100%;margin-top:18px">Cambiar foto</button></div>
+          <div class="section"><div class="section-head"><div><span class="kicker">Progreso</span><h2>Intercambiador</h2><p>Te faltan 2 cruces para llegar a Referente.</p></div><span class="score">78%</span></div><div class="progress-box"><div class="bar"><div style="width:78%"></div></div></div><div class="grid-stats"><div class="stat"><b>12</b><span>Cruces</span></div><div class="stat"><b>3</b><span>Álbumes</span></div><div class="stat green"><b>8</b><span>Logros</span></div><div class="stat orange"><b>Plus</b><span>Plan</span></div></div></div>
+        </div>
+        <div class="section"><div class="section-head"><div><h2>Mis álbumes</h2><p>Tus colecciones activas.</p></div></div><div class="album-card"><div class="cover"><div><b>26</b><span>World Cup</span></div></div><div><h2 style="font-size:2rem">FIFA WORLD CUP 2026</h2><p style="color:var(--muted)">Official Sticker Collection · 99% completo</p><div class="progress-box" style="padding-left:0;padding-right:0"><div class="bar"><div style="width:99%"></div></div></div></div></div></div>
+      </section>
+
+      <section id="plans" class="page">
+        <div class="section"><div class="section-head"><div><span class="kicker">Planes</span><h2>Completá más rápido</h2><p>No pagás por funciones. Pagás por encontrar mejores cruces.</p></div></div><div style="padding:18px"><div class="plans"><div class="plan"><div class="n">Gratis</div><div class="price">$0</div><ul><li>1 álbum activo</li><li>3 cruces mensuales</li><li>Chat por 3 días</li></ul><button>Empezar gratis</button></div><div class="plan featured"><div class="n">Plus</div><div class="price">$149</div><ul><li>10 cruces mensuales</li><li>3 álbumes activos</li><li>Alertas de faltantes</li></ul><button>Elegir Plus</button></div><div class="plan"><div class="n">Pro</div><div class="price">$299</div><ul><li>Cruces ilimitados</li><li>Álbumes ilimitados</li><li>Todo Uruguay</li></ul><button>Elegir Pro</button></div></div></div></div>
+        <div class="table"><table><thead><tr><th>Función</th><th>Gratis</th><th>Plus</th><th>Pro</th></tr></thead><tbody><tr><td><b>Cruces</b></td><td>3</td><td>10</td><td>Ilimitados</td></tr><tr><td><b>Álbumes</b></td><td>1</td><td>3</td><td>Ilimitados</td></tr><tr><td><b>Chat</b></td><td>3 días</td><td>Ilimitado</td><td>Ilimitado</td></tr></tbody></table></div>
+      </section>
+
+      <section id="premium" class="page">
+        <div class="section"><div class="section-head"><div><span class="kicker">Premium</span><h2>Desbloqueá más intercambios</h2><p>Más cruces, más alertas y menos tiempo perdido.</p></div><div class="panel" style="min-width:250px"><p>Tu plan actual</p><h3>Gratis</h3><div class="bar" style="margin-top:10px"><div style="width:66%"></div></div></div></div></div>
+        <div class="plans"><div class="plan"><div class="n">Gratis</div><div class="price">$0</div><ul><li>Chat 3 días</li><li>1 álbum</li><li>3 cruces</li></ul><button>Plan actual</button></div><div class="plan featured"><div class="n">Plus recomendado</div><div class="price">$149</div><ul><li>10 cruces</li><li>3 álbumes</li><li>Alertas 20+</li></ul><button>Elegir Plus</button></div><div class="plan"><div class="n">Pro</div><div class="price">$299</div><ul><li>Ilimitado</li><li>Tiempo real</li><li>Todo Uruguay</li></ul><button>Elegir Pro</button></div></div>
+      </section>
+    </div>
+  </main>
+</div>
+<script>
+function showPage(id,el){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.getElementById(id).classList.add('active');document.querySelectorAll('.nav a').forEach(a=>a.classList.remove('active'));if(el)el.classList.add('active');const titles={album:['Álbum activo','FIFA World Cup 2026'],matches:['Cruces','Matches'],profile:['Usuario','Mi perfil'],plans:['Planes','Planes'],premium:['Premium','Premium']};document.getElementById('top-k').textContent=titles[id][0];document.getElementById('top-title').textContent=titles[id][1]}
+const g=document.getElementById('albumGrid');for(let i=1;i<=160;i++){let c=i%17===0?'miss':i%13===0?'dup':i%5!==0?'have':'';let d=document.createElement('button');d.className='sticker '+c;d.innerHTML=`<b>${i}</b><span>${c==='have'?'Jugador':c==='dup'?'Repetida':c==='miss'?'Faltante':'Sticker'}</span>`;g.appendChild(d)}
+const matches=[['S','Sofía','Pocitos · 350m','18 24 45 M3','10 22 97','92'],['D','Diego','Cordón · 800m','45 M1','88','74'],['M','Martina','Centro · 1.1km','101 102','7 18','68']];document.getElementById('matchList').innerHTML=matches.map(m=>`<article class='match'><div><div class='avatar'>${m[0]}</div><div class='name'>${m[1]}</div><div class='meta'>${m[2]}</div></div><div><span class='kicker'>Te da</span><div class='chips'>${m[3].split(' ').map(x=>`<span class='chip green'>${x}</span>`).join('')}</div></div><div><span class='kicker'>Le das</span><div class='chips'>${m[4].split(' ').map(x=>`<span class='chip orange'>${x}</span>`).join('')}</div></div><div><div class='score'>${m[5]}</div><button class='btn orange' style='width:100%;margin-top:8px'>Contactar</button></div></article>`).join('')
+</script>
+</body>
+</html>

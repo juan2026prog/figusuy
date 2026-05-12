@@ -186,7 +186,7 @@ export default function AdminReferrals() {
                       <div>
                         <span style={{ font: "900 .78rem 'Barlow Condensed'", textTransform: 'uppercase', color: def.color }}>{def.label}</span>
                         <div style={{ fontSize: '.68rem', color: 'var(--admin-muted2)' }}>
-                          user: {share.user_id?.slice(0, 8)}... Â· {share.status || 'clicked'}
+                          user: {share.user_id?.slice(0, 8)}... · {share.status || 'clicked'}
                         </div>
                       </div>
                       <span style={{ font: "900 .62rem 'Barlow Condensed'", color: 'var(--admin-muted2)' }}>{new Date(share.created_at).toLocaleDateString()}</span>
@@ -219,7 +219,7 @@ export default function AdminReferrals() {
                       <div>
                         <span style={{ font: "900 .78rem 'Barlow Condensed'", textTransform: 'uppercase', color: colors[referral.event] || '#fff' }}>{reward.label || referral.event}</span>
                         <div style={{ fontSize: '.68rem', color: 'var(--admin-muted2)' }}>
-                          referrer: {referral.referrer_id?.slice(0, 8)}... â†’ {referral.referred_id?.slice(0, 8)}... Â· {referral.status || 'pending'}
+                          referrer: {referral.referrer_id?.slice(0, 8)}... → {referral.referred_id?.slice(0, 8)}... · {referral.status || 'pending'}
                         </div>
                       </div>
                       <span style={{ font: "900 .62rem 'Barlow Condensed'", color: 'var(--admin-muted2)' }}>{new Date(referral.created_at).toLocaleDateString()}</span>
@@ -242,7 +242,7 @@ export default function AdminReferrals() {
                     <div>
                       <div style={{ font: "900 .82rem 'Barlow Condensed'", textTransform: 'uppercase', color: '#f5f5f5' }}>{def.label}</div>
                       <div style={{ fontSize: '.72rem', color: 'var(--admin-muted2)', marginTop: '2px' }}>
-                        +{def.xp} XP{def.reward_type ? ` Â· ${def.reward_type} (${def.reward_hours}h)` : ''}
+                        +{def.xp} XP{def.reward_type ? ` · ${def.reward_type} (${def.reward_hours}h)` : ''}
                       </div>
                     </div>
                     <span style={{ font: "italic 900 1.2rem 'Barlow Condensed'", color: 'var(--admin-orange)' }}>{key}</span>

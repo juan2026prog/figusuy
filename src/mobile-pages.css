@@ -1,0 +1,308 @@
+/* ============================================================
+   FigusUY — Mobile Responsive (Part 2: Page Overrides)
+   COMPLETE MOBILE-FIRST REBUILD
+   ============================================================ */
+
+/* === HOME PAGE === */
+@media (max-width: 480px) {
+  .home-panini-wrapper .wrap { padding: 16px 12px 80px; }
+  .home-panini-wrapper .hero-title { font-size: 2rem; }
+  .home-panini-wrapper .hero-desc { font-size: 0.88rem; }
+  .home-panini-wrapper .stat-grid { grid-template-columns: 1fr 1fr; gap: 6px; }
+  .home-panini-wrapper .stat-card { padding: 10px 8px; }
+  .home-panini-wrapper .stat-value { font-size: 1.4rem; }
+  .home-panini-wrapper .stat-label { font-size: 0.6rem; }
+  .home-panini-wrapper .momentum-strip { gap: 6px; overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding-bottom: 4px; }
+  .home-panini-wrapper .momentum-strip::-webkit-scrollbar { display: none; }
+  .home-panini-wrapper .how-it-works { padding: 16px 12px; }
+  .home-panini-wrapper .section-head h2 { font-size: 1.6rem; }
+  .home-panini-wrapper .live-stat-grid { grid-template-columns: 1fr; gap: 8px; }
+  .home-panini-wrapper .album-list { display: grid; grid-template-columns: 1fr; gap: 10px; }
+  .home-panini-wrapper .steps { display: grid; grid-template-columns: 1fr; gap: 10px; }
+  .home-panini-wrapper .step { padding: 14px; }
+}
+
+/* === PROFILE PAGE === */
+@media (max-width: 768px) {
+  .profile-final-root .profile-grid { grid-template-columns: 1fr !important; }
+  .profile-final-root .content-grid { grid-template-columns: 1fr !important; }
+  .profile-final-root .progress-card { grid-template-columns: 1fr !important; }
+  .profile-final-root .favorites-gamification { grid-template-columns: 1fr !important; display: grid; gap: 12px; }
+}
+
+@media (max-width: 480px) {
+  .profile-final-root .wrap { padding: 12px 10px 80px; }
+  .profile-final-root .topbar { padding: 10px 12px; min-height: 56px; flex-wrap: wrap; gap: 8px; }
+  .profile-final-root .top-title { font-size: 1.5rem; }
+  .profile-final-root .top-actions { width: 100%; justify-content: space-between; }
+  .profile-final-root .top-actions .btn { padding: 8px 10px; font-size: 0.72rem; }
+  .profile-final-root .identity-card { padding: 16px; }
+  .profile-final-root .avatar-box { width: 72px; height: 72px; font-size: 1.8rem; margin-bottom: 12px; }
+  .profile-final-root .profile-name { font-size: 1.8rem; }
+  .profile-final-root .profile-meta { font-size: 0.82rem; }
+  .profile-final-root h2 { font-size: 1.6rem; }
+  .profile-final-root .progress-main { padding: 16px; }
+  .profile-final-root .level-title { font-size: 1.6rem; }
+  .profile-final-root .big-percent { font-size: 1.6rem; }
+  .profile-final-root .pstat b { font-size: 1.8rem; }
+  .profile-final-root .plan-block { padding: 16px; min-height: auto; }
+  .profile-final-root .plan-block b { font-size: 2rem; }
+  .profile-final-root .card-head { padding: 12px 14px; }
+  .profile-final-root .album-row { padding: 12px; gap: 10px; flex-direction: column; }
+  .profile-final-root .album-cover { width: 100%; min-height: 100px; aspect-ratio: 16/9; border-radius: 8px; }
+  .profile-final-root .album-title { font-size: 1.4rem; }
+  .profile-final-root .album-actions { flex-direction: row !important; width: 100%; }
+  .profile-final-root .album-actions .btn { flex: 1; justify-content: center; }
+  .profile-final-root .side-card { padding: 14px; }
+  .profile-final-root .side-title { font-size: 1.3rem; }
+  .profile-final-root .input { height: 48px; font-size: 16px; }
+  .profile-final-root .trust-row, .profile-final-root .settings-row { padding: 10px 0; }
+  .profile-final-root .trust-row span, .profile-final-root .settings-row span { font-size: 0.82rem; }
+  .profile-final-root .quick-row button { width: 100%; text-align: left; padding: 12px 14px; }
+}
+
+/* === MATCHES PAGE === */
+@media (max-width: 768px) {
+  .matches-page .layout { flex-direction: column !important; }
+  .matches-page .layout > aside { order: 2; }
+  .matches-page .hero { grid-template-columns: 1fr !important; }
+}
+
+@media (max-width: 480px) {
+  .matches-page .wrap { padding: 10px 10px 80px; }
+  .matches-page .hero-main { padding: 14px; min-height: auto; }
+  .matches-page .hero-main:before { font-size: 3rem; }
+  .matches-page .hero-title { font-size: 1.6rem; }
+  .matches-page .hero-sub { font-size: 0.78rem; }
+  .matches-page .hero-stats { grid-template-columns: 1fr 1fr; gap: 6px; }
+  .matches-page .hero-stat { padding: 8px; }
+  .matches-page .hero-stat b { font-size: 1.3rem; }
+  .matches-page .top-match { padding: 12px; min-height: auto; }
+  .matches-page .top-user h2 { font-size: 1.3rem; }
+  .matches-page .score { font-size: 2.4rem; }
+  .matches-page .top-actions-grid { grid-template-columns: 1fr; gap: 6px; }
+  .matches-page .match-card { border-radius: 6px; }
+  .matches-page .match-body { padding: 10px; }
+  .matches-page .match-name { font-size: 1.1rem; }
+  .matches-page .sticker-exchange { gap: 4px; flex-wrap: wrap; }
+  .matches-page .match-action { padding: 8px; }
+  .matches-page .match-action .btn { padding: 0.5rem 0.8rem; font-size: 0.72rem; min-width: 0; flex: 1; }
+  .matches-page .premium-notice { padding: 10px; }
+  .matches-page .premium-notice p { font-size: 0.75rem; }
+  .matches-page .section-title { display: block; }
+  .matches-page .section-title h2 { font-size: 1.4rem; }
+  .matches-page .tab { padding: 8px 10px; font-size: 0.65rem; }
+  .matches-page .tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; flex-wrap: nowrap; }
+  .matches-page .tabs::-webkit-scrollbar { display: none; }
+  .matches-page .controls-top { flex-direction: column; gap: 8px; }
+  .matches-page .search-line { flex-direction: column; gap: 6px; }
+  .matches-page .search-line input { width: 100%; }
+  .matches-page .side-card { padding: 12px; }
+  .matches-page .side-card h3 { font-size: 1.2rem; }
+}
+
+/* === CHATS LIST === */
+@media (max-width: 480px) {
+  .chats-list-page .wrap { padding: 12px 10px 80px; }
+  .chats-list-page .hero-main { padding: 14px; min-height: auto; }
+  .chats-list-page .hero-title { font-size: 2rem; }
+  .chats-list-page .hero-stats { grid-template-columns: 1fr; }
+  .chats-list-page .chat-card { grid-template-columns: 44px 1fr; gap: 8px; }
+  .chats-list-page .avatar { width: 36px; height: 36px; font-size: 1rem; }
+  .chats-list-page .chat-body { padding: 10px; }
+  .chats-list-page .chat-name { font-size: 1.1rem; }
+  .chats-list-page .chat-action { padding: 8px; }
+  .chats-list-page .quick-card { min-height: auto; padding: 14px; }
+  .chats-list-page .quick-card h2 { font-size: 1.6rem; }
+}
+
+/* === CHAT PAGE === */
+@media (max-width: 480px) {
+  .chat-page-root .chat-header { min-height: 56px; padding: 8px 10px; gap: 8px; }
+  .chat-page-root .chat-back-btn { width: 36px; height: 36px; }
+  .chat-page-root .chat-avatar { width: 36px; height: 36px; font-size: 1.1rem; }
+  .chat-page-root .chat-header-name { font-size: 1.2rem; }
+  .chat-page-root .chat-messages { padding: 10px 8px; gap: 8px; }
+  .chat-page-root .bubble { max-width: 88%; padding: 10px 12px; }
+  .chat-page-root .msg-text { font-size: 0.88rem; }
+  .chat-page-root .chat-footer { padding: 8px 10px; padding-bottom: max(10px, env(safe-area-inset-bottom)); }
+  .chat-page-root .send-btn { height: 44px; padding: 0 14px; font-size: 0.78rem; }
+  .chat-page-root .hero-strip { grid-template-columns: 1fr; }
+  .chat-page-root .exchange-grid { grid-template-columns: 1fr; }
+  .chat-page-root .completion-card { margin: 8px; padding: 12px; }
+  .chat-page-root .completion-grid { grid-template-columns: 1fr 1fr; }
+  .chat-page-root .completion-title { font-size: 1.4rem; }
+  .chat-page-root .completion-actions { flex-direction: column; gap: 6px; }
+  .chat-page-root .completion-actions button { min-width: auto; width: 100%; }
+}
+
+/* === ALBUM PAGE === */
+@media (max-width: 768px) {
+  .album-page-v2 .album-hero-panel { flex-direction: column !important; }
+  .album-page-v2 .album-hero-panel .album-hero-main { flex-direction: column; }
+  .album-page-v2 .album-workspace { flex-direction: column !important; gap: 16px; }
+  .album-page-v2 .album-middle-panels { grid-template-columns: 1fr !important; gap: 12px; }
+  .album-page-v2 .album-live-feed-strip .live-feed-grid { grid-template-columns: 1fr !important; }
+}
+
+@media (max-width: 480px) {
+  .album-page-v2 { padding: 0 8px 80px !important; }
+  .album-page-v2 .album-hero-panel { padding: 14px; gap: 14px; }
+  .album-page-v2 .album-cover.album-cover-v2 { width: 80px; height: auto; min-height: 100px; }
+  .album-page-v2 .album-hero-copy h1 { font-size: 1.6rem; }
+  .album-page-v2 .album-hero-topline { flex-direction: column; gap: 8px; align-items: flex-start; }
+  .album-page-v2 .album-hero-side { padding: 14px; }
+  .album-page-v2 .album-progress-card { padding: 14px; }
+  .album-page-v2 .album-state-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .album-page-v2 .state-card { padding: 12px 8px; }
+  .album-page-v2 .state-card strong { font-size: 1.6rem; }
+  .album-page-v2 .opportunity-cards { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .album-page-v2 .opp-card { padding: 12px; }
+  .album-page-v2 .opp-card strong { font-size: 1.3rem; }
+  .album-page-v2 .album-panel { padding: 14px; }
+  .album-page-v2 .modes-grid { grid-template-columns: 1fr 1fr !important; gap: 8px; }
+  .album-page-v2 .mode-card { padding: 12px !important; }
+  .album-page-v2 .mode-card b { font-size: 0.88rem; }
+  .album-page-v2 .filter-tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; flex-wrap: nowrap; gap: 4px; padding-bottom: 4px; }
+  .album-page-v2 .filter-tabs::-webkit-scrollbar { display: none; }
+  .album-page-v2 .filter-tab { white-space: nowrap; font-size: 0.72rem; padding: 6px 10px; flex-shrink: 0; }
+  .album-page-v2 .stickers-grid { grid-template-columns: repeat(auto-fill, minmax(38px, 1fr)) !important; gap: 3px !important; }
+  .album-page-v2 .sticker-cell { width: 38px; height: 38px; font-size: 0.7rem; }
+  .album-page-v2 .album-bulk-form { flex-direction: column; gap: 8px; }
+  .album-page-v2 .album-bulk-form input { width: 100%; }
+  .album-page-v2 .album-search-row { flex-direction: column; gap: 8px; }
+  .album-page-v2 .album-search-input { width: 100%; }
+  .album-page-v2 .mobile-grid-toolbar { flex-direction: column; gap: 8px; align-items: stretch; }
+  .album-page-v2 .mobile-grid-nav { display: flex; gap: 6px; }
+  .album-page-v2 .mobile-grid-nav button { flex: 1; }
+  .album-page-v2 .album-empty-grid { grid-template-columns: 1fr !important; gap: 12px; }
+  .album-page-v2 .album-picker-card { padding: 12px; }
+  .album-page-v2 .album-switcher-v2 { width: 100%; }
+  .album-page-v2 .switcher-toggle { width: 100%; font-size: 0.82rem; }
+  .album-page-v2 .switcher-menu { width: 100%; }
+}
+
+/* === PREMIUM PAGE === */
+@media (max-width: 480px) {
+  .premium-panini-wrapper .wrap { padding: 10px 10px 80px; }
+  .premium-panini-wrapper .hero-main { padding: 14px; }
+  .premium-panini-wrapper .hero-title { font-size: 2rem; }
+  .premium-panini-wrapper .hero-panel, .premium-panini-wrapper .hero-panel-cta { padding: 14px; }
+  .premium-panini-wrapper .plan { padding: 16px; min-height: auto; }
+  .premium-panini-wrapper .plan-name { font-size: 1.8rem; }
+  .premium-panini-wrapper .price b { font-size: 2.4rem; }
+  .premium-panini-wrapper .section-head h2, .premium-panini-wrapper .table-head h2 { font-size: 1.6rem; }
+  .premium-panini-wrapper .benefit { padding: 14px; }
+  .premium-panini-wrapper .benefit h3 { font-size: 1.2rem; }
+  .premium-panini-wrapper .faq-item summary { padding: 12px; font-size: 0.88rem; }
+  .premium-panini-wrapper .mini-grid { grid-template-columns: 1fr; }
+  .premium-panini-wrapper .plans { grid-template-columns: 1fr !important; }
+}
+
+/* === ACHIEVEMENTS === */
+@media (max-width: 480px) {
+  .panini-page .wrap { padding: 12px 10px 80px; }
+  .panini-page .hero-main { padding: 16px; min-height: auto; }
+  .panini-page .hero-main:before { font-size: 3.5rem; }
+  .panini-page .hero-title { font-size: 2rem; }
+  .panini-page .level-card { padding: 14px; min-height: auto; }
+  .panini-page .level-percent { font-size: 2.2rem; }
+  .panini-page .ach-card { padding: 12px; }
+  .panini-page .ach-name { font-size: 1.1rem; }
+  .panini-page .stats-grid { grid-template-columns: 1fr 1fr; }
+  .panini-page .stat { padding: 12px; }
+  .panini-page .stat b { font-size: 1.8rem; }
+  .panini-page .roadmap-line { grid-template-columns: 1fr; }
+  .panini-page .road-step { min-height: auto; padding: 12px; }
+  .panini-page .mission { padding: 10px; gap: 8px; }
+  .panini-page .reward-card { grid-template-columns: 42px 1fr; gap: 10px; padding: 12px; }
+}
+
+/* === FAVORITES === */
+@media (max-width: 480px) {
+  .favorites-page-root { padding: 0.75rem 0.5rem 5rem; }
+  .favorites-header { padding: 0.75rem; }
+  .favorites-title { font-size: 2rem; }
+  .favorites-list-shell { padding: 0.75rem; }
+  .favorites-list-title { font-size: 1.4rem; }
+  .tab-btn { width: 100%; padding: 0.65rem; }
+}
+
+/* === STORES / RADAR === */
+@media (max-width: 480px) {
+  .stores-final-root .sf-wrap { padding: 0.75rem; padding-bottom: 5rem; }
+  .stores-final-root .sf-topbar { padding: 0.875rem; }
+  .stores-final-root .sf-top-title { font-size: 1.8rem; }
+  .stores-final-root .sf-hero-card { padding: 1rem; }
+  .stores-final-root .sf-hero-title { font-size: 1.6rem; }
+  .stores-final-root .sf-hero-stats { grid-template-columns: 1fr; gap: 0.5rem; }
+  .stores-final-root .sf-hero-stat { padding: 0.75rem; }
+  .stores-final-root .sf-hero-stat b { font-size: 1.6rem; }
+  .stores-final-root .sf-filters-panel { padding: 0.75rem; position: static; }
+  .stores-final-root .sf-filters-top { grid-template-columns: 1fr; gap: 0.5rem; }
+  .stores-final-root .sf-point-card { min-height: auto; border-radius: 6px; }
+  .stores-final-root .sf-point-name { font-size: 1.1rem; white-space: normal; }
+  .stores-final-root .sf-point-body { padding: 0.875rem; }
+  .stores-final-root .sf-point-content-row { grid-template-columns: 1fr; }
+  .stores-final-root .sf-point-cover { width: 100%; height: 120px; }
+  .stores-final-root .sf-point-actions { padding: 0.625rem; flex-direction: column; gap: 6px; }
+  .stores-final-root .sf-point-actions .btn { width: 100%; justify-content: center; }
+  .stores-final-root .sf-section-title { display: block; }
+  .stores-final-root .sf-section-title h2 { font-size: 1.6rem; }
+  .stores-final-root .sf-promo-box { flex-direction: column; text-align: center; }
+  .stores-final-root .sf-features-row { gap: 0.25rem; overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; }
+  .stores-final-root .sf-feature-highlight { min-width: 60px; max-width: none; padding: 0.375rem; flex-shrink: 0; font-size: 0.6rem; }
+}
+
+/* === PARTNER PLANS === */
+@media (max-width: 480px) {
+  .pp-wrapper .pp-wrap { padding: 12px 10px 80px; }
+  .pp-wrapper .pp-topbar { padding: 10px 12px; }
+  .pp-wrapper .pp-top-title { font-size: 1.4rem; }
+  .pp-wrapper .pp-hero { padding: 14px; }
+  .pp-wrapper .pp-hero-title { font-size: 2rem; }
+  .pp-wrapper .pp-plan { padding: 14px; }
+  .pp-wrapper .pp-plan-name { font-size: 1.8rem; }
+  .pp-wrapper .pp-price b { font-size: 2.4rem; }
+  .pp-wrapper .pp-section-head h2 { font-size: 1.8rem; }
+  .pp-wrapper .pp-table { grid-template-columns: 1.3fr repeat(4, minmax(36px, 1fr)); font-size: 0.65rem; }
+}
+
+/* === BUSINESS PENDING === */
+@media (max-width: 480px) {
+  .pending-panini-wrapper { padding: 16px; }
+  .pending-card { padding: 20px 16px; }
+  .pending-title { font-size: 1.6rem; }
+  .pending-icon { width: 56px; height: 56px; font-size: 1.8rem; }
+}
+
+/* === REFERRALS PAGE === */
+@media (max-width: 480px) {
+  .referrals-page .wrap { padding: 12px 10px 80px; }
+}
+
+/* === USER REFERRALS === */
+@media (max-width: 480px) {
+  .referral-hero { padding: 16px; min-height: auto; }
+  .referral-hero h1 { font-size: 1.8rem; }
+  .referral-stats { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .referral-link-box { padding: 12px; flex-direction: column; gap: 8px; }
+  .referral-link-box input { width: 100%; }
+  .referral-link-box button { width: 100%; }
+}
+
+/* === PUBLIC PROFILE === */
+@media (max-width: 480px) {
+  .public-profile-container { padding: 16px 10px 80px !important; }
+  .public-profile-container .glass-panel { padding: 16px !important; border-radius: 16px !important; }
+  .public-profile-container h1 { font-size: 1.5rem !important; }
+}
+
+/* === PUBLIC ALBUM === */
+@media (max-width: 480px) {
+  .public-album-page { padding: 16px 10px 80px !important; }
+  .public-album-page > .glass-panel:first-child { flex-direction: column !important; align-items: center !important; text-align: center !important; }
+  .public-album-page > .glass-panel:first-child img { width: 80px !important; height: 112px !important; }
+  .public-album-page > div[style*="grid-template-columns: 1fr 1fr"],
+  .public-album-page > div[style*="gridTemplateColumns"] { display: grid !important; grid-template-columns: 1fr !important; }
+}

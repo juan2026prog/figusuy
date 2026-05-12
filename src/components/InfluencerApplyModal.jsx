@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../stores/authStore';
 import { useToast } from './Toast';
@@ -310,7 +310,7 @@ export default function InfluencerApplyModal({ isOpen, onClose }) {
       <div className="modal-content" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
           <h2>Sumate como Influencer</h2>
-          <button className="close-btn" onClick={onClose}>âœ•</button>
+          <button className="close-btn" onClick={onClose}>✕</button>
         </div>
 
         <div className="modal-body">

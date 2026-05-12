@@ -182,7 +182,7 @@ export const useGamificationStore = create((set, get) => ({
             const rep = get().reputation
             const { canUnlock } = canUnlockMilestone(key, rep?.star_rating || 1)
             if (!canUnlock) {
-              // User doesn't have enough reputation â€” don't complete the milestone
+              // User doesn't have enough reputation — don't complete the milestone
               // Still update progress so they see they're close
               await supabase
                 .from('user_achievements')

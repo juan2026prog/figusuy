@@ -192,8 +192,8 @@ export default function InfluencerPayouts() {
             <div className="affiliate-list-item" key={payment.id}>
               <strong>{formatMoney(payment.commission_total)}</strong>
               <div className="affiliate-mini-note">Periodo {payment.period_start} al {payment.period_end}</div>
-              <div className="affiliate-mini-note">Estado {payment.status} Â· Conversiones {payment.total_conversions} Â· Revenue {formatMoney(payment.total_revenue)}</div>
-              <div className="affiliate-mini-note">{payment.payment_method || 'Metodo pendiente'} {payment.payment_reference ? `Â· Ref ${payment.payment_reference}` : ''}</div>
+              <div className="affiliate-mini-note">Estado {payment.status} · Conversiones {payment.total_conversions} · Revenue {formatMoney(payment.total_revenue)}</div>
+              <div className="affiliate-mini-note">{payment.payment_method || 'Metodo pendiente'} {payment.payment_reference ? `· Ref ${payment.payment_reference}` : ''}</div>
             </div>
           )) : (
             <div className="affiliate-list-item">

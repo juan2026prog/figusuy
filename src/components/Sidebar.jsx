@@ -1,4 +1,4 @@
-﻿import React from 'react'
+import React from 'react'
 import { NavLink } from 'react-router-dom'
 import { useAppStore } from '../stores/appStore'
 import { useAuthStore } from '../stores/authStore'
@@ -17,7 +17,7 @@ export default function Sidebar() {
   const isFeatureEnabled = useFeatureFlagStore(state => state.isFeatureEnabled)
 
   let navItems = [
-    { path: '/album', icon: 'menu_book', label: 'Ãlbumes', feature: 'album' },
+    { path: '/album', icon: 'menu_book', label: 'Álbumes', feature: 'album' },
     { path: '/matches', icon: 'swap_horiz', label: 'Intercambios', badge: matchCount },
     { path: '/chats', icon: 'chat', label: 'Chats', badge: unreadChats, feature: 'chats' },
     { path: '/favorites', icon: 'favorite', label: 'Favoritos' },
@@ -38,9 +38,9 @@ export default function Sidebar() {
   }
 
   return (
-    <aside className="app-sidebar">
+    <aside className="app-sidebar" style={{ position: 'fixed', left: 0, top: 0, height: '100vh', zIndex: 50 }}>
 
-      {/* Styles migrated to index.css â€” .app-sidebar section */}
+      {/* Styles migrated to index.css — .app-sidebar section */}
 
       <div className="sidebar-logo-container">
         {profile?.avatar_url ? (

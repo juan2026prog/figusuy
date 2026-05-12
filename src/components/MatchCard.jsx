@@ -87,7 +87,7 @@ export default function MatchCard({ match, isLocked = false, isTopMatch = false,
                 </div>
               </div>
               <div className="match-meta">
-                {locationStr} Â· {distanceStr} Â· {lastActive || 'Recientemente'}
+                {locationStr} · {distanceStr} · {lastActive || 'Recientemente'}
               </div>
             </div>
           </div>

@@ -293,7 +293,7 @@ export default function BusinessMetrics() {
             </div>
           </div>
 
-          {/* LAYER 2: INTERACCION â€” Turbo+ */}
+          {/* LAYER 2: INTERACCION — Turbo+ */}
           <div className={`metrics-layer locked-wrap ${!isTurbo ? 'locked' : ''}`}>
             <div className="layer-head">
               <span className="material-symbols-outlined" style={{ color: 'var(--green)' }}>touch_app</span>
@@ -325,7 +325,7 @@ export default function BusinessMetrics() {
             )}
           </div>
 
-          {/* LAYER 3: CONVERSION â€” Dominio */}
+          {/* LAYER 3: CONVERSION — Dominio */}
           <div className={`metrics-layer locked-wrap ${!isDominio ? 'locked' : ''}`}>
             <div className="layer-head">
               <span className="material-symbols-outlined" style={{ color: '#a78bfa' }}>shopping_cart</span>
@@ -357,7 +357,7 @@ export default function BusinessMetrics() {
             )}
           </div>
 
-          {/* LAYER 4: OPTIMIZACION â€” Dominio */}
+          {/* LAYER 4: OPTIMIZACION — Dominio */}
           <div className={`metrics-layer locked-wrap ${!isDominio ? 'locked' : ''}`}>
             <div className="layer-head">
               <span className="material-symbols-outlined" style={{ color: 'var(--yellow)' }}>auto_fix_high</span>
@@ -374,7 +374,7 @@ export default function BusinessMetrics() {
               </div>
               <div className="optimization-card">
                 <h4>Mejor horario</h4>
-                <p>14 â€“ 18h</p>
+                <p>14 – 18h</p>
               </div>
               <div className="optimization-card">
                 <h4>Barrio top</h4>

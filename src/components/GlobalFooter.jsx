@@ -1,4 +1,4 @@
-﻿import React, { useEffect } from 'react'
+import React, { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useBrandingStore } from '../stores/brandingStore'
 
@@ -45,37 +45,46 @@ export default function GlobalFooter() {
           </div>
         )}
 
-        {footerPages && footerPages.length > 0 && (
-          <nav style={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            justifyContent: 'center',
-            gap: '1.5rem',
-            marginBottom: '1rem'
-          }}>
-            {footerPages.map((page) => (
-              <Link 
-                key={page.slug} 
-                to={`/p/${page.slug}`}
-                style={{ 
-                  color: settings.footer_link_color || '#ff5a00',
-                  textDecoration: 'none',
-                  fontWeight: 600,
-                  fontSize: '0.9rem'
-                }}
-              >
-                {page.title}
-              </Link>
-            ))}
-          </nav>
-        )}
+        <nav style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          justifyContent: 'center',
+          gap: '1.5rem',
+          marginBottom: '1rem'
+        }}>
+          {footerPages && footerPages.length > 0 && footerPages.filter(p => p.slug !== 'contacto').map((page) => (
+            <Link 
+              key={page.slug} 
+              to={`/p/${page.slug}`}
+              style={{ 
+                color: settings.footer_link_color || '#ff5a00',
+                textDecoration: 'none',
+                fontWeight: 600,
+                fontSize: '0.9rem'
+              }}
+            >
+              {page.title}
+            </Link>
+          ))}
+          <Link 
+            to="/p/contacto"
+            style={{ 
+              color: settings.footer_link_color || '#ff5a00',
+              textDecoration: 'none',
+              fontWeight: 600,
+              fontSize: '0.9rem'
+            }}
+          >
+            Contacto
+          </Link>
+        </nav>
 
         <div style={{
           opacity: 0.6,
           fontSize: '0.8rem',
           textAlign: 'center'
         }}>
-          {settings.footer_text || 'Â© 2026 FigusUY. Todos los derechos reservados.'}
+          {settings.footer_text || '© 2026 FigusUY. Todos los derechos reservados.'}
         </div>
       </div>
     </footer>

@@ -217,7 +217,7 @@ export default function Stores() {
     const neighborhood = loc.neighborhood || loc.metadata?.zone || loc.metadata?.neighborhood;
     const department = loc.department || loc.metadata?.city || loc.metadata?.department;
     const locParts = [neighborhood, department].filter(Boolean)
-    const locationStr = locParts.length > 0 ? locParts.join(' Â· ') : loc.address
+    const locationStr = locParts.length > 0 ? locParts.join(' · ') : loc.address
     const defaultDesc = isExchange 
       ? 'Intercambiá figuritas en un lugar seguro.' 
       : 'Comprá figuritas y sobres.'
@@ -306,7 +306,7 @@ export default function Stores() {
                 <div className="sf-map-title">{selectedDepartment !== 'Todos' ? selectedDepartment : 'Uruguay'}</div>
                 <div className="sf-map-mini">Concentración de lugares y actividad</div>
               </div>
-              <button className="sf-btn sf-orange" onClick={handleCercaMio}>ðŸ“ Cerca mío</button>
+              <button className="sf-btn sf-orange" onClick={handleCercaMio}>📍 Cerca mío</button>
             </div>
             <div className="sf-hero-google-map">
               <iframe 
@@ -348,7 +348,7 @@ export default function Stores() {
             <button className={`sf-tab ${tab === 'all' ? 'sf-active' : ''}`} onClick={() => setTab('all')}>Todos los lugares</button>
             <button className={`sf-tab ${tab === 'exchange' ? 'sf-active' : ''}`} onClick={() => setTab('exchange')}>Solo intercambios</button>
             <button className={`sf-tab ${tab === 'store' ? 'sf-active' : ''}`} onClick={() => setTab('store')}>Solo tiendas</button>
-            <button className={`sf-tab ${tab === 'featured' ? 'sf-active' : ''}`} onClick={() => setTab('featured')}>â­ Destacados</button>
+            <button className={`sf-tab ${tab === 'featured' ? 'sf-active' : ''}`} onClick={() => setTab('featured')}>⭐ Destacados</button>
           </div>
         </section>
 
@@ -429,7 +429,7 @@ export default function Stores() {
                       featureHighlights.push({ key: 'promo', icon: 'redeem', title: topPromo.title, subtitle: topPromo.condition_text || '', statusLabel: statusCfg.label, statusColor: statusCfg.color, statusBg: statusCfg.bg, statusBorder: statusCfg.border })
                     }
                     if (isCollectorHub) {
-                      featureHighlights.push({ key: 'validation', icon: 'fact_check', title: 'Validación de Ãlbumes', subtitle: 'Validamos tus álbumes al instante.' })
+                      featureHighlights.push({ key: 'validation', icon: 'fact_check', title: 'Validación de Álbumes', subtitle: 'Validamos tus álbumes al instante.' })
                     }
                     if (premiumBadge) {
                       featureHighlights.push({ key: 'oficial', iconKey: premiumIconKey, icon: 'verified_user', title: premiumBadge, subtitle: 'Sumá puntos y canjeá rewards.' })
@@ -461,19 +461,19 @@ export default function Stores() {
                           <div className="sf-point-content-row">
                           <div className="sf-point-info-col">
                             <div className="sf-badges">
-                              {isExchange ? <span className="sf-badge sf-exchange">ðŸ› Punto de intercambio</span> : <span className="sf-badge sf-store">ðŸ› Tienda aliada</span>}
-                              <span className="sf-badge">âš¡ {scoreLabel}</span>
-                              {loc.is_verified && <span className="sf-badge sf-verified">ðŸ›¡ï¸ Zona Segura</span>}
+                              {isExchange ? <span className="sf-badge sf-exchange">🛍 Punto de intercambio</span> : <span className="sf-badge sf-store">🛍 Tienda aliada</span>}
+                              <span className="sf-badge">⚡ {scoreLabel}</span>
+                              {loc.is_verified && <span className="sf-badge sf-verified">🛡️ Zona Segura</span>}
                               {premiumBadge && (
                                 <span className="sf-badge sf-premium-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                                  {premiumIconKey ? <GamificationIcon icon={premiumIconKey} size="sm" /> : 'â­'} {premiumBadge}
+                                  {premiumIconKey ? <GamificationIcon icon={premiumIconKey} size="sm" /> : '⭐'} {premiumBadge}
                                 </span>
                               )}
-                              {meta.distance && <span className="sf-badge">ðŸ“ {meta.distance}</span>}
+                              {meta.distance && <span className="sf-badge">📍 {meta.distance}</span>}
                             </div>
 
                             <h3 className="sf-point-name">{loc.name || 'Punto sin nombre'}</h3>
-                            <p className="sf-point-loc">{typeStr} Â· {locationStr}</p>
+                            <p className="sf-point-loc">{typeStr} · {locationStr}</p>
                             <div className="sf-point-address">
                               <span className="material-symbols-outlined">location_on</span> {loc.address || 'Dirección no disponible'}
                             </div>
@@ -581,7 +581,7 @@ export default function Stores() {
                   <b>{selectedLoc.name}</b>
                   <span>
                     {selectedLoc.address} 
-                    {` Â· ${permitsExchange(selectedLoc) ? 'Punto de intercambio' : 'Tienda aliada'}`}
+                    {` · ${permitsExchange(selectedLoc) ? 'Punto de intercambio' : 'Tienda aliada'}`}
                   </span>
                 </div>
               )}
@@ -601,7 +601,7 @@ export default function Stores() {
             <LiveFeed title="Actividad en vivo" items={feed} refreshedAt={summary.refreshedAt} />
             
             <section className="sf-safety">
-              ðŸ’¡ <b>Tip de seguridad:</b> Realizá tus intercambios preferentemente en las Tiendas Aliadas o Lugares Seguros verificados.
+              💡 <b>Tip de seguridad:</b> Realizá tus intercambios preferentemente en las Tiendas Aliadas o Lugares Seguros verificados.
             </section>
           </aside>
         </section>
@@ -654,7 +654,7 @@ export default function Stores() {
                    const dest = selectedLoc.address || selectedLoc.name;
                    window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(dest)}`, '_blank');
                 }}>
-                   ðŸ“ Iniciar navegación en Maps
+                   📍 Iniciar navegación en Maps
                 </button>
               </div>
             )}

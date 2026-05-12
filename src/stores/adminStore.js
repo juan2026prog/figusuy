@@ -1,4 +1,4 @@
-﻿import { create } from 'zustand'
+import { create } from 'zustand'
 import { supabase } from '../lib/supabase'
 
 const ALBUM_FALLBACK_DROP_ORDER = [
@@ -14,6 +14,7 @@ const ALBUM_FALLBACK_DROP_ORDER = [
   'country',
   'category',
   'status',
+  'sort_order',
 ]
 
 const isAlbumSchemaError = (error) => {
@@ -50,13 +51,16 @@ const stripUndefined = (payload) =>
   Object.fromEntries(Object.entries(payload).filter(([, value]) => value !== undefined))
 
 const buildAlbumPayload = (album) => {
-  const payload = {
-    ...album,
-    year: parseInt(album.year) || null,
-    total_stickers: parseInt(album.total_stickers) || 0,
-    cover_url: album.cover_url || album.images?.[0] || null,
-    images: Array.isArray(album.images) ? album.images : (album.cover_url ? [album.cover_url] : [])
+  const payload = { ...album }
+  
+  if (album.year !== undefined) payload.year = parseInt(album.year) || null
+  if (album.total_stickers !== undefined) payload.total_stickers = parseInt(album.total_stickers) || 0
+  
+  if (album.images !== undefined || album.cover_url !== undefined) {
+    payload.cover_url = album.cover_url || album.images?.[0] || null
+    payload.images = Array.isArray(album.images) ? album.images : (album.cover_url ? [album.cover_url] : [])
   }
+  
   return stripUndefined(payload)
 }
 
@@ -334,6 +338,12 @@ export const useAdminStore = create((set, get) => ({
     await get().fetchUsers()
   },
 
+  setUserPlan: async (userId, planName, premiumStatus) => {
+    const { error } = await supabase.from('profiles').update({ plan_name: planName, is_premium: premiumStatus }).eq('id', userId)
+    if (error) console.error('Error setting user plan:', error)
+    await get().fetchUsers()
+  },
+
   toggleUserVerified: async (userId, verified) => {
     const { error } = await supabase.from('profiles').update({ is_verified: verified }).eq('id', userId)
     if (error) console.error('Error toggling verified:', error)
@@ -349,10 +359,20 @@ export const useAdminStore = create((set, get) => ({
   // ========== ALBUMS ==========
   fetchAllAlbums: async () => {
     set({ loading: true })
-    const { data } = await supabase
+    let { data, error } = await supabase
       .from('albums')
       .select('*')
+      .order('sort_order', { ascending: true })
       .order('year', { ascending: false })
+
+    if (error) {
+      console.warn('Error fetching albums with sort_order, trying fallback:', error.message)
+      const fallback = await supabase
+        .from('albums')
+        .select('*')
+        .order('year', { ascending: false })
+      data = fallback.data
+    }
     // Get user counts per album
     const { data: userCounts } = await supabase
       .from('user_albums')
@@ -626,7 +646,7 @@ export const useAdminStore = create((set, get) => ({
           await supabase.functions.invoke('send-email', {
             body: { 
               to: targetEmail,
-              subject: 'Tu local fue aprobado ðŸŽ‰',
+              subject: 'Tu local fue aprobado 🎉',
               template: 'business_approved',
               data: {
                 name: request.applicant_name || request.profile?.name || 'Comerciante',

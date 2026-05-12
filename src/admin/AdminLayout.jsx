@@ -1,5 +1,9 @@
-﻿import React, { useState } from 'react'
+"use client"
+
+import React, { useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+
+export const dynamic = "force-dynamic"
 import { useAuthStore } from '../stores/authStore'
 import { useAdminStore } from '../stores/adminStore'
 
@@ -13,7 +17,7 @@ const menuSections = [
   {
     title: 'Producto',
     items: [
-      { path: '/admin/albums', icon: 'menu_book', label: 'Albumes', perm: 'admin.albums' },
+      { path: '/admin/albums', icon: 'menu_book', label: 'Álbumes', perm: 'admin.albums' },
       { path: '/admin/users', icon: 'person', label: 'Usuarios', perm: 'admin.users' },
       { path: '/admin/matches', icon: 'swap_horiz', label: 'Cruces', perm: 'admin.matches' },
       { path: '/admin/exchange-completion', icon: 'verified', label: 'Exchange Completion', perm: 'admin.exchange_completion' },
@@ -35,6 +39,7 @@ const menuSections = [
     title: 'Moderacion',
     items: [
       { path: '/admin/reports', icon: 'report', label: 'Reportes', perm: 'admin.reports' },
+      { path: '/admin/contact-requests', icon: 'contact_support', label: 'Contactos', perm: 'admin.reports' },
       { path: '/admin/blocks', icon: 'block', label: 'Bloqueos', perm: 'admin.blocks' },
       { path: '/admin/security', icon: 'security', label: 'Seguridad', perm: 'admin.security' },
       { path: '/admin/audit', icon: 'assignment', label: 'Auditoria', perm: 'admin.audit' },

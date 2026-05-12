@@ -25,7 +25,7 @@ const BUSINESS_PLANS = [
     name: 'Radar',
     badge: 'Mas visibilidad',
     price: 'USD 16.85',
-    uyuApprox: 'â‰ˆ $690 UYU estimados',
+    uyuApprox: '≈ $690 UYU estimados',
     accent: 'var(--color-primary)',
     className: 'featured',
     iconKey: 'PlanRadarTurboIcon',
@@ -43,7 +43,7 @@ const BUSINESS_PLANS = [
     name: 'Conversion',
     badge: 'Intencion comercial',
     price: 'USD 36.20',
-    uyuApprox: 'â‰ˆ $1490 UYU estimados',
+    uyuApprox: '≈ $1490 UYU estimados',
     accent: '#8b5cf6',
     className: 'premium',
     iconKey: 'PlanConversionDominioIcon',
@@ -59,17 +59,17 @@ const BUSINESS_PLANS = [
   {
     id: 'partnerstore',
     name: 'Collector Hub',
-    badge: 'Validacion + autoridad',
+    badge: 'Validación + autoridad',
     price: 'USD 72.90',
-    uyuApprox: 'â‰ˆ $2990 UYU estimados',
+    uyuApprox: '≈ $2990 UYU estimados',
     accent: '#f59e0b',
     className: 'partnerstore',
     iconKey: 'CollectorHubIcon',
     description: 'La capa premium para validar, generar confianza, sumar rewards y capturar liquidez del ecosistema.',
     features: [
       'Todo Conversion',
-      'Validacion de albumes',
-      'Validacion de usuarios',
+      'Validación de álbumes',
+      'Validación de usuarios',
       'Badge Collector Hub',
       'Prioridad de validacion',
       'Rewards asociados',
@@ -84,7 +84,7 @@ const COMPARISON_ROWS = [
   { label: 'Promos', boost: 'Simple', Radar: 'Destacadas', conversion: 'Promo first', partnerstore: 'Promo + rewards' },
   { label: 'Contacto y CTA', boost: 'Visible', Radar: 'Mejorado', conversion: 'Top CTA', partnerstore: 'Top CTA + autoridad' },
   { label: 'Puntos sugeridos', boost: 'Si', Radar: 'Si', conversion: 'Si', partnerstore: 'Si + prioridad' },
-  { label: 'Validacion', boost: '-', Radar: '-', conversion: '-', partnerstore: 'Albumes y usuarios' },
+  { label: 'Validación', boost: '-', Radar: '-', conversion: '-', partnerstore: 'Álbumes y usuarios' },
   { label: 'Conversion', boost: 'Basica', Radar: 'Local', conversion: 'Alta intencion', partnerstore: 'Premium + rewards' }
 ]
 
