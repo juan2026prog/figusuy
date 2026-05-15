@@ -1,13 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react'
 
-const BADGE_IMG = '/assets/badge-desde-el-comienzo.png'
-const DISPLAY_DURATION = 6000 // 6 seconds
+const BADGE_IMG = '/assets/badge-desde-el-comienzo.webp'
+const DISPLAY_DURATION = 3800
 
 /**
  * FoundingBadgeUnlockModal
  * 
- * Full-screen cinematic unlock animation shown after a user creates their profile
- * and is assigned the founding badge. Shows for ~6 seconds then auto-dismisses.
+ * Full-screen cinematic unlock animation shown once for founding members.
  */
 export default function FoundingBadgeUnlockModal({ isOpen, onClose, proDays = 7 }) {
   const [phase, setPhase] = useState('enter') // enter | reveal | celebrate | exit
@@ -20,21 +19,15 @@ export default function FoundingBadgeUnlockModal({ isOpen, onClose, proDays = 7 
       return
     }
 
-    // Phase timeline
     const timers = []
 
-    // Mount -> visible
     timers.push(setTimeout(() => setVisible(true), 50))
-    // Reveal badge
-    timers.push(setTimeout(() => setPhase('reveal'), 600))
-    // Celebrate with particles
-    timers.push(setTimeout(() => setPhase('celebrate'), 1800))
-    // Auto exit
+    timers.push(setTimeout(() => setPhase('reveal'), 520))
+    timers.push(setTimeout(() => setPhase('celebrate'), 1450))
     timers.push(setTimeout(() => {
       setPhase('exit')
       setVisible(false)
     }, DISPLAY_DURATION - 500))
-    // Close callback
     timers.push(setTimeout(() => {
       onClose?.()
     }, DISPLAY_DURATION))
@@ -226,10 +219,10 @@ export default function FoundingBadgeUnlockModal({ isOpen, onClose, proDays = 7 
           gap: 0.4rem;
           margin-top: 1rem;
           padding: 0.5rem 1.2rem;
-          border: 1px solid rgba(139, 92, 246, 0.4);
+          border: 1px solid rgba(255, 160, 50, 0.22);
           border-radius: 999px;
-          background: rgba(139, 92, 246, 0.1);
-          color: #a78bfa;
+          background: rgba(255, 160, 50, 0.08);
+          color: #ffd28c;
           font-family: 'Barlow Condensed', sans-serif;
           font-weight: 900;
           font-size: 0.85rem;
@@ -314,7 +307,7 @@ export default function FoundingBadgeUnlockModal({ isOpen, onClose, proDays = 7 
         <div className={`fb-unlock-content fb-${phase}`}>
           {/* Unlock label */}
           <div className="fb-unlock-label">
-            🔓 BADGE DESBLOQUEADO
+            BADGE DESBLOQUEADO
           </div>
 
           {/* Badge */}
@@ -333,18 +326,17 @@ export default function FoundingBadgeUnlockModal({ isOpen, onClose, proDays = 7 
 
           {/* Name */}
           <h2 className="fb-badge-name">
-            <span className="fb-badge-name-gradient">"Desde el comienzo"</span>
+            <span className="fb-badge-name-gradient">Desde el comienzo</span>
           </h2>
 
           {/* Subtitle */}
           <p className="fb-unlock-sub">
-            Estás entre los primeros en entrar a la comunidad.<br />
-            Esta insignia es permanente en tu perfil.
+            Ahora sos parte de la primera generación de coleccionistas de FigusUY.
           </p>
 
           {/* PRO pill */}
           <div className="fb-pro-pill">
-            👑 {proDays} DÍAS PRO ACTIVADOS
+            {proDays} DIAS PRO ACTIVADOS
           </div>
 
           {/* Skip hint */}

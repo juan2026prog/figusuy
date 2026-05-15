@@ -24,6 +24,7 @@ const menuSections = [
       { path: '/admin/chats', icon: 'chat', label: 'Chats', perm: 'admin.chats' },
       { path: '/admin/favorites', icon: 'favorite', label: 'Favoritos', perm: 'admin.favorites' },
       { path: '/admin/gamification', icon: 'military_tech', label: 'Gamificacion', perm: 'admin.users' },
+      { path: '/admin/album-validations', icon: 'fact_check', label: 'Validar Álbumes', perm: 'admin.albums' },
     ]
   },
   {
@@ -94,6 +95,7 @@ const menuSections = [
       { path: '/admin/algorithm', icon: 'psychology', label: 'Algoritmo', perm: 'admin.algorithm' },
       { path: '/admin/roles', icon: 'admin_panel_settings', label: 'Roles', perm: 'admin.roles' },
       { path: '/admin/logs', icon: 'receipt_long', label: 'Logs', perm: 'admin.logs' },
+      { path: '/admin/special-codes', icon: 'key', label: 'Códigos Especiales', perm: 'admin.settings' },
     ]
   },
 ]

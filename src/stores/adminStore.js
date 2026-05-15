@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { supabase } from '../lib/supabase'
+import { buildSiteUrl } from '../lib/siteUrl'
 
 const ALBUM_FALLBACK_DROP_ORDER = [
   'has_sticker_codes',
@@ -653,7 +654,7 @@ export const useAdminStore = create((set, get) => ({
                 plan: (request.business_plan === 'legend' || request.business_plan === 'partner_store') ? 'Collector Hub' :
                       request.business_plan === 'dominio' ? 'Plan Conversion' : 
                       request.business_plan === 'turbo' ? 'Plan Radar' : 'Plan Gratuito',
-                link: 'https://figusuy.vercel.app/login?type=business'
+                link: buildSiteUrl('/login?type=business')
               }
             }
           })

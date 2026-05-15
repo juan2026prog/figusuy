@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { supabase } from '../lib/supabase'
+import { authCallbackUrl } from '../lib/siteUrl'
 import { useFeatureFlagStore } from './featureFlagStore'
 import { useExchangeStore } from './exchangeStore'
 import { useGrowthStore } from './growthStore'
@@ -276,7 +277,7 @@ export const useAuthStore = create((set, get) => ({
     return authInitializePromise
   },
 
-  signInWithGoogle: async (redirectTo = `${window.location.origin}/auth/callback`) => {
+  signInWithGoogle: async (redirectTo = authCallbackUrl) => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {

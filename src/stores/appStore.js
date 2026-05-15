@@ -354,8 +354,8 @@ export const useAppStore = create((set, get) => ({
       .from('chats')
       .select(`
         *,
-        profile1:profiles!chats_user_1_fkey(id,name,avatar_url,city,department,is_premium,plan_name,is_verified),
-        profile2:profiles!chats_user_2_fkey(id,name,avatar_url,city,department,is_premium,plan_name,is_verified)
+        profile1:profiles!chats_user_1_fkey(id,name,avatar_url,city,department,is_premium,plan_name,is_verified,account_type),
+        profile2:profiles!chats_user_2_fkey(id,name,avatar_url,city,department,is_premium,plan_name,is_verified,account_type)
       `)
       .or(`user_1.eq.${userId},user_2.eq.${userId}`)
 

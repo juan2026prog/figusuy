@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { authCallbackUrl, siteUrl } from '../lib/siteUrl'
 import { useAuthStore } from '../stores/authStore'
 import { useInfluencerStore } from '../stores/influencerStore'
 import { useToast } from './Toast'
@@ -65,7 +66,7 @@ export default function AuthPanel({ initialType = null, mode = 'page', onClose =
     setForgotLoading(true)
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
-        redirectTo: `${window.location.origin}/login`,
+        redirectTo: `${siteUrl}/login`,
       })
       if (error) throw error
       setForgotSent(true)
@@ -88,7 +89,7 @@ export default function AuthPanel({ initialType = null, mode = 'page', onClose =
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
-          emailRedirectTo: redirectTo ? new URL(redirectTo, window.location.origin).toString() : window.location.href,
+          emailRedirectTo: redirectTo ? new URL(redirectTo, `${siteUrl}/`).toString() : window.location.href,
         },
       })
       if (error) throw error
@@ -647,9 +648,7 @@ export default function AuthPanel({ initialType = null, mode = 'page', onClose =
 
                   setError('')
                   setLoading(true)
-                  signInWithGoogle(
-                    `${window.location.origin}/auth/callback`
-                  ).catch((err) => {
+                  signInWithGoogle(authCallbackUrl).catch((err) => {
                     setError(err.message || 'Error al iniciar con Google')
                     setLoading(false)
                   })

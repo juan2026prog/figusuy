@@ -51,6 +51,13 @@ export default function ProfilePage() {
   const [showPrivacyModal, setShowPrivacyModal] = useState(false)
   const [editingAlbumPrivacy, setEditingAlbumPrivacy] = useState(null)
   const [showDeletionModal, setShowDeletionModal] = useState(false)
+  
+  const [specialCode, setSpecialCode] = useState('')
+  const [redeemingCode, setRedeemingCode] = useState(false)
+  
+  const hasFoundingBadge =
+    profile?.founding_member === true ||
+    badges?.some((badge) => badge?.key === 'desde_el_comienzo' || badge?.badge_key === 'desde_el_comienzo')
 
   useEffect(() => {
     // Only set initial values once or if they are empty
@@ -145,6 +152,26 @@ export default function ProfilePage() {
     }
   }
 
+  const handleRedeemCode = async () => {
+    if (!specialCode.trim()) return
+    setRedeemingCode(true)
+    try {
+      const { data, error } = await supabase.rpc('redeem_special_access_code', {
+        p_code_text: specialCode
+      })
+      if (error) throw error
+      
+      toast.success(data?.message || 'Código activado correctamente!')
+      setSpecialCode('')
+      // Refresh user profile if possible
+      initGamification(profile.id)
+    } catch (err) {
+      toast.error('Error: ' + err.message)
+    } finally {
+      setRedeemingCode(false)
+    }
+  }
+
   // Find the selected album in userAlbums, or fallback to the first one
   const mainAlbumData = userAlbums.find(ua => ua.album_id === selectedAlbum?.id) || userAlbums[0]
   const mainAlbum = mainAlbumData?.album
@@ -156,9 +183,9 @@ export default function ProfilePage() {
   const progressPercent = mainAlbum?.total_stickers && mainAlbum.total_stickers > 0 
     ? Math.round((ownedCount / mainAlbum.total_stickers) * 100) 
     : 0
+
   return (
     <div className="profile-final-root">
-
       <header className="topbar">
         <div>
           <div className="top-kicker">{user?.role === 'admin' ? 'ADMINISTRADOR' : 'USUARIO'}</div>
@@ -167,7 +194,7 @@ export default function ProfilePage() {
         <div className="top-actions">
           <button className="btn desktop-only" onClick={() => navigate('/album')}>Cambiar álbum</button>
           <button className="btn orange desktop-only" onClick={() => navigate('/matches')}>Ver cruces</button>
-          <button className="btn red logout-btn-top" onClick={() => openConfirm()}>SALIR</button>
+          <button className="btn red logout-btn-top" onClick={() => handleSignOut()}>SALIR</button>
         </div>
       </header>
 
@@ -183,7 +210,11 @@ export default function ProfilePage() {
               {profile?.avatar_url ? (
                 <img src={profile.avatar_url} alt={name} />
               ) : (
-                initial
+                <img 
+                  src={profile?.account_type === 'business' ? '/assets/avatar-tienda.webp' : '/assets/avatar-generico.webp'} 
+                  alt="Avatar" 
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                />
               )}
               <label className="avatar-edit">
                 📷
@@ -197,7 +228,7 @@ export default function ProfilePage() {
               {profile?.is_verified && <span className="badge green">Confiable</span>}
               {mainAlbum && <span className="badge">{mainAlbum.name}</span>}
               {/* Founding Badge */}
-              {badges?.some(b => b.badge_key === 'desde_el_comienzo') && (
+              {hasFoundingBadge && (
                 <span className="badge" style={{
                   display: 'inline-flex', alignItems: 'center', gap: '4px',
                   background: 'linear-gradient(135deg, rgba(255,180,60,0.15), rgba(255,120,30,0.08))',
@@ -205,7 +236,7 @@ export default function ProfilePage() {
                   color: '#ffb74d',
                   padding: '3px 8px 3px 4px',
                 }}>
-                  <img src="/assets/badge-desde-el-comienzo.png" alt="Desde el comienzo" style={{ width: 20, height: 20, objectFit: 'contain' }} />
+                  <img src="/assets/badge-desde-el-comienzo.webp" alt="Desde el comienzo" style={{ width: 20, height: 20, objectFit: 'contain' }} />
                   Desde el comienzo
                 </span>
               )}
@@ -352,8 +383,6 @@ export default function ProfilePage() {
           </div>
 
           <aside className="side-stack">
-
-
             <section className="side-card">
               <div className="side-title">Reputación</div>
               <div style={{ marginBottom: '14px' }}>
@@ -364,6 +393,29 @@ export default function ProfilePage() {
               <div className="trust-row"><span>Confiabilidad</span><b>{Math.round(progress?.reliability_score || profile?.reliability_score || 0)}/100</b></div>
               <div className="trust-row"><span>Miembro desde</span><b>{profile?.created_at ? new Date(profile.created_at).toLocaleDateString('es-UY', { month: 'short', year: 'numeric' }) : '—'}</b></div>
               <div className="trust-row"><span>Nivel de confianza</span><b style={{ color: getStarLevel(reputation?.star_rating || 1).color }}>{getStarLevel(reputation?.star_rating || 1).label}</b></div>
+            </section>
+
+            <section className="side-card">
+              <div className="side-title">¿Tenés un código?</div>
+              <p className="muted" style={{ marginBottom: '12px' }}>Ingresá tu código especial para obtener beneficios o activar accesos.</p>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <input 
+                  type="text" 
+                  value={specialCode}
+                  onChange={(e) => setSpecialCode(e.target.value.toUpperCase())}
+                  placeholder="Ej. VERANO2026"
+                  className="input"
+                  style={{ textTransform: 'uppercase' }}
+                  disabled={redeemingCode}
+                />
+                <button 
+                  className="btn orange" 
+                  onClick={handleRedeemCode}
+                  disabled={redeemingCode || !specialCode.trim()}
+                >
+                  {redeemingCode ? '...' : 'Canjear'}
+                </button>
+              </div>
             </section>
 
             <section className="side-card">

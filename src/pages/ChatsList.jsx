@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
 import { useAppStore } from '../stores/appStore'
@@ -174,9 +174,14 @@ export default function ChatsListPage() {
                       <div className="blocked-user">
                         <div className="avatar">
                           {block.profile?.avatar_url ? (
-                            <img src={block.profile.avatar_url} alt="" />
+                            <img src={block.profile.avatar_url} alt="" loading="lazy" />
                           ) : (
-                            (block.profile?.name || '?')[0].toUpperCase()
+                            <img 
+                              src={block.profile?.account_type === 'business' ? '/assets/avatar-tienda.webp' : '/assets/avatar-generico.webp'} 
+                              alt="" 
+                              loading="lazy"
+                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                            />
                           )}
                         </div>
                         <div>
@@ -208,9 +213,14 @@ export default function ChatsListPage() {
                       <div className="chat-avatar-wrap">
                         <div className="avatar">
                           {other?.avatar_url ? (
-                            <img src={other.avatar_url} alt="" />
+                            <img src={other.avatar_url} alt="" loading="lazy" />
                           ) : (
-                            (other?.name || '?')[0].toUpperCase()
+                            <img 
+                              src={other?.account_type === 'business' ? '/assets/avatar-tienda.webp' : '/assets/avatar-generico.webp'} 
+                              alt="" 
+                              loading="lazy"
+                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                            />
                           )}
                         </div>
                       </div>

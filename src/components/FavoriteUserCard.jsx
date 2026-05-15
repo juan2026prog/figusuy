@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react'
+import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
 import { useAppStore } from '../stores/appStore'
@@ -64,9 +64,14 @@ export default function FavoriteUserCard({ favorite }) {
           overflow: 'hidden'
         }}>
           {userProfile.avatar_url ? (
-            <img src={userProfile.avatar_url} alt={userProfile.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            <img src={userProfile.avatar_url} alt={userProfile.name} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           ) : (
-            userProfile.name?.[0]?.toUpperCase() || '?'
+            <img 
+              src={userProfile.account_type === 'business' ? '/assets/avatar-tienda.webp' : '/assets/avatar-generico.webp'} 
+              alt={userProfile.name} 
+              loading="lazy"
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+            />
           )}
         </div>
         <div style={{ minWidth: 0 }}>

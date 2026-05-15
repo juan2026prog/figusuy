@@ -74,8 +74,8 @@ const MODE_META = {
 
 const STATUS_META = {
   [ALBUM_PROGRESS_STATES.IN_PROGRESS]: { label: 'En progreso', detail: 'Tu album sigue abierto para edicion y cruces.', tone: 'blue' },
-  [ALBUM_PROGRESS_STATES.COMPLETED]: { label: 'Completado', detail: 'Quedo cerrado. Falta validarlo en Collector Hub.', tone: 'orange' },
-  [ALBUM_PROGRESS_STATES.PARTNER_VERIFIED]: { label: 'Legend verified', detail: 'Ya quedo validado con recompensa activada.', tone: 'green' },
+  [ALBUM_PROGRESS_STATES.COMPLETED]: { label: 'Pendiente de revisión', detail: 'Álbum completado. Pendiente de validación en Collector Hub.', tone: 'orange' },
+  [ALBUM_PROGRESS_STATES.PARTNER_VERIFIED]: { label: 'Oficialmente Validado', detail: 'Ya quedo validado con recompensa activada.', tone: 'green' },
 }
 
 export default function AlbumPage() {

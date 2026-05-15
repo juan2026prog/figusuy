@@ -30,17 +30,20 @@ export default function GlobalFooter() {
         
         {settings.header_show_logo && (
           <div style={{ marginBottom: '1rem' }}>
-            {settings.header_logo_url ? (
-              <img src={settings.header_logo_url} alt={settings.header_logo_alt || 'FigusUY'} style={{ height: '40px' }} />
+            {(settings.header_logo_url && settings.header_logo_url !== 'null') ? (
+              <img 
+                src={settings.header_logo_url} 
+                alt={settings.header_logo_alt || 'FigusUY'} 
+                style={{ height: '40px', width: 'auto', display: 'block' }} 
+                loading="lazy" 
+                decoding="async" 
+              />
             ) : (
-              <span style={{ 
-                fontFamily: 'Barlow Condensed', 
-                fontWeight: 900, 
-                fontSize: '1.5rem', 
-                color: settings.header_primary_color || '#ff5a00' 
-              }}>
-                {settings.header_logo_alt || 'FigusUY'}
-              </span>
+              <img 
+                src="/logo.webp" 
+                alt="FigusUY" 
+                style={{ height: '40px', width: 'auto', display: 'block' }} 
+              />
             )}
           </div>
         )}

@@ -613,16 +613,16 @@ const OFFICIAL_DEFAULT_BLOCKS = mapDefaultBlocks(LANDING_PAGE_KEY, [
     draft_content: {
       logoText: '',
       logoAccent: '',
-      logoUrl: '/logo.png',
+      logoUrl: '/logo.webp',
       background: '#080808',
       sticky: true,
       links: [
-        { label: 'Como funciona', url: '#como-funciona' },
-        { label: 'Influencers', url: '#influencers' },
-        { label: 'Referidos', url: '#invita-y-gana' },
-        { label: 'Gamificacion', url: '#gamificacion' },
-        { label: 'Planes', url: '#planes-usuario' },
-        { label: 'Negocios', url: '#planes-negocio' },
+        { label: 'Como funciona', url: '/#como-funciona' },
+        { label: 'Influencers', url: '/#influencers' },
+        { label: 'Referidos', url: '/#invita-y-gana' },
+        { label: 'Gamificacion', url: '/#gamificacion' },
+        { label: 'Planes', url: '/#planes-usuario' },
+        { label: 'Negocios', url: '/#planes-negocio' },
       ],
       cta: { label: 'Entrar', url: '/login', style: 'primary' },
     },
@@ -725,19 +725,19 @@ const OFFICIAL_DEFAULT_BLOCKS = mapDefaultBlocks(LANDING_PAGE_KEY, [
       subtitle: 'Subí tus repetidas, encontrá matches, descubrí lugares y conectá con una comunidad activa de coleccionistas.',
       steps: [
         {
-          image: '/assets/landing/how_it_works/step1.png',
+          image: '/assets/landing/how_it_works/step1.webp',
           title: 'Carga tu album',
           description: 'Subi faltantes y repetidas en segundos.',
           ctaLabel: '',
         },
         {
-          image: '/assets/landing/how_it_works/step2.png',
+          image: '/assets/landing/how_it_works/step2.webp',
           title: 'Encontra matches',
           description: 'Descubri con quien te conviene hablar primero.',
           ctaLabel: '',
         },
         {
-          image: '/assets/landing/how_it_works/step3.png',
+          image: '/assets/landing/how_it_works/step3.webp',
           title: 'Cerra intercambios',
           description: 'Valida, rankea y hace crecer tu reputacion.',
           ctaLabel: '',
@@ -886,7 +886,7 @@ const OFFICIAL_DEFAULT_BLOCKS = mapDefaultBlocks(LANDING_PAGE_KEY, [
     draft_content: {
       logoText: '',
       logoAccent: '',
-      logoUrl: '/logo.png',
+      logoUrl: '/logo.webp',
       legal: '© 2026 FigusUY. Todos los derechos reservados.',
       social: [
         { label: 'Instagram', url: 'https://instagram.com' },
@@ -912,7 +912,7 @@ const POINTS_DEFAULT_BLOCKS = mapDefaultBlocks(LANDING_POINTS_PAGE_KEY, [
       kicker: '// lugares oficiales',
       title: 'Converti tu local en lugar de intercambio',
       description: 'Activa trafico real en tu zona, aparece en el mapa y sumate a la red donde los coleccionistas ya estan buscando ir.',
-      image: '/assets/landing/local_intercambio.png',
+      image: '/assets/landing/local_intercambio.webp',
       background: '#101010',
       chips: [
         { label: 'Trafico real', tone: 'orange' },
@@ -931,7 +931,7 @@ const POINTS_DEFAULT_BLOCKS = mapDefaultBlocks(LANDING_POINTS_PAGE_KEY, [
       kicker: '// programa de lugares',
       title: 'Tu tienda puede mover la red',
       description: 'No se trata solo de aparecer. Se trata de convertir tu local en una referencia para intercambios, validaciones y nuevas compras.',
-      image: '/assets/landing/tienda_red.png',
+      image: '/assets/landing/tienda_red.webp',
       chips: [
         { label: 'Comercios aliados', tone: 'orange' },
         { label: 'Visibilidad local', tone: 'green' },

@@ -18,7 +18,7 @@ const applyFavicon = (faviconUrl) => {
 
 export const useBrandingStore = create((set, get) => ({
   settings: {
-    header_logo_url: '/logo.png',
+    header_logo_url: '/logo.webp',
     header_logo_alt: 'FigusUY',
     header_logo_link: '/',
     header_show_logo: true,
@@ -78,6 +78,8 @@ export const useBrandingStore = create((set, get) => ({
                 else if (rawValue === 'false') settingsMap[item.key] = false
                 else if (rawValue.startsWith('[') || rawValue.startsWith('{')) {
                   settingsMap[item.key] = JSON.parse(rawValue)
+                } else if (item.key.includes('logo_url') && (!rawValue || rawValue === 'null')) {
+                  // Keep default if empty
                 } else {
                   settingsMap[item.key] = rawValue
                 }

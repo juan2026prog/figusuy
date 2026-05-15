@@ -46,9 +46,12 @@ export default function Sidebar() {
         {profile?.avatar_url ? (
           <img src={profile.avatar_url} alt="Avatar" className="sidebar-logo-avatar" />
         ) : (
-          <div className="sidebar-logo-icon">
-            {profile?.name ? profile.name.charAt(0).toUpperCase() : (profile?.email ? profile.email.charAt(0).toUpperCase() : 'F')}
-          </div>
+          <img 
+            src={profile?.account_type === 'business' ? '/assets/avatar-tienda.webp' : '/assets/avatar-generico.webp'} 
+            alt="Avatar" 
+            className="sidebar-logo-avatar"
+            style={{ objectFit: 'cover' }}
+          />
         )}
         <div>
           <p className="sidebar-logo-text">

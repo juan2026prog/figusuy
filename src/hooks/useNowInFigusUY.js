@@ -160,6 +160,7 @@ function buildCards({ albumActivity, activeUsers, recentAlbums, promos, location
       body: 'Aparece activo en la red ahora y puede abrir nuevas oportunidades cerca.',
       cta: 'Sumarte',
       action: { kind: 'auth' },
+      media: user.avatar_url || (user.account_type === 'business' ? '/assets/avatar-tienda.webp' : '/assets/avatar-generico.webp'),
     })
   })
 
@@ -177,6 +178,7 @@ function buildCards({ albumActivity, activeUsers, recentAlbums, promos, location
         body: 'La red tambien se mueve con cierres reales y progreso visible.',
         cta: 'Empezar',
         action: { kind: 'auth' },
+        media: item.profile?.avatar_url || (item.profile?.account_type === 'business' ? '/assets/avatar-tienda.webp' : '/assets/avatar-generico.webp'),
       })
     })
 
@@ -306,10 +308,10 @@ export function useNowInFigusUY({ albums = [] } = {}) {
 
       const results = await Promise.allSettled([
         supabase.from('profiles').select('id', { count: 'exact', head: true }).gte('last_active', activeCutoff),
-        supabase.from('profiles').select('id, name, city, department, last_active').gte('last_active', recentCutoff).order('last_active', { ascending: false }).limit(8),
+        supabase.from('profiles').select('id, name, city, department, last_active, account_type, avatar_url').gte('last_active', recentCutoff).order('last_active', { ascending: false }).limit(8),
         supabase.from('sponsored_placements').select('id, title, album_id, location_id, placement_type, priority, starts_at, created_at').eq('is_active', true).order('priority', { ascending: false }).limit(6),
         supabase.from('locations').select('id, name, department, neighborhood, business_plan, activity_score, updated_at').eq('is_active', true).order('activity_score', { ascending: false }).limit(6),
-        supabase.from('user_albums').select('id, user_id, album_id, created_at, progress_state, album:albums(id, name, cover_url, year), profile:profiles(id, name, city, department, last_active)').order('created_at', { ascending: false }).limit(24),
+        supabase.from('user_albums').select('id, user_id, album_id, created_at, progress_state, album:albums(id, name, cover_url, year), profile:profiles(id, name, city, department, last_active, account_type, avatar_url)').order('created_at', { ascending: false }).limit(24),
       ])
 
       if (cancelled) return

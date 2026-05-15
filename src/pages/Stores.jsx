@@ -1,6 +1,6 @@
-﻿import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
-import whpIcon from '../components/WhpIcon.png'
+import whpIcon from '../components/WhpIcon.webp'
 import { SponsoredPointCard } from '../components/sponsored/SponsoredComponents'
 import { getUserLocation } from '../utils/location'
 import { useAuthStore } from '../stores/authStore'

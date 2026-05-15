@@ -1,6 +1,6 @@
-﻿import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
-import whpIcon from '../WhpIcon.png';
+import whpIcon from '../WhpIcon.webp';
 
 // Helper for tracking
 const trackEvent = async (placementId, eventType, placementContext, page) => {

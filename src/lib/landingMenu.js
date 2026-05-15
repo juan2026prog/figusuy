@@ -17,14 +17,16 @@ export const FOOTER_LINKS = [
 
 export const LEGAL_TEXT = '© 2026 FigusUY. Uruguay.'
 
-export function patchLandingBlocks(blocks) {
+export function patchLandingBlocks(blocks, settings = {}) {
   return blocks.map(block => {
     if (block.block_type === 'navbar') {
       return {
         ...block,
         content: {
           ...block.content,
-          links: LANDING_MENU_LINKS
+          links: LANDING_MENU_LINKS,
+          logoUrl: settings.header_logo_url || block.content.logoUrl || '/logo.webp',
+          logoText: settings.header_logo_alt || block.content.logoText || 'FigusUY'
         }
       }
     }
@@ -34,7 +36,9 @@ export function patchLandingBlocks(blocks) {
         content: {
           ...block.content,
           links: FOOTER_LINKS,
-          legal: LEGAL_TEXT
+          legal: settings.footer_text || LEGAL_TEXT,
+          logoUrl: settings.header_logo_url || block.content.logoUrl || '/logo.webp',
+          logoText: settings.header_logo_alt || block.content.logoText || 'FigusUY'
         }
       }
     }

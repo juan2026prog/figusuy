@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { getPartnerStoreValidations, verifyAlbumAsPartnerStore } from '../lib/partnerStore'
 
@@ -303,7 +303,7 @@ export default function BusinessPartnerStoreValidations() {
                   <span className="legend-chip" style={{ color: 'var(--green)', borderColor: 'rgba(34,197,94,.3)', background: 'rgba(34,197,94,.08)' }}>Validado</span>
                 </div>
                 <p className="legend-note" style={{ marginTop: '.8rem' }}>
-                  Validado en {item.location_name || location.name} el {item.verified_at ? new Date(item.verified_at).toLocaleDateString('es-UY') : 'hoy'}.
+                  Validado en {item.location_name || location.name} el {item.validated_at ? new Date(item.validated_at).toLocaleDateString('es-UY') : 'hoy'}.
                 </p>
               </article>
             ))}

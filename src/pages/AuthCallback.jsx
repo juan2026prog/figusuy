@@ -25,8 +25,8 @@ export default function AuthCallback() {
           // Clear the hash from the URL
           window.history.replaceState(null, document.title, window.location.pathname + window.location.search)
 
-          // Redirect to the AuthRedirector via /home to route to the correct profile/dashboard
-          if (mounted) navigate('/home', { replace: true })
+          // Redirect directly to /profile avoiding any absolute URLs
+          if (mounted) navigate('/profile', { replace: true })
         } else {
           // No session found in URL
           if (mounted) navigate('/login', { replace: true })

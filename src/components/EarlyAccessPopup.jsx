@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 
-const BADGE_IMG = '/assets/badge-desde-el-comienzo.png'
+const BADGE_IMG = '/assets/badge-desde-el-comienzo.webp'
 
 /**
  * EarlyAccessPopup
@@ -17,6 +17,14 @@ export default function EarlyAccessPopup({ isOpen, onClose, onCreateProfile, slo
 
   useEffect(() => {
     if (isOpen) {
+      // Preload inteligente de la imagen badge al abrir
+      const preloadLink = document.createElement('link')
+      preloadLink.href = BADGE_IMG
+      preloadLink.rel = 'preload'
+      preloadLink.as = 'image'
+      preloadLink.fetchPriority = 'high'
+      document.head.appendChild(preloadLink)
+
       // Small delay for mount animation
       requestAnimationFrame(() => {
         requestAnimationFrame(() => setVisible(true))
@@ -60,13 +68,12 @@ export default function EarlyAccessPopup({ isOpen, onClose, onCreateProfile, slo
           place-items: center;
           padding: 1rem;
           background: rgba(0, 0, 0, 0);
-          backdrop-filter: blur(0px);
-          transition: background 0.5s ease, backdrop-filter 0.5s ease;
+          transition: background 0.4s ease;
           overflow-y: auto;
+          /* Eliminado backdrop-filter agresivo para performance */
         }
         .ea-overlay.ea-visible {
-          background: rgba(0, 0, 0, 0.82);
-          backdrop-filter: blur(12px);
+          background: rgba(0, 0, 0, 0.92);
         }
 
         .ea-popup {
@@ -80,41 +87,30 @@ export default function EarlyAccessPopup({ isOpen, onClose, onCreateProfile, slo
           text-align: center;
           color: #f5f5f5;
           font-family: 'Barlow', system-ui, sans-serif;
-          box-shadow:
-            0 0 80px rgba(255, 120, 30, 0.12),
-            0 0 0 1px rgba(255, 255, 255, 0.04) inset,
-            0 40px 80px rgba(0, 0, 0, 0.6);
+          /* Reducido box-shadow dinámico y caro */
+          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.8);
           overflow: hidden;
-          transform: scale(0.88) translateY(40px);
+          transform: scale(0.95) translateY(20px);
           opacity: 0;
-          transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s ease;
+          transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
+          will-change: transform, opacity;
         }
         .ea-visible .ea-popup {
           transform: scale(1) translateY(0);
           opacity: 1;
         }
 
-        /* Metallic border shimmer */
+        /* Metallic border static - evitamos animaciones infinitas pesadas */
         .ea-popup::before {
           content: '';
           position: absolute;
-          inset: -1px;
-          border-radius: 25px;
-          background: linear-gradient(135deg,
-            rgba(255, 180, 80, 0.3) 0%,
-            transparent 30%,
-            transparent 70%,
-            rgba(255, 140, 50, 0.2) 100%
-          );
-          z-index: -1;
-          animation: ea-shimmer 4s ease-in-out infinite;
-        }
-        @keyframes ea-shimmer {
-          0%, 100% { opacity: 0.6; }
-          50% { opacity: 1; }
+          inset: 0;
+          border-radius: 24px;
+          border: 1px solid rgba(255, 180, 80, 0.15);
+          pointer-events: none;
         }
 
-        /* Particle effects */
+        /* Particle effects - Reducido a 3 para optimizar GPU */
         .ea-particles {
           position: absolute;
           inset: 0;
@@ -129,21 +125,15 @@ export default function EarlyAccessPopup({ isOpen, onClose, onCreateProfile, slo
           border-radius: 50%;
           background: rgba(255, 160, 60, 0.6);
           animation: ea-float 6s ease-in-out infinite;
+          will-change: transform, opacity;
         }
-        .ea-particle:nth-child(1) { left: 10%; top: 20%; animation-delay: 0s; animation-duration: 7s; }
-        .ea-particle:nth-child(2) { left: 85%; top: 15%; animation-delay: 1s; animation-duration: 5s; }
-        .ea-particle:nth-child(3) { left: 25%; top: 80%; animation-delay: 2s; animation-duration: 8s; }
-        .ea-particle:nth-child(4) { left: 70%; top: 70%; animation-delay: 0.5s; animation-duration: 6s; }
-        .ea-particle:nth-child(5) { left: 50%; top: 40%; animation-delay: 3s; animation-duration: 9s; }
-        .ea-particle:nth-child(6) { left: 15%; top: 55%; animation-delay: 1.5s; animation-duration: 7.5s; width: 2px; height: 2px; }
-        .ea-particle:nth-child(7) { left: 90%; top: 50%; animation-delay: 4s; animation-duration: 6.5s; width: 2px; height: 2px; }
-        .ea-particle:nth-child(8) { left: 40%; top: 10%; animation-delay: 2.5s; animation-duration: 8.5s; width: 4px; height: 4px; background: rgba(255, 200, 100, 0.4); }
+        .ea-particle:nth-child(1) { left: 15%; top: 25%; animation-duration: 7s; }
+        .ea-particle:nth-child(2) { left: 80%; top: 20%; animation-duration: 5s; animation-delay: 1s; }
+        .ea-particle:nth-child(3) { left: 30%; top: 75%; animation-duration: 8s; animation-delay: 2s; }
 
         @keyframes ea-float {
-          0%, 100% { transform: translateY(0) scale(1); opacity: 0.4; }
-          25% { transform: translateY(-15px) scale(1.2); opacity: 0.8; }
-          50% { transform: translateY(-8px) scale(0.8); opacity: 0.5; }
-          75% { transform: translateY(-20px) scale(1.1); opacity: 0.7; }
+          0%, 100% { transform: translateY(0); opacity: 0.3; }
+          50% { transform: translateY(-12px); opacity: 0.7; }
         }
 
         .ea-close-btn {
@@ -184,11 +174,13 @@ export default function EarlyAccessPopup({ isOpen, onClose, onCreateProfile, slo
           letter-spacing: 0.16em;
           text-transform: uppercase;
           margin-bottom: 1.2rem;
-          animation: ea-pulse-glow 2s ease-in-out infinite;
+          /* Reemplazo de box-shadow animado por opacity liviana */
+          animation: ea-pulse-opacity 3s ease-in-out infinite;
+          will-change: opacity;
         }
-        @keyframes ea-pulse-glow {
-          0%, 100% { box-shadow: 0 0 15px rgba(255, 140, 50, 0.1); }
-          50% { box-shadow: 0 0 25px rgba(255, 140, 50, 0.25); }
+        @keyframes ea-pulse-opacity {
+          0%, 100% { opacity: 0.8; }
+          50% { opacity: 1; }
         }
 
         .ea-badge-container {
@@ -202,12 +194,14 @@ export default function EarlyAccessPopup({ isOpen, onClose, onCreateProfile, slo
           position: absolute;
           inset: -20px;
           border-radius: 50%;
-          background: radial-gradient(circle, rgba(255, 160, 50, 0.2) 0%, transparent 70%);
+          background: radial-gradient(circle, rgba(255, 160, 50, 0.15) 0%, transparent 60%);
+          /* Sustituir scale por opacity para no repintar layout */
           animation: ea-badge-pulse 3s ease-in-out infinite;
+          will-change: opacity;
         }
         @keyframes ea-badge-pulse {
-          0%, 100% { transform: scale(1); opacity: 0.6; }
-          50% { transform: scale(1.15); opacity: 1; }
+          0%, 100% { opacity: 0.5; }
+          50% { opacity: 0.9; }
         }
 
         .ea-badge-img {
@@ -215,13 +209,16 @@ export default function EarlyAccessPopup({ isOpen, onClose, onCreateProfile, slo
           width: 100%;
           height: 100%;
           object-fit: contain;
-          filter: drop-shadow(0 0 30px rgba(255, 160, 50, 0.35));
+          /* Reducir blur radius en drop-shadow drásticamente por performance en móviles */
+          filter: drop-shadow(0 4px 12px rgba(255, 160, 50, 0.25));
           z-index: 1;
           animation: ea-badge-float 4s ease-in-out infinite;
+          will-change: transform;
+          transform: translateZ(0); /* Hardware acceleration */
         }
         @keyframes ea-badge-float {
           0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-6px); }
+          50% { transform: translateY(-4px); }
         }
 
         .ea-title {
@@ -305,15 +302,17 @@ export default function EarlyAccessPopup({ isOpen, onClose, onCreateProfile, slo
           content: '';
           position: absolute;
           top: 0;
-          left: -100%;
+          left: 0;
           width: 100%;
           height: 100%;
           background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
-          animation: ea-btn-shine 3s ease-in-out infinite;
+          transform: translateX(-100%);
+          animation: ea-btn-shine 4s ease-in-out infinite;
+          will-change: transform;
         }
         @keyframes ea-btn-shine {
-          0% { left: -100%; }
-          50%, 100% { left: 100%; }
+          0% { transform: translateX(-100%); }
+          30%, 100% { transform: translateX(100%); }
         }
 
         .ea-cta-secondary {
@@ -369,13 +368,8 @@ export default function EarlyAccessPopup({ isOpen, onClose, onCreateProfile, slo
         onClick={(e) => { if (e.target === overlayRef.current) handleClose() }}
       >
         <div className="ea-popup" role="dialog" aria-modal="true" aria-label="Early Access">
-          {/* Particles */}
+          {/* Particles (reducidas de 8 a 3) */}
           <div className="ea-particles">
-            <div className="ea-particle" />
-            <div className="ea-particle" />
-            <div className="ea-particle" />
-            <div className="ea-particle" />
-            <div className="ea-particle" />
             <div className="ea-particle" />
             <div className="ea-particle" />
             <div className="ea-particle" />
@@ -400,6 +394,10 @@ export default function EarlyAccessPopup({ isOpen, onClose, onCreateProfile, slo
               src={BADGE_IMG}
               alt="Badge Desde el comienzo"
               loading="eager"
+              fetchPriority="high"
+              decoding="async"
+              width="180"
+              height="180"
             />
           </div>
 

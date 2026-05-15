@@ -3,15 +3,16 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { fetchLandingBlocks, trackLandingEvent } from '../../lib/landingApi'
 import { normalizeLandingBlocks, LANDING_DEFAULT_BLOCKS } from '../../lib/landingBuilder'
 import { patchLandingBlocks } from '../../lib/landingMenu'
-import LandingRenderer from './LandingRenderer'
-import AuthModal from '../AuthModal'
-import BusinessApplyModal from '../BusinessApplyModal'
-import BusinessInfoModal from '../BusinessInfoModal'
-import PlansModal from '../PlansModal'
-import InfluencerApplyModal from '../InfluencerApplyModal'
+const LandingRenderer = lazy(() => import('./LandingRenderer'))
+const AuthModal = lazy(() => import('../AuthModal'))
+const BusinessApplyModal = lazy(() => import('../BusinessApplyModal'))
+const BusinessInfoModal = lazy(() => import('../BusinessInfoModal'))
+const PlansModal = lazy(() => import('../PlansModal'))
+const InfluencerApplyModal = lazy(() => import('../InfluencerApplyModal'))
 import { ErrorBoundary } from '../ErrorBoundary'
 import { useAuthStore } from '../../stores/authStore'
 import { useBusinessPlanStore } from '../../stores/businessPlanStore'
+import { useBrandingStore } from '../../stores/brandingStore'
 import { useEarlyAccessEligibility } from '../../hooks/useEarlyAccessEligibility'
 
 const EarlyAccessPopup = lazy(() => import('../EarlyAccessPopup'))
@@ -20,7 +21,10 @@ const PENDING_LANDING_ACTION_KEY = 'figusuy.pendingLandingAction'
 
 function hasPaidPointSuggestionAccess(profile) {
   const planName = String(profile?.plan_name || '').trim().toLowerCase()
-  return profile?.is_premium === true || planName === 'plus' || planName === 'pro'
+  const hasActiveTrial =
+    !!profile?.plan_trial_until &&
+    new Date(profile.plan_trial_until).getTime() > Date.now()
+  return profile?.is_premium === true || hasActiveTrial || planName === 'plus' || planName === 'pro'
 }
 
 const fallbackBlocks = normalizeLandingBlocks(
@@ -135,34 +139,45 @@ export default function LandingLayout() {
   const [applyType, setApplyType] = useState('store')
   const [authRedirectTo, setAuthRedirectTo] = useState('/home')
   const [showEarlyAccess, setShowEarlyAccess] = useState(false)
-  
+
   const location = useLocation()
   const navigate = useNavigate()
   const user = useAuthStore(state => state.user)
   const profile = useAuthStore(state => state.profile)
 
-  // Early Access popup logic
-  const {
-    shouldShowPopup: earlyAccessEligible,
-    slotsRemaining,
-    dismissTemporarily: dismissEarlyAccess,
-  } = useEarlyAccessEligibility({ user, enabled: location.pathname === '/' })
+  // Early Access slots display (non-blocking, cosmetic only)
+  const { slotsRemaining } = useEarlyAccessEligibility({ user, enabled: false })
 
-  // Show popup ~1s after landing loads for unauthenticated users
+  // Show popup after 1s if: on landing (/), not logged in, not dismissed before
   useEffect(() => {
-    if (!earlyAccessEligible || showEarlyAccess) return
-    const timer = setTimeout(() => setShowEarlyAccess(true), 1200)
+    // Only run on the root landing path
+    if (location.pathname !== '/') return
+    // Already logged in → never show
+    if (user) return
+    // Already dismissed this session or persistently
+    try {
+      if (
+        localStorage.getItem('earlyAccessDismissed') ||
+        sessionStorage.getItem('earlyAccessDismissedSession')
+      ) return
+    } catch { /* ignore storage errors */ }
+
+    const timer = setTimeout(() => setShowEarlyAccess(true), 1000)
     return () => clearTimeout(timer)
-  }, [earlyAccessEligible])
+  }, [location.pathname, user])
 
   const handleEarlyAccessClose = () => {
     setShowEarlyAccess(false)
-    dismissEarlyAccess()
+    try {
+      sessionStorage.setItem('earlyAccessDismissedSession', '1')
+    } catch { /* ignore */ }
   }
 
   const handleEarlyAccessCta = () => {
     setShowEarlyAccess(false)
-    dismissEarlyAccess()
+    try {
+      localStorage.setItem('earlyAccessDismissed', 'true')
+    } catch { /* ignore */ }
     setAuthRedirectTo('/home')
     setShowAuthModal(true)
   }
@@ -171,7 +186,7 @@ export default function LandingLayout() {
 
 
   useEffect(() => {
-    fetchPlans()
+    // fetchPlans()
     const load = async () => {
       try {
         const rows = await fetchLandingBlocks({ mode: 'published' })
@@ -186,6 +201,26 @@ export default function LandingLayout() {
     }
     load()
   }, [])
+
+  const { settings: brandSettings, fetchSettings } = useBrandingStore()
+
+  useEffect(() => {
+    void fetchSettings()
+  }, [fetchSettings])
+  
+  // Handle cross-page anchors (e.g. /#planes-usuario)
+  useEffect(() => {
+    if (location.hash && !loading) {
+      const id = location.hash.slice(1)
+      const target = document.getElementById(id)
+      if (target) {
+        const timer = setTimeout(() => {
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }, 100)
+        return () => clearTimeout(timer)
+      }
+    }
+  }, [location.hash, loading, blocks])
 
   const syncedBlocks = useMemo(() => {
     return blocks.map(block => {
@@ -260,7 +295,7 @@ export default function LandingLayout() {
 
 
   const { navBlock, footerBlock } = useMemo(() => {
-    const patched = patchLandingBlocks(syncedBlocks)
+    const patched = patchLandingBlocks(syncedBlocks, brandSettings)
     return {
       navBlock: patched.find(b => b.block_type === 'navbar'),
       footerBlock: patched.find(b => b.block_type === 'footer')
@@ -394,28 +429,22 @@ export default function LandingLayout() {
         )}
       </ErrorBoundary>
 
-      <AuthModal
-        isOpen={showAuthModal}
-        onClose={() => setShowAuthModal(false)}
-        redirectTo={authRedirectTo}
-      />
-      <BusinessApplyModal
-        isOpen={showApplyModal}
-        onClose={() => setShowApplyModal(false)}
-        initialType={applyType}
-      />
-      <BusinessInfoModal isOpen={showInfoModal} onClose={() => setShowInfoModal(false)} />
-      <PlansModal isOpen={showPlansModal} onClose={() => setShowPlansModal(false)} />
-      <InfluencerApplyModal isOpen={showInfluencerModal} onClose={() => setShowInfluencerModal(false)} />
-
-      {/* Early Access Popup */}
       <Suspense fallback={null}>
-        <EarlyAccessPopup
-          isOpen={showEarlyAccess}
-          onClose={handleEarlyAccessClose}
-          onCreateProfile={handleEarlyAccessCta}
-          slotsRemaining={slotsRemaining}
-        />
+        {showAuthModal && <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} redirectTo={authRedirectTo} />}
+        {showApplyModal && <BusinessApplyModal isOpen={showApplyModal} onClose={() => setShowApplyModal(false)} initialType={applyType} />}
+        {showInfoModal && <BusinessInfoModal isOpen={showInfoModal} onClose={() => setShowInfoModal(false)} />}
+        {showPlansModal && <PlansModal isOpen={showPlansModal} onClose={() => setShowPlansModal(false)} />}
+        {showInfluencerModal && <InfluencerApplyModal isOpen={showInfluencerModal} onClose={() => setShowInfluencerModal(false)} />}
+        
+        {/* Early Access Popup */}
+        {showEarlyAccess && (
+          <EarlyAccessPopup
+            isOpen={showEarlyAccess}
+            onClose={handleEarlyAccessClose}
+            onCreateProfile={handleEarlyAccessCta}
+            slotsRemaining={slotsRemaining}
+          />
+        )}
       </Suspense>
     </div>
   )

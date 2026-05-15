@@ -76,20 +76,24 @@ function BlockRenderer({ block, preview, onCta }) {
       return <NowBlock block={block} content={content} onCta={onCta} />
     case 'albums':
       return <AlbumsBlock block={block} content={content} />
-    case 'exchange_points':
-      return <PromoBlock block={block} content={content} onCta={onCta} />
     case 'how_it_works':
       return <HowItWorksBlock content={content} />
-    case 'influencer_split':
     case 'influencers':
       return <InfluencersBlock block={block} content={content} onCta={onCta} />
+    case 'final_cta':
+      return <FinalCtaBlock block={block} content={content} onCta={onCta} />
+    case 'footer':
+      return <FooterBlock block={block} content={content} onCta={onCta} />
+      
+    case 'exchange_points':
+      return null
+    case 'influencer_split':
+      return null
     case 'gamification':
       return <GamificationBlock content={content} />
     case 'user_plans':
     case 'business_plans':
       return <PlansBlock block={block} content={content} onCta={onCta} />
-    case 'final_cta':
-      return <FinalCtaBlock block={block} content={content} onCta={onCta} />
     case 'influencer_program_hero':
       return <InfluencerProgramHeroBlock block={block} content={content} onCta={onCta} />
     case 'influencer_program_pillars':
@@ -102,8 +106,6 @@ function BlockRenderer({ block, preview, onCta }) {
       return <InfluencerProgramCtaBlock block={block} content={content} onCta={onCta} />
     case 'faq':
       return <FAQBlock content={content} />
-    case 'footer':
-      return <FooterBlock block={block} content={content} onCta={onCta} />
     case 'referral_section':
       return <ReferralSection block={block} content={content} onCta={onCta} />
     case 'referrals':
@@ -145,13 +147,18 @@ function NavbarBlock({ block, content, preview, onCta }) {
     <header className="fy-navbar-shell" style={{ position: content.sticky ? 'sticky' : 'relative', top: 0, zIndex: 1000 }}>
       <div className="fy-shell fy-navbar">
         <Link to="/" className="fy-logo" onClick={() => setOpen(false)}>
-          {content.logoUrl ? (
-            <img src={content.logoUrl} alt={content.logoText || 'FigusUY'} />
+          {(content.logoUrl && content.logoUrl !== 'null') ? (
+            <img 
+              src={content.logoUrl} 
+              alt={content.logoText || 'FigusUY'} 
+              style={{ height: '40px', width: 'auto', display: 'block' }} 
+            />
           ) : (
-            <>
-              <span>{content.logoText || 'FIGUS'}</span>
-              <strong>{content.logoAccent || 'UY'}</strong>
-            </>
+            <img 
+              src="/logo.webp" 
+              alt="FigusUY" 
+              style={{ height: '40px', width: 'auto', display: 'block' }} 
+            />
           )}
         </Link>
         <nav className="fy-navbar-links">
@@ -321,37 +328,54 @@ function AlbumsBlock({ content }) {
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
   const navigate = useNavigate()
+  const sectionRef = useRef(null)
+  const hasFetched = useRef(false)
 
+  // Defer Supabase query until section is near viewport
   useEffect(() => {
-    async function loadAlbums() {
-      try {
-        const { data, error } = await supabase
-          .from('albums')
-          .select('*')
-          .eq('is_active', true)
-          .order('sort_order', { ascending: true })
-          .limit(10)
-        
-        if (data && data.length > 0) {
-          setItems(data)
-        } else {
-          setItems(content.items ? toItems(content.items) : [])
+    if (!sectionRef.current || hasFetched.current) return undefined
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !hasFetched.current) {
+          hasFetched.current = true
+          loadAlbums()
+          observer.disconnect()
         }
-      } catch (err) {
-        setItems(content.items ? toItems(content.items) : [])
-      } finally {
-        setLoading(false)
-      }
-    }
-    loadAlbums()
+      },
+      { rootMargin: '200px' }
+    )
+    observer.observe(sectionRef.current)
+    return () => observer.disconnect()
   }, [content.items])
+
+  async function loadAlbums() {
+    try {
+      const { data, error } = await supabase
+        .from('albums')
+        .select('*')
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true })
+        .limit(10)
+      
+      if (data && data.length > 0) {
+        setItems(data)
+      } else {
+        setItems(content.items ? toItems(content.items) : [])
+      }
+    } catch (err) {
+      setItems(content.items ? toItems(content.items) : [])
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleExplore = (e, item) => {
     e.stopPropagation()
     navigate(`/albums/${item.id || item.slug || 'explorar'}`)
   }
 
-  if (loading) return null
+  if (loading) return <div ref={sectionRef} className="fy-shell fy-section" style={{ minHeight: '200px' }} />
 
   if (items.length === 0) {
     return (
@@ -394,7 +418,7 @@ function AlbumsBlock({ content }) {
           return (
             <article key={item.id || index} className="fy-album-card" onClick={(e) => handleExplore(e, item)}>
               <div className="fy-cover-wrap">
-                {cover && <img src={cover} alt={item.name || item.title || 'Álbum'} />}
+                {cover && <img src={cover} alt={item.name || item.title || 'Álbum'} loading="lazy" decoding="async" />}
                 {badgeText && <span className={`fy-album-badge ${badgeText.toLowerCase()}`}>{badgeText}</span>}
                 <span className="fy-album-rank">#{index + 1}</span>
               </div>
@@ -467,7 +491,7 @@ function PromoBlock({ block, content, onCta }) {
             <CtaButton block={block} cta={content.cta} onCta={onCta} />
           </div>
         </div>
-        <div className="fy-promo-media" style={{ backgroundImage: `url(${content.image || ''})` }} />
+        <div className="fy-promo-media" style={{ backgroundImage: `url(${content.image || ''})` }} role="img" aria-label="Promoción" />
       </div>
     </div>
   )
@@ -481,7 +505,7 @@ function HowItWorksBlock({ content }) {
       <div className="fy-card-grid fy-steps-grid">
         {steps.map((step, index) => (
           <article key={`${step.title}-${index}`} className="fy-editorial-card">
-            <div className="fy-editorial-media" style={{ backgroundImage: `url(${step.image || ''})` }} />
+            <div className="fy-editorial-media" style={{ backgroundImage: `url(${step.image || ''})` }} role="img" aria-label={step.title} />
             <div className="fy-editorial-copy">
               <span className="fy-step-index">0{index + 1}</span>
               <h3>{step.title}</h3>
@@ -836,13 +860,22 @@ function FooterBlock({ block, content, onCta }) {
       <div className="fy-shell fy-footer">
         <div className="fy-footer-brand">
           <Link to="/" className="fy-logo">
-            {content.logoUrl ? (
-              <img src={content.logoUrl} alt={content.logoText || 'FigusUY'} />
+            {(content.logoUrl && content.logoUrl !== 'null') ? (
+              <img 
+                src={content.logoUrl} 
+                alt={content.logoText || 'FigusUY'} 
+                style={{ height: '40px', width: 'auto', display: 'block' }} 
+                loading="lazy" 
+                decoding="async" 
+              />
             ) : (
-              <>
-                <span>{content.logoText || 'FIGUS'}</span>
-                <strong>{content.logoAccent || 'UY'}</strong>
-              </>
+              <img 
+                src="/logo.webp" 
+                alt="FigusUY" 
+                style={{ height: '40px', width: 'auto', display: 'block' }} 
+                loading="lazy" 
+                decoding="async" 
+              />
             )}
           </Link>
           <p className="fy-legal-text">{content.legal || '© 2026 FigusUY'}</p>
@@ -877,7 +910,7 @@ function ReferralSection({ block, content, onCta }) {
 
         <div className="fy-ref-grid">
           <article className="fy-ref-card">
-            <img src="/assets/landing/referrals/logo-referidos.png" className="fy-ref-card-logo-top" alt="" />
+            <img src="/assets/landing/referrals/logo-referidos.webp" className="fy-ref-card-logo-top" alt="" loading="lazy" decoding="async" />
             <div className="fy-ref-card-kicker">// LINK DE REFERIDO</div>
             <h3 className="fy-ref-card-title">TU LINK DE INVITACIÓN</h3>
             <p className="fy-ref-card-text">
@@ -894,7 +927,7 @@ function ReferralSection({ block, content, onCta }) {
               <button className="fy-ref-btn-secondary" onClick={() => onCta(block, { url: '/referidos' }, 'share-now')}>Compartir ahora</button>
             </div>
 
-            <img src="/assets/landing/referrals/logo-referidos.png" className="fy-ref-card-logo-center" alt="" />
+            <img src="/assets/landing/referrals/logo-referidos.webp" className="fy-ref-card-logo-center" alt="" loading="lazy" decoding="async" />
 
             <div className="fy-ref-note">
               FigusUY premia actividad real, no registros vacíos.

@@ -22,12 +22,30 @@ export default defineConfig({
         warn(warning)
       },
       output: {
-        // Evita que Rollup fusione exports internos y renombre variables
-        // a letras simples (n, t, k) que chocan en producción
-        minifyInternalExports: false,
-        // Aislar influencerStore en su propio chunk para prevenir
-        // que el minificador genere referencias cruzadas
+        // Optimizaciones habilitadas según requerimiento
+        minifyInternalExports: true,
+        treeshake: true,
+        // Aislar stores en chunks propios y mejorar split chunks para vendors
         manualChunks(id) {
+          if (id.includes('node_modules/react/') || id.includes('node_modules/react-dom/')) {
+            return 'react-vendor'
+          }
+          if (id.includes('node_modules/react-router')) {
+            return 'router-vendor'
+          }
+          if (id.includes('node_modules/@supabase/')) {
+            return 'supabase-vendor'
+          }
+          // Isolate heavy vendor libs used only in specific routes
+          if (id.includes('node_modules/framer-motion')) {
+            return 'framer-motion-vendor'
+          }
+          if (id.includes('node_modules/leaflet') || id.includes('node_modules/react-leaflet')) {
+            return 'leaflet-vendor'
+          }
+          if (id.includes('node_modules/lucide-react')) {
+            return 'lucide-vendor'
+          }
           if (id.includes('influencerStore')) return 'influencerStore'
           if (id.includes('appStore')) return 'appStore'
           if (id.includes('growthStore')) return 'growthStore'

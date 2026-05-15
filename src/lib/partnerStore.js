@@ -1,7 +1,7 @@
-﻿import { supabase } from './supabase'
+import { supabase } from './supabase'
 
 export const ALBUM_PROGRESS_STATES = {
-  IN_PROGRESS: 'in_progress',
+  IN_PROGRESS: 'active',
   COMPLETED: 'completed',
   PARTNER_VERIFIED: 'legend_verified'
 }
@@ -28,7 +28,7 @@ export async function markAlbumCompleted(payload) {
     throw new Error('albumId requerido')
   }
 
-  const { data, error } = await supabase.rpc('request_legend_album_completion', {
+  const { data, error } = await supabase.rpc('request_album_completion_validation', {
     p_album_id: payload.albumId
   })
 
@@ -39,7 +39,7 @@ export async function markAlbumCompleted(payload) {
 export async function getPartnerStoreValidations(locationId) {
   if (!locationId) return []
 
-  const { data, error } = await supabase.rpc('get_legend_validations_for_location', {
+  const { data, error } = await supabase.rpc('get_album_validations_for_hub', {
     p_location_id: locationId
   })
 
@@ -60,10 +60,11 @@ export async function verifyAlbumAsPartnerStore({
     throw new Error('validationId y locationId son requeridos')
   }
 
-  const { data, error } = await supabase.rpc('verify_legend_album', {
+  const { data, error } = await supabase.rpc('validate_album_completion', {
     p_validation_id: validationId,
-    p_location_id: locationId,
-    p_notes: notes || ''
+    p_status: 'approved',
+    p_notes: notes || '',
+    p_collector_hub_id: locationId
   })
 
   if (error) throw error

@@ -55,11 +55,18 @@ export function usePremiumAccess() {
   }, [])
 
   const actualPlanName = profile?.plan_name || 'gratis'
-  const actualIsPremium = profile?.is_premium === true || (actualPlanName !== 'gratis')
+  const hasActiveTrial =
+    !!profile?.plan_trial_until &&
+    new Date(profile.plan_trial_until).getTime() > Date.now()
+  const actualIsPremium = profile?.is_premium === true || (actualPlanName !== 'gratis') || hasActiveTrial
 
   // If user is already premium by payment, always true
   if (actualIsPremium) {
-    return { isPremium: true, planName: actualPlanName, reason: 'paid' }
+    return {
+      isPremium: true,
+      planName: hasActiveTrial && actualPlanName === 'gratis' ? 'pro' : actualPlanName,
+      reason: hasActiveTrial ? 'free_trial' : 'paid',
+    }
   }
 
   // Check free mode

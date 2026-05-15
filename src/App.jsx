@@ -4,23 +4,23 @@ import { useAuthStore } from './stores/authStore'
 // FigusUY - PayPal Integration Final Sync
 import { useFeatureFlagStore } from './stores/featureFlagStore'
 import { useBrandingStore } from './stores/brandingStore'
-import BottomNav from './components/BottomNav'
-import GlobalFooter from './components/GlobalFooter'
-import Sidebar from './components/Sidebar'
+const BottomNav = lazy(() => import('./components/BottomNav'))
+const GlobalFooter = lazy(() => import('./components/GlobalFooter'))
+const Sidebar = lazy(() => import('./components/Sidebar'))
+
 import { useAnalytics } from './hooks/useAnalytics'
 import { useGrowthStore } from './stores/growthStore'
-
-import BusinessAccessGuard from './components/BusinessAccessGuard'
-import InfluencerAccessGuard from './components/InfluencerAccessGuard'
-import AdminRoleGuard from './components/AdminRoleGuard'
+const BusinessAccessGuard = lazy(() => import('./components/BusinessAccessGuard'))
+const InfluencerAccessGuard = lazy(() => import('./components/InfluencerAccessGuard'))
+const AdminRoleGuard = lazy(() => import('./components/AdminRoleGuard'))
 import { useInfluencerStore } from './stores/influencerStore'
 
-import Landing from './pages/Landing'
-import Login from './pages/Login'
-import Points from './pages/Points'
-import InfluencersPage from './pages/InfluencersPage'
-import FAQ from './pages/FAQ'
-import AccountSuspended from './pages/AccountSuspended'
+const Landing = lazy(() => import('./pages/Landing'))
+const Login = lazy(() => import('./pages/Login'))
+const Points = lazy(() => import('./pages/Points'))
+const InfluencersPage = lazy(() => import('./pages/InfluencersPage'))
+const FAQ = lazy(() => import('./pages/FAQ'))
+const AccountSuspended = lazy(() => import('./pages/AccountSuspended'))
 
 const ReferralLanding = lazy(() => import('./pages/ReferralLanding'))
 const UserReferrals = lazy(() => import('./pages/UserReferrals'))
@@ -107,8 +107,10 @@ const AdminRewardsEngine = lazy(() => import('./admin/AdminRewardsEngine'))
 const AdminExchangeCompletion = lazy(() => import('./admin/AdminExchangeCompletion'))
 const AdminInfluencerApplications = lazy(() => import('./admin/AdminInfluencerApplications'))
 const AdminEmailLifecycle = lazy(() => import('./admin/AdminEmailLifecycle'))
+const AdminSpecialCodes = lazy(() => import('./admin/AdminSpecialCodes'))
+const AdminAlbumValidations = lazy(() => import('./admin/AdminAlbumValidations'))
 
-import LandingLayout from './components/landing/LandingLayout'
+const LandingLayout = lazy(() => import('./components/landing/LandingLayout'))
 
 const AlphaWelcomeModal = lazy(() => import('./components/AlphaWelcomeModal'))
 const GamificationToast = lazy(() => import('./components/GamificationToast'))
@@ -118,9 +120,9 @@ const SmartNotifications = lazy(() => import('./components/SmartNotifications'))
 const GlobalLogoutDialog = lazy(() => import('./components/GlobalLogoutDialog'))
 const EarlyAccessBadgeHandler = lazy(() => import('./components/EarlyAccessBadgeHandler'))
 
-import { SystemEventEngine } from './components/system/SystemEventEngine'
+const SystemEventEngine = lazy(() => import('./components/system/SystemEventEngine').then(module => ({ default: module.SystemEventEngine })))
 import './components/gamification/icons/GamificationIcons.css'
-import { GamificationIconDefs } from './components/gamification/icons/GamificationIconDefs'
+const GamificationIconDefs = lazy(() => import('./components/gamification/icons/GamificationIconDefs').then(m => ({ default: m.GamificationIconDefs })))
 
 function LoadingScreen({ text = "Cargando FigusUY..." }) {
   return (
@@ -288,6 +290,7 @@ function AppChrome() {
       <GlobalLogoutDialog />
       <GamificationIconDefs />
       <EarlyAccessBadgeHandler />
+      <SystemEventEngine />
     </>
   )
 }
@@ -327,7 +330,9 @@ export default function App() {
   }, [])
 
   useEffect(() => {
-    void initializeFlags(user?.id)
+    if (user?.id) {
+      void initializeFlags(user.id)
+    }
   }, [user?.id])
 
   useEffect(() => {
@@ -459,12 +464,13 @@ export default function App() {
           <Route path="growth-achievements" element={<AdminGrowthAchievements />} />
           <Route path="rewards-engine" element={<AdminRewardsEngine />} />
           <Route path="email-lifecycle" element={<AdminEmailLifecycle />} />
+          <Route path="special-codes" element={<AdminSpecialCodes />} />
+          <Route path="album-validations" element={<AdminAlbumValidations />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
         <AppChrome />
-        <SystemEventEngine />
       </Suspense>
     </BrowserRouter>
   )

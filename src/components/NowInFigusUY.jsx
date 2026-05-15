@@ -1,4 +1,4 @@
-﻿import React from 'react'
+import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { formatRelativeTime } from '../lib/liveMomentum'
 import { useNowInFigusUY } from '../hooks/useNowInFigusUY'
@@ -408,7 +408,7 @@ export default function NowInFigusUY({ albums = [], onAuthAction, onScrollToSect
 
           <aside className="nfy-hero-side">
             <div className="nfy-cover">
-              {hero.coverUrl ? <img src={hero.coverUrl} alt={hero.title} /> : <InitialTile title={hero.title} />}
+              {hero.coverUrl ? <img src={hero.coverUrl} alt={hero.title} loading="lazy" decoding="async" /> : <InitialTile title={hero.title} />}
             </div>
             <div className="nfy-metrics">
               {hero.metrics?.map((metric) => (
@@ -436,7 +436,7 @@ export default function NowInFigusUY({ albums = [], onAuthAction, onScrollToSect
                     </div>
                     {card.media ? (
                       <div className="nfy-card-media">
-                        <img src={card.media} alt={card.title} />
+                        <img src={card.media} alt={card.title} loading="lazy" decoding="async" />
                       </div>
                     ) : null}
                   </div>

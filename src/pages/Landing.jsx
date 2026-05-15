@@ -14,7 +14,7 @@ export default function Landing() {
 
   const middleBlocks = useMemo(() => {
     return blocks.filter(b => 
-      !['navbar', 'footer', 'exchange_points', 'business_plans', 'influencers'].includes(b.block_type)
+      !['navbar', 'footer'].includes(b.block_type)
     )
   }, [blocks])
 

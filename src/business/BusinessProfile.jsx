@@ -1,5 +1,5 @@
-﻿import React, { useEffect, useState, useRef, useCallback } from 'react'
-import whpIcon from '../components/WhpIcon.png'
+import React, { useEffect, useState, useRef, useCallback } from 'react'
+import whpIcon from '../components/WhpIcon.webp'
 import { useOutletContext } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import UniversalAddressAutocomplete from '../components/UniversalAddressAutocomplete'

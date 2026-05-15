@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
 import { useAppStore } from '../stores/appStore'
@@ -45,7 +45,7 @@ export default function ChatPage() {
 
       const loadChatData = async () => {
         const { data: chat } = await supabase.from('chats')
-          .select('*, profile1:profiles!chats_user_1_fkey(id,name,avatar_url,city,department,is_premium,plan_name,is_verified), profile2:profiles!chats_user_2_fkey(id,name,avatar_url,city,department,is_premium,plan_name,is_verified), album:albums(*)')
+          .select('*, profile1:profiles!chats_user_1_fkey(id,name,avatar_url,city,department,is_premium,plan_name,is_verified,account_type), profile2:profiles!chats_user_2_fkey(id,name,avatar_url,city,department,is_premium,plan_name,is_verified,account_type), album:albums(*)')
           .eq('id', chatId).single()
 
         if (chat) {
@@ -176,7 +176,11 @@ export default function ChatPage() {
                 {otherUser?.avatar_url ? (
                   <img src={otherUser.avatar_url} alt={otherName} />
                 ) : (
-                  otherInitial
+                  <img 
+                    src={otherUser?.account_type === 'business' ? '/assets/avatar-tienda.webp' : '/assets/avatar-generico.webp'} 
+                    alt={otherName} 
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
                 )}
               </div>
               <div className="header-copy">
@@ -358,7 +362,15 @@ export default function ChatPage() {
             <div className="side-title">Perfil del cruce</div>
             <div className="side-user">
               <div className="chat-avatar">
-                {otherUser?.avatar_url ? <img src={otherUser.avatar_url} alt={otherName} /> : otherInitial}
+                {otherUser?.avatar_url ? (
+                  <img src={otherUser.avatar_url} alt={otherName} />
+                ) : (
+                  <img 
+                    src={otherUser?.account_type === 'business' ? '/assets/avatar-tienda.webp' : '/assets/avatar-generico.webp'} 
+                    alt={otherName} 
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                )}
               </div>
               <div>
                 <strong>{otherName}</strong>

@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react'
+import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
 import { useAppStore } from '../stores/appStore'
@@ -76,7 +76,16 @@ export default function MatchCard({ match, isLocked = false, isTopMatch = false,
         <div className="match-head">
           <div className="profile-mini">
             <div className="avatar">
-              {avatarUrl ? <img src={avatarUrl} alt={userName} /> : avatarLetter}
+              {avatarUrl ? (
+                <img src={avatarUrl} alt={userName} loading="lazy" />
+              ) : (
+                <img 
+                  src={match.profile?.account_type === 'business' ? '/assets/avatar-tienda.webp' : '/assets/avatar-generico.webp'} 
+                  alt={userName} 
+                  loading="lazy"
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+              )}
             </div>
             <div>
               <div className="match-name" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

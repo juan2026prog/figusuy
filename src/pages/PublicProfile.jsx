@@ -1,4 +1,4 @@
-﻿import React, { useEffect } from 'react'
+import React, { useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { usePublicProfileStore } from '../stores/publicProfileStore'
 import { useAuthStore } from '../stores/authStore'
@@ -13,6 +13,7 @@ export default function PublicProfile() {
   const navigate = useNavigate()
   const { user } = useAuthStore()
   const { publicProfile, loading, error, fetchPublicProfile } = usePublicProfileStore()
+  const { name, avatar_url, city, department, created_at, completed_exchanges, albums, is_owner, progress, reputation, badges, account_type } = publicProfile || {}
   const trackEvent = useGrowthStore(state => state.trackEvent)
 
   useEffect(() => {
@@ -44,11 +45,13 @@ export default function PublicProfile() {
     )
   }
 
-  const { name, avatar_url, city, department, created_at, completed_exchanges, albums, is_owner, progress, reputation, badges } = publicProfile
-  
+  const avatarFallback = account_type === 'business' 
+    ? '/assets/avatar-tienda.webp' 
+    : '/assets/avatar-generico.webp'
+
   const avatarStyle = avatar_url
     ? { backgroundImage: `url(${avatar_url})` }
-    : { backgroundColor: getAvatarColor(name || username) }
+    : { backgroundImage: `url(${avatarFallback})`, backgroundSize: 'cover', backgroundPosition: 'center' }
 
   const joinDate = new Date(created_at).toLocaleDateString('es-UY', { month: 'long', year: 'numeric' })
 
@@ -58,7 +61,6 @@ export default function PublicProfile() {
       {/* HEADER */}
       <div className="profile-header glass-panel" style={{ display: 'flex', gap: '1.5rem', padding: '2rem', borderRadius: '24px', alignItems: 'center', marginBottom: '2rem' }}>
         <div className="avatar avatar-xl" style={avatarStyle}>
-          {!avatar_url && (name || username).charAt(0).toUpperCase()}
         </div>
         
         <div style={{ flex: 1 }}>
