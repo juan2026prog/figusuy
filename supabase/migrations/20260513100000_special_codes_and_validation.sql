@@ -1,5 +1,27 @@
 -- 20260513100000_special_codes_and_validation.sql
 
+-- PARTE 0: PREREQUISITOS
+DO $$
+BEGIN
+    -- Asegurar que profiles tenga las columnas necesarias para el plan premium
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'profiles' AND column_name = 'premium_until') THEN
+        ALTER TABLE public.profiles ADD COLUMN premium_until timestamptz;
+    END IF;
+
+    -- Crear tabla xp_events si no existe
+    IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'xp_events' AND table_schema = 'public') THEN
+        CREATE TABLE public.xp_events (
+            id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+            user_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+            amount int NOT NULL,
+            reason text,
+            created_at timestamptz NOT NULL DEFAULT now()
+        );
+        ALTER TABLE public.xp_events ENABLE ROW LEVEL SECURITY;
+        CREATE POLICY "Users view own xp events" ON public.xp_events FOR SELECT USING (user_id = auth.uid());
+    END IF;
+END $$;
+
 -- PARTE 1: SPECIAL ACCESS CODES
 CREATE TABLE IF NOT EXISTS public.special_access_codes (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -32,9 +54,9 @@ CREATE TABLE IF NOT EXISTS public.special_access_code_redemptions (
   benefits_applied jsonb
 );
 
-CREATE INDEX idx_special_access_codes_code ON public.special_access_codes(code);
-CREATE INDEX idx_special_redemptions_user ON public.special_access_code_redemptions(user_id);
-CREATE INDEX idx_special_redemptions_store ON public.special_access_code_redemptions(store_id);
+CREATE INDEX IF NOT EXISTS idx_special_access_codes_code ON public.special_access_codes(code);
+CREATE INDEX IF NOT EXISTS idx_special_redemptions_user ON public.special_access_code_redemptions(user_id);
+CREATE INDEX IF NOT EXISTS idx_special_redemptions_store ON public.special_access_code_redemptions(store_id);
 
 ALTER TABLE public.special_access_codes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.special_access_code_redemptions ENABLE ROW LEVEL SECURITY;
@@ -45,8 +67,8 @@ CREATE POLICY "Admins can manage special codes"
   FOR ALL
   USING (
     EXISTS (
-      SELECT 1 FROM public.profiles 
-      WHERE id = auth.uid() 
+      SELECT 1 FROM public.user_roles 
+      WHERE user_id = auth.uid() 
       AND role IN ('admin', 'god_admin')
     )
   );
@@ -155,19 +177,13 @@ BEGIN
     SET founding_member = true
     WHERE id = v_user_id;
     v_benefits := jsonb_set(v_benefits, '{founding_badge}', 'true'::jsonb);
-
-    IF v_code.consume_founding_slot THEN
-      -- Try to insert into founding_members if not exists (for slot counting)
-      INSERT INTO public.founding_members (user_id)
-      VALUES (v_user_id)
-      ON CONFLICT DO NOTHING;
-    END IF;
   END IF;
 
   -- 2. PRO access
   IF v_code.grants_pro THEN
     UPDATE public.profiles
-    SET premium_plan = 'plus',
+    SET plan_name = 'plus',
+        is_premium = true,
         premium_until = COALESCE(premium_until, v_now) + (COALESCE(v_code.pro_days, 30) || ' days')::interval
     WHERE id = v_user_id;
     v_benefits := jsonb_set(v_benefits, '{pro_days_granted}', to_jsonb(COALESCE(v_code.pro_days, 30)));
@@ -175,9 +191,8 @@ BEGIN
 
   -- 3. XP
   IF v_code.grants_xp THEN
-    UPDATE public.user_gamification
+    UPDATE public.user_progress
     SET total_xp = total_xp + COALESCE(v_code.xp_amount, 0),
-        current_xp = current_xp + COALESCE(v_code.xp_amount, 0),
         updated_at = v_now
     WHERE user_id = v_user_id;
     
@@ -189,9 +204,6 @@ BEGIN
 
   -- 4. Store benefits
   IF p_store_id IS NOT NULL THEN
-    -- Make it a collector hub automatically? Or partner store? 
-    -- The user requested: "activar perfil como comercio aliado, activar postulación especial..."
-    -- Let's just make it a partner_store if the code grants pro
     IF v_code.grants_pro THEN
       UPDATE public.locations
       SET business_plan = 'partner_store',
@@ -234,8 +246,8 @@ CREATE TABLE IF NOT EXISTS public.album_completion_validations (
   UNIQUE(user_id, album_id)
 );
 
-CREATE INDEX idx_album_comp_val_user ON public.album_completion_validations(user_id);
-CREATE INDEX idx_album_comp_val_status ON public.album_completion_validations(status);
+CREATE INDEX IF NOT EXISTS idx_album_comp_val_user ON public.album_completion_validations(user_id);
+CREATE INDEX IF NOT EXISTS idx_album_comp_val_status ON public.album_completion_validations(status);
 
 ALTER TABLE public.album_completion_validations ENABLE ROW LEVEL SECURITY;
 
@@ -251,8 +263,8 @@ CREATE POLICY "Admins view all validations"
   FOR ALL
   USING (
     EXISTS (
-      SELECT 1 FROM public.profiles 
-      WHERE id = auth.uid() 
+      SELECT 1 FROM public.user_roles 
+      WHERE user_id = auth.uid() 
       AND role IN ('admin', 'god_admin')
     )
   );
@@ -309,7 +321,7 @@ BEGIN
     collector_hub_id = NULL,
     notes = NULL;
 
-  -- Update user_album progress_state (doesn't lock anymore, just for info)
+  -- Update user_album progress_state
   UPDATE public.user_albums
   SET progress_state = 'completed',
       completed_at = COALESCE(completed_at, v_now)
@@ -348,7 +360,7 @@ BEGIN
   END IF;
 
   -- Check permissions
-  SELECT EXISTS(SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('admin', 'god_admin')) INTO v_is_admin;
+  SELECT EXISTS(SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role IN ('admin', 'god_admin')) INTO v_is_admin;
   
   IF p_collector_hub_id IS NOT NULL THEN
     SELECT EXISTS(
