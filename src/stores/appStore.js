@@ -226,11 +226,14 @@ export const useAppStore = create((set, get) => ({
     }
   },
 
-  addDuplicateSticker: async (userId, albumId, stickerNumber) => {
+  addDuplicateSticker: async (userId, albumId, stickerNumber, qty = null) => {
+    const existing = get().duplicateStickers.find(item => String(item.sticker_number) === String(stickerNumber))
+    const quantity = qty !== null ? qty : (existing ? (existing.quantity || 1) + 1 : 1)
+
     const { error } = await supabase
       .from('stickers_duplicate')
       .upsert(
-        { user_id: userId, album_id: albumId, sticker_number: stickerNumber },
+        { user_id: userId, album_id: albumId, sticker_number: stickerNumber, quantity },
         { onConflict: 'user_id,album_id,sticker_number' }
       )
 
@@ -254,6 +257,28 @@ export const useAppStore = create((set, get) => ({
     } else {
       console.error('Error in addDuplicateSticker:', error)
       throw error
+    }
+  },
+
+  decrementDuplicateSticker: async (userId, albumId, stickerNumber) => {
+    const existing = get().duplicateStickers.find(item => String(item.sticker_number) === String(stickerNumber))
+    if (!existing) return
+    const currentQty = existing.quantity || 1
+    if (currentQty > 1) {
+      const { error } = await supabase
+        .from('stickers_duplicate')
+        .upsert(
+          { user_id: userId, album_id: albumId, sticker_number: stickerNumber, quantity: currentQty - 1 },
+          { onConflict: 'user_id,album_id,sticker_number' }
+        )
+      if (!error) {
+        await get().fetchStickers(userId, albumId)
+      } else {
+        console.error('Error in decrementDuplicateSticker:', error)
+        throw error
+      }
+    } else {
+      await get().removeStickerStatus(userId, albumId, stickerNumber)
     }
   },
 

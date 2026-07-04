@@ -96,6 +96,7 @@ export default function AlbumPage() {
   const addOwnedSticker = useAppStore(state => state.addOwnedSticker)
   const addMissingSticker = useAppStore(state => state.addMissingSticker)
   const addDuplicateSticker = useAppStore(state => state.addDuplicateSticker)
+  const decrementDuplicateSticker = useAppStore(state => state.decrementDuplicateSticker)
   const removeStickerStatus = useAppStore(state => state.removeStickerStatus)
   const bulkAddStickers = useAppStore(state => state.bulkAddStickers)
   const matches = useAppStore(state => state.matches)
@@ -274,7 +275,7 @@ export default function AlbumPage() {
 
   const ownedCount = ownedStickers.length
   const missingCount = missingStickers.length
-  const duplicateCount = duplicateStickers.length
+  const duplicateCount = useMemo(() => duplicateStickers.reduce((acc, curr) => acc + (curr.quantity || 1), 0), [duplicateStickers])
   const progressPercent = total > 0 ? Math.round((ownedCount / total) * 100) : 0
   const emptyCount = Math.max(total - ownedCount - missingCount - duplicateCount, 0)
 
@@ -332,7 +333,7 @@ export default function AlbumPage() {
           BRA: { iso: "br", name: "Brasil" }, MAR: { iso: "ma", name: "Marruecos" }, HAI: { iso: "ht", name: "Haití" }, SCO: { iso: "gb-sct", name: "Escocia" },
           USA: { iso: "us", name: "EE.UU." }, PAR: { iso: "py", name: "Paraguay" }, AUS: { iso: "au", name: "Australia" }, TUR: { iso: "tr", name: "Turquía" },
           GER: { iso: "de", name: "Alemania" }, CUW: { iso: "cw", name: "Curazao" }, CIV: { iso: "ci", name: "C. Marfil" }, ECU: { iso: "ec", name: "Ecuador" },
-          NED: { iso: "nl", name: "P. Bajos" }, JPN: { iso: "jp", name: "Japón" }, POL: { iso: "pl", name: "Polonia" }, TUN: { iso: "tn", name: "Túnez" },
+          NED: { iso: "nl", name: "P. Bajos" }, JPN: { iso: "jp", name: "Japón" }, SWE: { iso: "se", name: "Suecia" }, TUN: { iso: "tn", name: "Túnez" },
           BEL: { iso: "be", name: "Bélgica" }, EGY: { iso: "eg", name: "Egipto" }, IRN: { iso: "ir", name: "Irán" }, NZL: { iso: "nz", name: "N. Zelanda" },
           ESP: { iso: "es", name: "España" }, URU: { iso: "uy", name: "Uruguay" }, KSA: { iso: "sa", name: "Arabia S." }, CPV: { iso: "cv", name: "Cabo Verde" },
           FRA: { iso: "fr", name: "Francia" }, SEN: { iso: "sn", name: "Senegal" }, NOR: { iso: "no", name: "Noruega" }, IRQ: { iso: "iq", name: "Irak" },
@@ -350,7 +351,7 @@ export default function AlbumPage() {
           { name: "GRUPO C", teams: ["BRA", "MAR", "HAI", "SCO"] },
           { name: "GRUPO D", teams: ["USA", "PAR", "AUS", "TUR"] },
           { name: "GRUPO E", teams: ["GER", "CUW", "CIV", "ECU"] },
-          { name: "GRUPO F", teams: ["NED", "JPN", "POL", "TUN"] },
+          { name: "GRUPO F", teams: ["NED", "JPN", "SWE", "TUN"] },
           { name: "GRUPO G", teams: ["BEL", "EGY", "IRN", "NZL"] },
           { name: "GRUPO H", teams: ["ESP", "URU", "KSA", "CPV"] },
           { name: "GRUPO I", teams: ["FRA", "SEN", "NOR", "IRQ"] },
@@ -456,14 +457,49 @@ export default function AlbumPage() {
       }
 
       if (mode === 'duplicate') {
-        if (duplicateSet.has(sticker)) await removeStickerStatus(profile.id, selectedAlbum.id, sticker)
-        else await addDuplicateSticker(profile.id, selectedAlbum.id, sticker)
+        if (duplicateSet.has(sticker)) {
+          const existing = duplicateStickers.find(item => String(item.sticker_number) === sticker)
+          const currentQty = existing ? existing.quantity || 1 : 1
+          await addDuplicateSticker(profile.id, selectedAlbum.id, sticker, currentQty + 1)
+        } else {
+          await addDuplicateSticker(profile.id, selectedAlbum.id, sticker, 1)
+        }
         return
       }
 
       if (mode === 'clear') await removeStickerStatus(profile.id, selectedAlbum.id, sticker)
     } catch {
       toast.error('Hubo un error al actualizar el estado.')
+    }
+  }
+
+  const handleIncrement = async (num, e) => {
+    if (e) e.stopPropagation()
+    if (isAlbumLocked) {
+      toast.error('Este album ya esta cerrado. No puedes modificarlo.')
+      return
+    }
+    const sticker = String(num)
+    try {
+      const existing = duplicateStickers.find(item => String(item.sticker_number) === sticker)
+      const currentQty = existing ? existing.quantity || 1 : 0
+      await addDuplicateSticker(profile.id, selectedAlbum.id, sticker, currentQty + 1)
+    } catch {
+      toast.error('Hubo un error al actualizar la cantidad.')
+    }
+  }
+
+  const handleDecrement = async (num, e) => {
+    if (e) e.stopPropagation()
+    if (isAlbumLocked) {
+      toast.error('Este album ya esta cerrado. No puedes modificarlo.')
+      return
+    }
+    const sticker = String(num)
+    try {
+      await decrementDuplicateSticker(profile.id, selectedAlbum.id, sticker)
+    } catch {
+      toast.error('Hubo un error al actualizar la cantidad.')
     }
   }
 
@@ -787,15 +823,15 @@ export default function AlbumPage() {
         <div className="album-panel album-state-panel">
           <span className="album-kicker">ESTADO DEL ́LBUM</span>
           <div className="album-state-grid">
-            <div className="state-card">
+            <div className="state-card have">
               <strong>{ownedCount}</strong>
               <span>TENGO</span>
             </div>
-            <div className="state-card">
+            <div className="state-card duplicate">
               <strong>{duplicateCount}</strong>
               <span>REPETIDAS</span>
             </div>
-            <div className="state-card">
+            <div className="state-card missing">
               <strong>{missingCount}</strong>
               <span>FALTANTES</span>
             </div>
@@ -901,7 +937,7 @@ export default function AlbumPage() {
               {Object.entries(MODE_META).map(([key, meta]) => (
                 <button
                   key={key}
-                  className={`mode-card mode-card-v2 ${mode === key ? 'active' : key === 'duplicate' ? 'dup' : key === 'missing' ? 'miss' : key}`}
+                  className={`mode-card mode-card-v2 ${key} ${mode === key ? 'active' : ''}`}
                   onClick={() => setMode(key)}
                 >
                   <small>{mode === key ? meta.eyebrow : 'Modo disponible'}</small>
@@ -1019,8 +1055,10 @@ export default function AlbumPage() {
 
                     const num = item
                     const status = ownedSet.has(num) ? 'have' : missingSet.has(num) ? 'miss' : duplicateSet.has(num) ? 'dup' : ''
+                    const dupRow = status === 'dup' ? duplicateStickers.find(d => String(d.sticker_number) === String(num)) : null
+                    const quantity = dupRow ? dupRow.quantity || 1 : 0
                     return (
-                      <button
+                      <div
                         key={num}
                         className={`sticker-cell ${status} animate-scale-in`}
                         style={{ animationDelay: `${(idx % 20) * 0.02}s` }}
@@ -1030,7 +1068,16 @@ export default function AlbumPage() {
                         onTouchStart={(e) => handlePokemonTouch(e, num)}
                       >
                         <b>{num}</b>
-                      </button>
+                        {status === 'dup' && quantity > 1 && (
+                          <span className="dup-badge">×{quantity}</span>
+                        )}
+                        {mode === 'duplicate' && status === 'dup' && (
+                          <div className="dup-controls" onClick={(e) => e.stopPropagation()}>
+                            <button className="control-btn minus" onClick={(e) => handleDecrement(num, e)}>−</button>
+                            <button className="control-btn plus" onClick={(e) => handleIncrement(num, e)}>+</button>
+                          </div>
+                        )}
+                      </div>
                     )
                   })}
                 </div>
@@ -1065,20 +1112,23 @@ export default function AlbumPage() {
                   let statusTextCol = 'var(--color-text-muted)'
                   let cardCls = 'checklist-card'
 
+                  const dupRow = isDuplicate ? duplicateStickers.find(d => String(d.sticker_number) === sticker) : null
+                  const quantity = dupRow ? dupRow.quantity || 1 : 0
+
                   if (isDuplicate) {
-                    statusColor = '#10b981'
-                    statusText = 'Repetida'
-                    statusTextCol = '#10b981'
+                    statusColor = '#22c55e'
+                    statusText = quantity > 1 ? `Repetida (×${quantity})` : 'Repetida'
+                    statusTextCol = '#22c55e'
                     cardCls += ' duplicate'
                   } else if (isMissing) {
-                    statusColor = '#ef4444'
+                    statusColor = '#ff4d5a'
                     statusText = 'Faltante'
-                    statusTextCol = '#ef4444'
+                    statusTextCol = '#ff4d5a'
                     cardCls += ' missing'
                   } else if (isOwned) {
-                    statusColor = 'white'
+                    statusColor = '#38bdf8'
                     statusText = 'Tengo'
-                    statusTextCol = 'white'
+                    statusTextCol = '#38bdf8'
                     cardCls += ' owned'
                   }
 
@@ -1111,6 +1161,12 @@ export default function AlbumPage() {
                         <div className="checklist-status">
                           <div className="status-dot" style={{ backgroundColor: statusColor }} />
                           <span className="status-text" style={{ color: statusTextCol }}>{statusText}</span>
+                          {mode === 'duplicate' && isDuplicate && (
+                            <div className="checklist-dup-controls" onClick={(e) => e.stopPropagation()} style={{ marginLeft: 'auto', display: 'flex', gap: '0.5rem' }}>
+                              <button className="control-btn-chk" onClick={(e) => handleDecrement(sticker, e)} style={{ padding: '2px 8px', borderRadius: '4px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', cursor: 'pointer' }}>−</button>
+                              <button className="control-btn-chk" onClick={(e) => handleIncrement(sticker, e)} style={{ padding: '2px 8px', borderRadius: '4px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', cursor: 'pointer' }}>+</button>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>

@@ -3576,13 +3576,13 @@ textarea:focus-visible {
 .sticker-cell:hover { border-color: var(--color-primary); transform: translateY(-2px); }
 .sticker-cell b { font: 900 1.4rem 'Barlow Condensed', sans-serif; color: var(--color-text); }
 
-.sticker-cell.have { background: var(--color-primary); border-color: var(--color-primary); }
+.sticker-cell.have { background: #38bdf8; border-color: #38bdf8; }
 .sticker-cell.have b { color: #fff; }
 
-.sticker-cell.dup { background: var(--color-success); border-color: var(--color-success); }
+.sticker-cell.dup { background: #22c55e; border-color: #22c55e; }
 .sticker-cell.dup b { color: #fff; }
 
-.sticker-cell.miss { background: var(--color-danger); border-color: var(--color-danger); }
+.sticker-cell.miss { background: #ff4d5a; border-color: #ff4d5a; }
 .sticker-cell.miss b { color: #fff; }
 
 .mobile-grid-toolbar {
@@ -3614,9 +3614,9 @@ textarea:focus-visible {
   box-shadow: 0 20px 40px rgba(0,0,0,0.5);
 }
 
-.checklist-card.owned { border-color: rgba(255, 90, 0, 0.4); background: rgba(255, 90, 0, 0.03); }
-.checklist-card.duplicate { border-color: rgba(34,197,94,0.4); background: rgba(34,197,94,0.03); }
-.checklist-card.missing { border-color: rgba(239,68,68,0.4); background: rgba(239,68,68,0.03); }
+.checklist-card.owned { border-color: rgba(56, 189, 248, 0.3); background: rgba(56, 189, 248, 0.04); }
+.checklist-card.duplicate { border-color: rgba(34, 197, 94, 0.3); background: rgba(34, 197, 94, 0.04); }
+.checklist-card.missing { border-color: rgba(255, 77, 90, 0.3); background: rgba(255, 77, 90, 0.04); }
 
 .checklist-img-wrapper {
   aspect-ratio: 3/4;
@@ -4053,6 +4053,18 @@ textarea:focus-visible {
   margin-bottom: 4px;
 }
 
+.state-card.have strong {
+  color: #38bdf8;
+}
+
+.state-card.duplicate strong {
+  color: #22c55e;
+}
+
+.state-card.missing strong {
+  color: #ff4d5a;
+}
+
 .state-card span {
   color: rgba(255,255,255,0.55);
   font: 800 .85rem 'Barlow Condensed', sans-serif;
@@ -4350,10 +4362,40 @@ textarea:focus-visible {
   border-color: rgba(255,255,255,0.12);
 }
 
-.mode-card-v2.active {
-  background: rgba(255, 90, 0, 0.1);
-  border-color: #ff5a00;
-  box-shadow: 0 0 20px rgba(255, 90, 0, 0.1);
+.mode-card-v2.have b span {
+  color: #38bdf8;
+}
+.mode-card-v2.have.active {
+  background: rgba(56, 189, 248, 0.08);
+  border-color: #38bdf8;
+  box-shadow: 0 0 20px rgba(56, 189, 248, 0.15);
+}
+
+.mode-card-v2.duplicate b span {
+  color: #22c55e;
+}
+.mode-card-v2.duplicate.active {
+  background: rgba(34, 197, 94, 0.08);
+  border-color: #22c55e;
+  box-shadow: 0 0 20px rgba(34, 197, 94, 0.15);
+}
+
+.mode-card-v2.missing b span {
+  color: #ff4d5a;
+}
+.mode-card-v2.missing.active {
+  background: rgba(255, 77, 90, 0.08);
+  border-color: #ff4d5a;
+  box-shadow: 0 0 20px rgba(255, 77, 90, 0.15);
+}
+
+.mode-card-v2.clear b span {
+  color: rgba(255, 255, 255, 0.4);
+}
+.mode-card-v2.clear.active {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.05);
 }
 
 .mode-card-v2 small {
@@ -4370,11 +4412,6 @@ textarea:focus-visible {
   font: italic 900 1.4rem 'Barlow Condensed', sans-serif;
   text-transform: uppercase;
   color: #fff;
-}
-
-.mode-card-v2 b span {
-  font-size: 1.5rem;
-  color: #ff5a00;
 }
 
 .mode-card-v2 span:last-child {
@@ -4484,27 +4521,38 @@ textarea:focus-visible {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.06);
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
-  overflow: hidden;
+  overflow: visible;
+  font-size: 1.25rem;
 }
 
 .sticker-cell b {
-  font: italic 900 1.35rem 'Barlow Condensed', sans-serif;
-  color: rgba(255,255,255,0.5);
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 900;
+  font-style: italic;
+  font-size: 1.1em;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  color: rgba(255, 255, 255, 0.45);
   line-height: 1;
-  transition: color 0.2s ease;
+  transition: all 0.2s ease;
   user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
 }
 
 .sticker-cell:hover {
   transform: translateY(-2px);
-  background: rgba(255,255,255,0.08);
-  border-color: rgba(255,255,255,0.2);
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.15);
   box-shadow: 0 8px 20px rgba(0,0,0,0.4);
 }
 
@@ -4513,42 +4561,135 @@ textarea:focus-visible {
 }
 
 .sticker-cell.have {
-  background: rgba(255, 90, 0, 0.08);
-  border-color: rgba(255, 90, 0, 0.4);
-  box-shadow: inset 0 0 15px rgba(255, 90, 0, 0.05);
+  background: rgba(56, 189, 248, 0.06);
+  border-color: rgba(56, 189, 248, 0.35);
+  box-shadow: inset 0 0 15px rgba(56, 189, 248, 0.04);
 }
 
 .sticker-cell.have b {
-  color: #ff5a00;
-  text-shadow: 0 0 12px rgba(255, 90, 0, 0.4);
+  color: #38bdf8;
+  text-shadow: 0 0 12px rgba(56, 189, 248, 0.35);
 }
 
 .sticker-cell.have:hover {
-  background: rgba(255, 90, 0, 0.15);
-  border-color: #ff5a00;
-  box-shadow: 0 0 25px rgba(255, 90, 0, 0.2);
+  background: rgba(56, 189, 248, 0.12);
+  border-color: #38bdf8;
+  box-shadow: 0 0 25px rgba(56, 189, 248, 0.2);
 }
 
 .sticker-cell.miss {
-  background: rgba(239, 68, 68, 0.06);
-  border-color: rgba(239, 68, 68, 0.3);
+  background: rgba(255, 77, 90, 0.06);
+  border-color: rgba(255, 77, 90, 0.35);
+  box-shadow: inset 0 0 15px rgba(255, 77, 90, 0.04);
 }
 
 .sticker-cell.miss b {
-  color: #ef4444;
+  color: #ff4d5a;
+  text-shadow: 0 0 12px rgba(255, 77, 90, 0.35);
+}
+
+.sticker-cell.miss:hover {
+  background: rgba(255, 77, 90, 0.12);
+  border-color: #ff4d5a;
+  box-shadow: 0 0 25px rgba(255, 77, 90, 0.2);
 }
 
 .sticker-cell.dup {
   background: rgba(34, 197, 94, 0.06);
-  border-color: rgba(34, 197, 94, 0.3);
+  border-color: rgba(34, 197, 94, 0.35);
+  box-shadow: inset 0 0 15px rgba(34, 197, 94, 0.04);
 }
 
 .sticker-cell.dup b {
   color: #22c55e;
+  text-shadow: 0 0 12px rgba(34, 197, 94, 0.35);
+}
+
+.sticker-cell.dup:hover {
+  background: rgba(34, 197, 94, 0.12);
+  border-color: #22c55e;
+  box-shadow: 0 0 25px rgba(34, 197, 94, 0.2);
 }
 
 .sticker-cell:active {
-  transform: scale(0.92);
+  transform: scale(0.94);
+}
+
+/* Badges for duplicates count */
+.dup-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: #22c55e;
+  color: #000;
+  font: 900 0.65rem 'Barlow Condensed', sans-serif;
+  padding: 1px 4.5px;
+  border-radius: 4px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+  z-index: 10;
+}
+
+/* Bottom controls bar */
+.dup-controls {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 15px;
+  display: flex;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(2px);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom-left-radius: 5px;
+  border-bottom-right-radius: 5px;
+  z-index: 5;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.sticker-cell.dup:hover .dup-controls {
+  opacity: 1;
+}
+
+/* Shift text slightly up when controls are present to avoid overlap */
+.sticker-cell.dup:hover b {
+  padding-bottom: 8px;
+}
+
+@media (hover: none), (max-width: 768px) {
+  .sticker-cell.dup .dup-controls {
+    opacity: 1;
+  }
+  .sticker-cell.dup b {
+    padding-bottom: 8px;
+  }
+  .sticker-cell b {
+    letter-spacing: -0.04em;
+  }
+}
+
+.control-btn {
+  flex: 1;
+  border: 0;
+  background: transparent;
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.1s ease;
+  line-height: 1;
+}
+
+.control-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.control-btn.minus {
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .checklist-card {
