@@ -40,6 +40,14 @@ function MapController({ center }) {
   return null
 }
 
+const parseAndValidateCoordinate = (val, min, max) => {
+  if (val === undefined || val === null || val === '') return null
+  const num = parseFloat(val)
+  if (isNaN(num)) return null
+  if (num < min || num > max) return null
+  return num
+}
+
 export default function LocationSelector({ onLocationSaved, className = '' }) {
   const { profile, updateProfile } = useAuthStore()
   const { matches } = useAppStore()
@@ -52,14 +60,20 @@ export default function LocationSelector({ onLocationSaved, className = '' }) {
   const [nearbyHubs, setNearbyHubs] = useState([])
   const [isScanning, setIsScanning] = useState(false)
 
+  const [manualLat, setManualLat] = useState(profile?.location_source === 'manual' ? profile?.lat : null)
+  const [manualLng, setManualLng] = useState(profile?.location_source === 'manual' ? profile?.lng : null)
+
   const lastUpdateRef = useRef(0)
   const isUpdatingRef = useRef(false)
   const lastFeedbackRef = useRef(0)
 
+  const activeLat = isGPSActive ? profile?.lat : (manualLat !== null ? manualLat : profile?.lat)
+  const activeLng = isGPSActive ? profile?.lng : (manualLng !== null ? manualLng : profile?.lng)
+
   const userCoords = useMemo(() => {
-    if (profile?.lat && profile?.lng) return [profile.lat, profile.lng]
+    if (activeLat && activeLng) return [activeLat, activeLng]
     return [-34.9011, -56.1645] // Default Montevideo
-  }, [profile?.lat, profile?.lng])
+  }, [activeLat, activeLng])
 
   useEffect(() => {
     if (!profile || loading) return
@@ -202,8 +216,8 @@ export default function LocationSelector({ onLocationSaved, className = '' }) {
         department,
         neighborhood,
         location_source: 'manual',
-        lat: null,
-        lng: null,
+        lat: manualLat,
+        lng: manualLng,
       }
       await saveLocationToDB(updateData)
       notifyLocationSaved(updateData)
@@ -396,6 +410,10 @@ export default function LocationSelector({ onLocationSaved, className = '' }) {
             onAddressSelect={(data) => {
               setDepartment(data.department || data.state || '')
               setNeighborhood(data.neighborhood || data.locality || data.city || '')
+              const parsedLat = parseAndValidateCoordinate(data.lat, -90, 90)
+              const parsedLng = parseAndValidateCoordinate(data.lng || data.lon, -180, 180)
+              setManualLat(parsedLat)
+              setManualLng(parsedLng)
             }}
             placeholder="Ej: Pocitos, Montevideo"
           />
@@ -437,14 +455,14 @@ export default function LocationSelector({ onLocationSaved, className = '' }) {
           />
           <MapController center={userCoords} />
           
-          {isGPSActive && profile?.lat && (
+          {activeLat && activeLng && (
             <>
               <Circle 
-                center={[profile.lat, profile.lng]} 
+                center={[activeLat, activeLng]} 
                 radius={500} 
                 pathOptions={{ color: '#ff6a00', fillColor: '#ff6a00', fillOpacity: 0.1 }} 
               />
-              <Marker position={[profile.lat, profile.lng]} />
+              <Marker position={[activeLat, activeLng]} />
             </>
           )}
 

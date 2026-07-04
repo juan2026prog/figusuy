@@ -61,6 +61,19 @@ function scoreMutuality(theyCanGiveMe: number[], iCanGiveThem: number[]): number
   return strongOne ? 8 : 0
 }
 
+
+/** 15 pts max — tiered by km, 0 if >50km */
+function scoreDistance(km: number): number {
+  if (km === Infinity) return 0
+  if (km <= 1) return 15
+  if (km <= 3) return 13
+  if (km <= 5) return 10
+  if (km <= 10) return 7
+  if (km <= 25) return 4
+  if (km <= 50) return 2
+  return 0
+}
+
 /** Global ranking integration (tiebreaker) */
 function scoreRanking(rankData: any): number {
   if (!rankData) return 50
