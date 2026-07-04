@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import ConfirmDialog from '../components/ConfirmDialog'
 import { LiveBadge, LiveFeed } from '../components/LiveMomentum'
+import { formatRelativeTime } from '../lib/liveMomentum'
 import { useToast } from '../components/Toast'
 import { useLiveMomentum } from '../hooks/useLiveMomentum'
 import { supabase } from '../lib/supabase'
@@ -295,6 +296,122 @@ export default function AlbumPage() {
     missingCount,
     duplicateCount,
   })
+
+  const [liveActivities, setLiveActivities] = useState([])
+  const [loadingActivities, setLoadingActivities] = useState(true)
+
+  const getSafeName = (profile) => {
+    if (!profile) return 'Un coleccionista'
+    const name = profile.username || profile.name || ''
+    if (!name) return 'Un coleccionista'
+    const firstSpace = name.indexOf(' ')
+    if (firstSpace > 0) {
+      return name.substring(0, firstSpace)
+    }
+    return name
+  }
+
+  useEffect(() => {
+    let active = true
+    const fetchActivities = async () => {
+      try {
+        const { data: recentAlbums } = await supabase
+          .from('user_albums')
+          .select(`
+            id,
+            created_at,
+            progress_state,
+            album:albums(name),
+            profile:profiles(name, username)
+          `)
+          .order('created_at', { ascending: false })
+          .limit(3)
+
+        const { data: recentDuplicates } = await supabase
+          .from('stickers_duplicate')
+          .select(`
+            id,
+            created_at,
+            album:albums(name),
+            profile:profiles(name, username)
+          `)
+          .order('created_at', { ascending: false })
+          .limit(3)
+
+        const { data: recentLocations } = await supabase
+          .from('locations')
+          .select('id, name, neighborhood, department, created_at')
+          .eq('is_active', true)
+          .order('created_at', { ascending: false })
+          .limit(3)
+
+        if (!active) return
+
+        const list = []
+
+        if (recentAlbums) {
+          recentAlbums.forEach(item => {
+            const userName = getSafeName(item.profile)
+            if (item.progress_state === 'completed' || item.progress_state === 'legend_verified') {
+              list.push({
+                id: `album-comp-${item.id}`,
+                date: new Date(item.created_at),
+                title: `${userName.toUpperCase()} COMPLETÓ SU ÁLBUM`,
+                desc: `Cerró la colección de ${item.album?.name || 'su álbum'}`,
+              })
+            } else {
+              list.push({
+                id: `album-join-${item.id}`,
+                date: new Date(item.created_at),
+                title: `${userName.toUpperCase()} EMPEZÓ A CAMBIAR`,
+                desc: `Activó la colección de ${item.album?.name || 'su álbum'}`,
+              })
+            }
+          })
+        }
+
+        if (recentDuplicates) {
+          recentDuplicates.forEach(item => {
+            const userName = getSafeName(item.profile)
+            list.push({
+              id: `dup-${item.id}`,
+              date: new Date(item.created_at),
+              title: `${userName.toUpperCase()} CARGÓ REPETIDAS`,
+              desc: `Abrió nuevas oportunidades de cambio en ${item.album?.name || 'su álbum'}`,
+            })
+          })
+        }
+
+        if (recentLocations) {
+          recentLocations.forEach(item => {
+            list.push({
+              id: `loc-${item.id}`,
+              date: new Date(item.created_at),
+              title: `NUEVO PUNTO ACTIVO`,
+              desc: `Se activó un punto de encuentro: ${item.name} en ${item.neighborhood || item.department || 'Uruguay'}`,
+            })
+          })
+        }
+
+        const sorted = list
+          .sort((a, b) => b.date - a.date)
+          .slice(0, 3)
+
+        setLiveActivities(sorted)
+      } catch (err) {
+        console.error('Error fetching live activities:', err)
+      } finally {
+        if (active) setLoadingActivities(false)
+      }
+    }
+
+    fetchActivities()
+    const timer = setInterval(fetchActivities, 60000)
+    return () => {
+      active = false
+      clearInterval(timer)
+    }
+  }, [])
 
   const currentUserAlbum = useMemo(
     () => userAlbums.find((item) => item.album_id === selectedAlbum?.id) || null,
@@ -996,23 +1113,19 @@ export default function AlbumPage() {
         </div>
       </section>
 
-      <section className="album-live-feed-strip">
-        <span className="album-kicker">AHORA EN FIGUSUY</span>
-        <div className="live-feed-grid">
-          <div className="live-feed-card">
-            <strong>MART͍N CARGÓ 12 REPETIDAS</strong>
-            <p>Abrió nuevas oportunidades hace 3 min.</p>
+      {!loadingActivities && liveActivities.length > 0 && (
+        <section className="album-live-feed-strip">
+          <span className="album-kicker">AHORA EN FIGUSUY</span>
+          <div className="live-feed-grid">
+            {liveActivities.map((activity) => (
+              <div key={activity.id} className="live-feed-card">
+                <strong>{activity.title}</strong>
+                <p>{activity.desc} {formatRelativeTime(activity.date)}.</p>
+              </div>
+            ))}
           </div>
-          <div className="live-feed-card">
-            <strong>COLLECTIBLES VALIDANDO</strong>
-            <p>2 álbumes en revisión ahora mismo.</p>
-          </div>
-          <div className="live-feed-card">
-            <strong>NUEVO PUNTO ACTIVO</strong>
-            <p>Se aprobó un nuevo punto en Pocitos.</p>
-          </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       <div className="album-workspace animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
         <div className="album-editor-column">
