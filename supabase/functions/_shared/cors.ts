@@ -2,7 +2,8 @@
 const ALLOWED_ORIGINS = [
   'http://localhost:5173',
   'http://localhost:3000',
-  // Agrega aquí tu dominio de producción cuando lo tengas
+  'https://figusuy.app',
+  'https://www.figusuy.app'
 ];
 
 export function getCorsOrigin(req: Request): string {
@@ -10,7 +11,10 @@ export function getCorsOrigin(req: Request): string {
   if (ALLOWED_ORIGINS.includes(origin)) {
     return origin;
   }
-  return ALLOWED_ORIGINS[0];
+  if (origin.endsWith('.vercel.app')) {
+    return origin;
+  }
+  return 'https://www.figusuy.app';
 }
 
 export const corsHeaders = {
@@ -22,6 +26,7 @@ export function getCorsHeaders(req: Request): Record<string, string> {
   return {
     'Access-Control-Allow-Origin': getCorsOrigin(req),
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Vary': 'Origin',
   };
 }

@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
-import { corsHeaders, handleOptions } from "../_shared/cors.ts"
+import { getCorsHeaders, handleOptions } from "../_shared/cors.ts"
 
 // ============================================================
 //  MATCH ENGINE v2 — FigusUY
@@ -143,7 +143,7 @@ serve(async (req: Request) => {
 
     if (!album) {
       return new Response(JSON.stringify({ matches: [], reason: "album_inactive" }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
       })
     }
 
@@ -169,7 +169,7 @@ serve(async (req: Request) => {
     // Pre-flight gate: no stickers = no matches (ME-09)
     if (myMissing.length === 0 && myDuplicates.length === 0) {
       return new Response(JSON.stringify({ matches: [], reason: "no_stickers" }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
       })
     }
 
@@ -192,7 +192,7 @@ serve(async (req: Request) => {
 
     if (!candidateAlbums || candidateAlbums.length === 0) {
       return new Response(JSON.stringify({ matches: [] }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
       })
     }
 
@@ -362,14 +362,14 @@ serve(async (req: Request) => {
       : limitedResults
 
     return new Response(JSON.stringify({ matches: finalResults }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
     })
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Unknown error"
     console.error("Match Engine error:", message)
     return new Response(JSON.stringify({ error: message }), {
       status: 400,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
     })
   }
 })
