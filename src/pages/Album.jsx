@@ -78,6 +78,11 @@ const STATUS_META = {
   [ALBUM_PROGRESS_STATES.PARTNER_VERIFIED]: { label: 'Oficialmente Validado', detail: 'Ya quedo validado con recompensa activada.', tone: 'green' },
 }
 
+const compareNatural = (a, b) => {
+  if (typeof a !== 'string' || typeof b !== 'string') return 0
+  return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' })
+}
+
 export default function AlbumPage() {
   const navigate = useNavigate()
   const toast = useToast()
@@ -206,6 +211,9 @@ export default function AlbumPage() {
         if (!grouped[prefix]) grouped[prefix] = []
         grouped[prefix].push(String(code))
       })
+      Object.keys(grouped).forEach((prefix) => {
+        grouped[prefix].sort(compareNatural)
+      })
       return grouped
     }
 
@@ -239,6 +247,9 @@ export default function AlbumPage() {
           if (!grouped[prefix]) grouped[prefix] = []
           grouped[prefix].push(num)
         })
+        if (grouped[prefix]) {
+          grouped[prefix].sort(compareNatural)
+        }
       })
     }
 
@@ -320,85 +331,184 @@ export default function AlbumPage() {
     return map
   }, [albumStickers])
 
-  const numbers = useMemo(() => {
+  const entireCanonicalStructure = useMemo(() => {
+    if (!selectedAlbum) return []
     let result = []
+    const isPaniniWC2026 = selectedAlbum.name === "Panini´s FIFA World Cup 2026"
 
-    const isPaniniWC2026 = selectedAlbum?.name === "Panini´s FIFA World Cup 2026"
+    // 1. Base section
+    if (isPaniniWC2026) {
+      const flagMap = {
+        MEX: { iso: "mx", name: "México" }, RSA: { iso: "za", name: "Sudáfrica" }, KOR: { iso: "kr", name: "Corea del Sur" }, CZE: { iso: "cz", name: "Rep. Checa" },
+        CAN: { iso: "ca", name: "Canadá" }, BIH: { iso: "ba", name: "Bosnia" }, QAT: { iso: "qa", name: "Qatar" }, SUI: { iso: "ch", name: "Suiza" },
+        BRA: { iso: "br", name: "Brasil" }, MAR: { iso: "ma", name: "Marruecos" }, HAI: { iso: "ht", name: "Haití" }, SCO: { iso: "gb-sct", name: "Escocia" },
+        USA: { iso: "us", name: "EE.UU." }, PAR: { iso: "py", name: "Paraguay" }, AUS: { iso: "au", name: "Australia" }, TUR: { iso: "tr", name: "Turquía" },
+        GER: { iso: "de", name: "Alemania" }, CUW: { iso: "cw", name: "Curazao" }, CIV: { iso: "ci", name: "C. Marfil" }, ECU: { iso: "ec", name: "Ecuador" },
+        NED: { iso: "nl", name: "P. Bajos" }, JPN: { iso: "jp", name: "Japón" }, SWE: { iso: "se", name: "Suecia" }, TUN: { iso: "tn", name: "Túnez" },
+        BEL: { iso: "be", name: "Bélgica" }, EGY: { iso: "eg", name: "Egipto" }, IRN: { iso: "ir", name: "Irán" }, NZL: { iso: "nz", name: "N. Zelanda" },
+        ESP: { iso: "es", name: "España" }, URU: { iso: "uy", name: "Uruguay" }, KSA: { iso: "sa", name: "Arabia S." }, CPV: { iso: "cv", name: "Cabo Verde" },
+        FRA: { iso: "fr", name: "Francia" }, SEN: { iso: "sn", name: "Senegal" }, NOR: { iso: "no", name: "Noruega" }, IRQ: { iso: "iq", name: "Irak" },
+        ARG: { iso: "ar", name: "Argentina" }, AUT: { iso: "at", name: "Austria" }, DZA: { iso: "dz", name: "Argelia" }, JOR: { iso: "jo", name: "Jordania" },
+        POR: { iso: "pt", name: "Portugal" }, COL: { iso: "co", name: "Colombia" }, COD: { iso: "cd", name: "RD Congo" }, UZB: { iso: "uz", name: "Uzbekistán" },
+        ENG: { iso: "gb-eng", name: "Inglaterra" }, CRO: { iso: "hr", name: "Croacia" }, PAN: { iso: "pa", name: "Panamá" }, GHA: { iso: "gh", name: "Ghana" }
+      }
 
-    if (activeTab === 'base') {
-      if (isPaniniWC2026) {
-        const flagMap = {
-          MEX: { iso: "mx", name: "México" }, RSA: { iso: "za", name: "Sudáfrica" }, KOR: { iso: "kr", name: "Corea del Sur" }, CZE: { iso: "cz", name: "Rep. Checa" },
-          CAN: { iso: "ca", name: "Canadá" }, BIH: { iso: "ba", name: "Bosnia" }, QAT: { iso: "qa", name: "Qatar" }, SUI: { iso: "ch", name: "Suiza" },
-          BRA: { iso: "br", name: "Brasil" }, MAR: { iso: "ma", name: "Marruecos" }, HAI: { iso: "ht", name: "Haití" }, SCO: { iso: "gb-sct", name: "Escocia" },
-          USA: { iso: "us", name: "EE.UU." }, PAR: { iso: "py", name: "Paraguay" }, AUS: { iso: "au", name: "Australia" }, TUR: { iso: "tr", name: "Turquía" },
-          GER: { iso: "de", name: "Alemania" }, CUW: { iso: "cw", name: "Curazao" }, CIV: { iso: "ci", name: "C. Marfil" }, ECU: { iso: "ec", name: "Ecuador" },
-          NED: { iso: "nl", name: "P. Bajos" }, JPN: { iso: "jp", name: "Japón" }, SWE: { iso: "se", name: "Suecia" }, TUN: { iso: "tn", name: "Túnez" },
-          BEL: { iso: "be", name: "Bélgica" }, EGY: { iso: "eg", name: "Egipto" }, IRN: { iso: "ir", name: "Irán" }, NZL: { iso: "nz", name: "N. Zelanda" },
-          ESP: { iso: "es", name: "España" }, URU: { iso: "uy", name: "Uruguay" }, KSA: { iso: "sa", name: "Arabia S." }, CPV: { iso: "cv", name: "Cabo Verde" },
-          FRA: { iso: "fr", name: "Francia" }, SEN: { iso: "sn", name: "Senegal" }, NOR: { iso: "no", name: "Noruega" }, IRQ: { iso: "iq", name: "Irak" },
-          ARG: { iso: "ar", name: "Argentina" }, AUT: { iso: "at", name: "Austria" }, DZA: { iso: "dz", name: "Argelia" }, JOR: { iso: "jo", name: "Jordania" },
-          POR: { iso: "pt", name: "Portugal" }, COL: { iso: "co", name: "Colombia" }, COD: { iso: "cd", name: "RD Congo" }, UZB: { iso: "uz", name: "Uzbekistán" },
-          ENG: { iso: { iso: "gb-eng" }, name: "Inglaterra" }, CRO: { iso: "hr", name: "Croacia" }, PAN: { iso: "pa", name: "Panamá" }, GHA: { iso: "gh", name: "Ghana" }
-        }
+      // Correcting the ENG entry
+      flagMap.ENG = { iso: "gb-eng", name: "Inglaterra" }
 
-        // Correcting the ENG entry which had a nesting error in previous line
-        flagMap.ENG = { iso: "gb-eng", name: "Inglaterra" }
+      const groups = [
+        { name: "GRUPO A", teams: ["MEX", "RSA", "KOR", "CZE"] },
+        { name: "GRUPO B", teams: ["CAN", "BIH", "QAT", "SUI"] },
+        { name: "GRUPO C", teams: ["BRA", "MAR", "HAI", "SCO"] },
+        { name: "GRUPO D", teams: ["USA", "PAR", "AUS", "TUR"] },
+        { name: "GRUPO E", teams: ["GER", "CUW", "CIV", "ECU"] },
+        { name: "GRUPO F", teams: ["NED", "JPN", "SWE", "TUN"] },
+        { name: "GRUPO G", teams: ["BEL", "EGY", "IRN", "NZL"] },
+        { name: "GRUPO H", teams: ["ESP", "URU", "KSA", "CPV"] },
+        { name: "GRUPO I", teams: ["FRA", "SEN", "NOR", "IRQ"] },
+        { name: "GRUPO J", teams: ["ARG", "AUT", "DZA", "JOR"] },
+        { name: "GRUPO K", teams: ["POR", "COL", "COD", "UZB"] },
+        { name: "GRUPO L", teams: ["ENG", "CRO", "PAN", "GHA"] }
+      ]
 
-        const groups = [
-          { name: "GRUPO A", teams: ["MEX", "RSA", "KOR", "CZE"] },
-          { name: "GRUPO B", teams: ["CAN", "BIH", "QAT", "SUI"] },
-          { name: "GRUPO C", teams: ["BRA", "MAR", "HAI", "SCO"] },
-          { name: "GRUPO D", teams: ["USA", "PAR", "AUS", "TUR"] },
-          { name: "GRUPO E", teams: ["GER", "CUW", "CIV", "ECU"] },
-          { name: "GRUPO F", teams: ["NED", "JPN", "SWE", "TUN"] },
-          { name: "GRUPO G", teams: ["BEL", "EGY", "IRN", "NZL"] },
-          { name: "GRUPO H", teams: ["ESP", "URU", "KSA", "CPV"] },
-          { name: "GRUPO I", teams: ["FRA", "SEN", "NOR", "IRQ"] },
-          { name: "GRUPO J", teams: ["ARG", "AUT", "DZA", "JOR"] },
-          { name: "GRUPO K", teams: ["POR", "COL", "COD", "UZB"] },
-          { name: "GRUPO L", teams: ["ENG", "CRO", "PAN", "GHA"] }
-        ]
-
-        result.push("00")
-        for (let i = 1; i <= 8; i++) result.push(`FWC${i}`)
-        
-        groups.forEach(group => {
-          result.push({ 
-            type: 'subtitle', 
-            label: group.name, 
-            flags: group.teams.map(t => flagMap[t]) 
-          })
-          group.teams.forEach(team => {
-            for (let i = 1; i <= 20; i++) result.push(`${team}${i}`)
-          })
+      result.push("00")
+      for (let i = 1; i <= 8; i++) result.push(`FWC${i}`)
+      
+      groups.forEach(group => {
+        result.push({ 
+          type: 'subtitle', 
+          label: group.name, 
+          flags: group.teams.map(t => flagMap[t]) 
         })
+        group.teams.forEach(team => {
+          for (let i = 1; i <= 20; i++) result.push(`${team}${i}`)
+        })
+      })
 
-        for (let i = 9; i <= 19; i++) result.push(`FWC${i}`)
-        for (let i = 1; i <= 14; i++) result.push(`CC${i}`)
+      for (let i = 9; i <= 19; i++) result.push(`FWC${i}`)
+      for (let i = 1; i <= 14; i++) result.push(`CC${i}`)
+    } else {
+      result = Array.from({ length: total }, (_, index) => String(index + 1))
+    }
+
+    // 2. Special sections
+    const config = selectedAlbum.special_codes || {}
+    const prefixes = !Array.isArray(config) && typeof config === 'object' ? Object.keys(config) : []
+    prefixes.forEach((prefix) => {
+      const groupConfig = config[prefix]
+      let label = typeof groupConfig === 'object' ? groupConfig.label : groupConfig
+      if (!label) {
+        if (prefix === 'P' || prefix === 'PROMO') label = 'Promos'
+        else if (prefix === 'F') label = 'Extra F'
+        else if (prefix === 'M') label = 'Especiales M'
+        else if (prefix === 'LE' || prefix === 'LEGEND') label = 'Leyendas'
+        else if (prefix === 'EXTRA') label = 'Especiales'
+        else label = `Especiales ${prefix}`
+      }
+      
+      const codes = specialGroups[prefix] || []
+      if (codes.length > 0) {
+        result.push({
+          type: 'subtitle',
+          label: label,
+          flags: []
+        })
+        result.push(...codes)
+      }
+    })
+
+    return result
+  }, [selectedAlbum, total, specialGroups])
+
+  const numbers = useMemo(() => {
+    if (!selectedAlbum) return []
+
+    // 1. Generate tabAllowedSet
+    let tabAllowedSet = new Set()
+    
+    if (activeTab === 'base') {
+      const isPaniniWC2026 = selectedAlbum.name === "Panini´s FIFA World Cup 2026"
+      if (isPaniniWC2026) {
+        tabAllowedSet.add("00")
+        for (let i = 1; i <= 8; i++) tabAllowedSet.add(`FWC${i}`)
+        const teams = [
+          "MEX", "RSA", "KOR", "CZE", "CAN", "BIH", "QAT", "SUI",
+          "BRA", "MAR", "HAI", "SCO", "USA", "PAR", "AUS", "TUR",
+          "GER", "CUW", "CIV", "ECU", "NED", "JPN", "SWE", "TUN",
+          "BEL", "EGY", "IRN", "NZL", "ESP", "URU", "KSA", "CPV",
+          "FRA", "SEN", "NOR", "IRQ", "ARG", "AUT", "DZA", "JOR",
+          "POR", "COL", "COD", "UZB", "ENG", "CRO", "PAN", "GHA"
+        ]
+        teams.forEach(team => {
+          for (let i = 1; i <= 20; i++) tabAllowedSet.add(`${team}${i}`)
+        })
+        for (let i = 9; i <= 19; i++) tabAllowedSet.add(`FWC${i}`)
+        for (let i = 1; i <= 14; i++) tabAllowedSet.add(`CC${i}`)
       } else {
-        result = Array.from({ length: total }, (_, index) => String(index + 1))
+        for (let i = 1; i <= total; i++) tabAllowedSet.add(String(i))
       }
     }
-    else if (activeTab === 'missing') result = Array.from(missingSet)
-    else if (activeTab === 'duplicates') result = Array.from(duplicateSet)
-    else if (activeTab.startsWith('special_')) result = specialGroups[activeTab.replace('special_', '')] || []
+    else if (activeTab.startsWith('special_')) {
+      const prefix = activeTab.replace('special_', '')
+      const codes = specialGroups[prefix] || []
+      codes.forEach(c => tabAllowedSet.add(c))
+    }
+    else if (activeTab === 'missing') {
+      tabAllowedSet = missingSet
+    }
+    else if (activeTab === 'duplicates') {
+      tabAllowedSet = duplicateSet
+    }
 
-    if (!searchFilter.trim()) return result
-
+    // 2. Intersect with search filter
+    let finalAllowedSet = new Set()
     const query = searchFilter.trim().toLowerCase()
-    return result.filter((item) => {
-      const num = typeof item === 'object' ? '' : item
-      if (!num) return false
-      const stickerData = albumStickersMap[num]
-      return (
-        num.toLowerCase().includes(query) ||
-        stickerData?.name?.toLowerCase().includes(query) ||
-        stickerData?.team?.toLowerCase().includes(query) ||
-        stickerData?.country?.toLowerCase().includes(query)
-      )
-    })
-  }, [activeTab, total, missingSet, duplicateSet, searchFilter, specialGroups, albumStickersMap, selectedAlbum?.name])
+    
+    for (const sticker of tabAllowedSet) {
+      if (query) {
+        const stickerData = albumStickersMap[sticker]
+        if (
+          sticker.toLowerCase().includes(query) ||
+          stickerData?.name?.toLowerCase().includes(query) ||
+          stickerData?.team?.toLowerCase().includes(query) ||
+          stickerData?.country?.toLowerCase().includes(query)
+        ) {
+          finalAllowedSet.add(sticker)
+        }
+      } else {
+        finalAllowedSet.add(sticker)
+      }
+    }
+
+    // 3. Lookahead filter on entireCanonicalStructure using finalAllowedSet
+    const filtered = []
+    for (let i = 0; i < entireCanonicalStructure.length; i++) {
+      const item = entireCanonicalStructure[i]
+      if (typeof item === 'object' && item.type === 'subtitle') {
+        // Look ahead to check if there is at least one visible sticker in this section
+        let hasVisibleStickers = false
+        for (let j = i + 1; j < entireCanonicalStructure.length; j++) {
+          const nextItem = entireCanonicalStructure[j]
+          if (typeof nextItem === 'object' && nextItem.type === 'subtitle') {
+            break
+          }
+          if (finalAllowedSet.has(nextItem)) {
+            hasVisibleStickers = true
+            break
+          }
+        }
+        if (hasVisibleStickers) {
+          filtered.push(item)
+        }
+      } else {
+        if (finalAllowedSet.has(item)) {
+          filtered.push(item)
+        }
+      }
+    }
+
+    return filtered
+  }, [activeTab, total, missingSet, duplicateSet, searchFilter, specialGroups, albumStickersMap, selectedAlbum, entireCanonicalStructure])
 
   const mobileGridPageSize = 120
   const shouldPaginateMobileGrid = isMobileGrid && viewMode === 'numbers' && numbers.length > mobileGridPageSize
