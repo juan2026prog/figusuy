@@ -503,7 +503,6 @@ export default function AlbumPage() {
       })
 
       for (let i = 9; i <= 19; i++) result.push(`FWC${i}`)
-      for (let i = 1; i <= 14; i++) result.push(`CC${i}`)
     } else {
       result = Array.from({ length: total }, (_, index) => String(index + 1))
     }
