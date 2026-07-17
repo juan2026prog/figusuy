@@ -232,7 +232,7 @@ export default function AlbumProfile() {
           BEL: { iso: 'be', name: 'Bélgica' }, EGY: { iso: 'eg', name: 'Egipto' }, IRN: { iso: 'ir', name: 'Irán' }, NZL: { iso: 'nz', name: 'N. Zelanda' },
           ESP: { iso: 'es', name: 'España' }, URU: { iso: 'uy', name: 'Uruguay' }, KSA: { iso: 'sa', name: 'Arabia S.' }, CPV: { iso: 'cv', name: 'Cabo Verde' },
           FRA: { iso: 'fr', name: 'Francia' }, SEN: { iso: 'sn', name: 'Senegal' }, NOR: { iso: 'no', name: 'Noruega' }, IRQ: { iso: 'iq', name: 'Irak' },
-          ARG: { iso: 'ar', name: 'Argentina' }, AUT: { iso: 'at', name: 'Austria' }, DZA: { iso: 'dz', name: 'Argelia' }, JOR: { iso: 'jo', name: 'Jordania' },
+          ARG: { iso: 'ar', name: 'Argentina' }, AUT: { iso: 'at', name: 'Austria' }, ALG: { iso: 'dz', name: 'Argelia' }, JOR: { iso: 'jo', name: 'Jordania' },
           POR: { iso: 'pt', name: 'Portugal' }, COL: { iso: 'co', name: 'Colombia' }, COD: { iso: 'cd', name: 'RD Congo' }, UZB: { iso: 'uz', name: 'Uzbekistán' },
           ENG: { iso: 'gb-eng', name: 'Inglaterra' }, CRO: { iso: 'hr', name: 'Croacia' }, PAN: { iso: 'pa', name: 'Panamá' }, GHA: { iso: 'gh', name: 'Ghana' }
         }
@@ -246,7 +246,7 @@ export default function AlbumProfile() {
           { name: 'GRUPO G', teams: ['BEL', 'EGY', 'IRN', 'NZL'] },
           { name: 'GRUPO H', teams: ['ESP', 'URU', 'KSA', 'CPV'] },
           { name: 'GRUPO I', teams: ['FRA', 'SEN', 'NOR', 'IRQ'] },
-          { name: 'GRUPO J', teams: ['ARG', 'AUT', 'DZA', 'JOR'] },
+          { name: 'GRUPO J', teams: ['ARG', 'AUT', 'ALG', 'JOR'] },
           { name: 'GRUPO K', teams: ['POR', 'COL', 'COD', 'UZB'] },
           { name: 'GRUPO L', teams: ['ENG', 'CRO', 'PAN', 'GHA'] }
         ]
