@@ -3,13 +3,13 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 import { getCorsHeaders, handleOptions } from "../_shared/cors.ts"
 
 // ============================================================
-//  MATCH ENGINE v2 — FigusUY
+//  MATCH ENGINE v2.1 — FigusUY (Hardened Privacy & Distance)
 //  Agent: Match Engine Agent
-//  Version: 2.0
 //  Scoring: 6-component normalized (0-100)
+//  Privacy: Strip all private user lat/lng, calculate distance server-side
 // ============================================================
 
-// ── Distance ──────────────────────────────────────────────
+// ── Distance Calculation ─────────────────────────────────────
 function haversineDistance(
   lat1: number | null,
   lng1: number | null,
@@ -37,9 +37,28 @@ function distanceLabel(km: number): string {
   return `~${Math.round(km)} km`
 }
 
+/**
+ * Adds slight deterministic jitter to coordinates to protect exact residential location
+ */
+function getApproximatePoint(lat: number | null, lng: number | null, userId: string): { lat: number; lng: number } | null {
+  if (!lat || !lng) return null
+  // Simple hash of userId to generate consistent pseudo-random jitter within ~500m (0.0045 deg)
+  let hash = 0
+  for (let i = 0; i < userId.length; i++) {
+    hash = (hash << 5) - hash + userId.charCodeAt(i)
+    hash |= 0
+  }
+  const jitterLat = ((hash % 100) / 100 - 0.5) * 0.008
+  const jitterLng = (((hash >> 4) % 100) / 100 - 0.5) * 0.008
+
+  return {
+    lat: Math.round((lat + jitterLat) * 10000) / 10000,
+    lng: Math.round((lng + jitterLng) * 10000) / 10000,
+  }
+}
+
 // ── Component Scorers ─────────────────────────────────────
 
-/** 35 pts max — normalized overlap against user's own inventory size */
 function scoreCompatibility(
   theyCanGiveMe: number[],
   iCanGiveThem: number[],
@@ -52,17 +71,13 @@ function scoreCompatibility(
   return Math.min(raw * 35, 35)
 }
 
-/** 25 pts max — mutual = both directions satisfied */
 function scoreMutuality(theyCanGiveMe: number[], iCanGiveThem: number[]): number {
   const isMutual = theyCanGiveMe.length > 0 && iCanGiveThem.length > 0
   if (isMutual) return 25
-  // Partial credit: strong one-directional (5+ stickers)
   const strongOne = theyCanGiveMe.length >= 5 || iCanGiveThem.length >= 5
   return strongOne ? 8 : 0
 }
 
-
-/** 15 pts max — tiered by km, 0 if >50km */
 function scoreDistance(km: number): number {
   if (km === Infinity) return 0
   if (km <= 1) return 15
@@ -74,7 +89,6 @@ function scoreDistance(km: number): number {
   return 0
 }
 
-/** Global ranking integration (tiebreaker) */
 function scoreRanking(rankData: any): number {
   if (!rankData) return 50
   return rankData.final_user_rank || 50
@@ -99,9 +113,9 @@ function getMaxResults(isPremium: boolean, planName: string): number {
 }
 
 // ── Quality Thresholds ────────────────────────────────────
-const SCORE_FLOOR = 5           // QT-5: below this → dropped
-const MAX_STALE_DAYS = 45       // QT-2: older than this → dropped
-const MIN_CANDIDATE_POOL = 500  // performance: pre-filter if >500 candidates
+const SCORE_FLOOR = 5
+const MAX_STALE_DAYS = 45
+const MIN_CANDIDATE_POOL = 500
 
 // ── Main Handler ──────────────────────────────────────────
 serve(async (req: Request) => {
@@ -112,7 +126,7 @@ serve(async (req: Request) => {
     const { albumId } = await req.json()
     if (!albumId) throw new Error("albumId required")
 
-    // 1. Authenticate requesting user
+    // 1. Authenticate requesting user via JWT
     const authHeader = req.headers.get("Authorization")
     if (!authHeader) throw new Error("Unauthorized")
 
@@ -130,10 +144,10 @@ serve(async (req: Request) => {
     } = await supabaseUserClient.auth.getUser()
     if (userError || !user) throw new Error("Invalid user token")
 
-    // Admin client for cross-user data access
+    // Admin client for cross-user private data access
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
 
-    // 2. Validate album is active (QT-6)
+    // 2. Validate album is active
     const { data: album } = await supabaseAdmin
       .from("albums")
       .select("id, is_active")
@@ -147,9 +161,10 @@ serve(async (req: Request) => {
       })
     }
 
-    // 3. Fetch requesting user's data
-    const [profileRes, myMissingRes, myDupRes] = await Promise.all([
+    // 3. Fetch requesting user's private data, album inventory and blocks
+    const [profileRes, myLocRes, myMissingRes, myDupRes, blocksRes] = await Promise.all([
       supabaseAdmin.from("profiles").select("*").eq("id", user.id).single(),
+      supabaseAdmin.from("user_locations_private").select("latitude, longitude").eq("user_id", user.id).maybeSingle(),
       supabaseAdmin
         .from("stickers_missing")
         .select("sticker_number")
@@ -160,13 +175,24 @@ serve(async (req: Request) => {
         .select("sticker_number")
         .eq("user_id", user.id)
         .eq("album_id", albumId),
+      supabaseAdmin
+        .from("user_blocks")
+        .select("blocker_id, blocked_id")
+        .or(`blocker_id.eq.${user.id},blocked_id.eq.${user.id}`)
     ])
 
     const currentUserProfile = profileRes.data
+    const currentUserLoc = myLocRes.data
     const myMissing = myMissingRes.data || []
     const myDuplicates = myDupRes.data || []
+    const rawBlocks = blocksRes.data || []
 
-    // Pre-flight gate: no stickers = no matches (ME-09)
+    const blockedUserIds = new Set<string>()
+    for (const b of rawBlocks) {
+      if (b.blocker_id === user.id) blockedUserIds.add(b.blocked_id)
+      if (b.blocked_id === user.id) blockedUserIds.add(b.blocker_id)
+    }
+
     if (myMissing.length === 0 && myDuplicates.length === 0) {
       return new Response(JSON.stringify({ matches: [], reason: "no_stickers" }), {
         headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
@@ -181,14 +207,12 @@ serve(async (req: Request) => {
     const maxDistance = getMaxDistance(isPremium, planName)
     const maxResults = getMaxResults(isPremium, planName)
 
-    // 4. Fetch candidate users in this album (excluding self — S-6 / QT-3)
-    let candidateQuery = supabaseAdmin
+    // 4. Fetch candidate users in this album (excluding self & blocked)
+    const { data: candidateAlbums } = await supabaseAdmin
       .from("user_albums")
       .select("user_id")
       .eq("album_id", albumId)
       .neq("user_id", user.id)
-
-    const { data: candidateAlbums } = await candidateQuery
 
     if (!candidateAlbums || candidateAlbums.length === 0) {
       return new Response(JSON.stringify({ matches: [] }), {
@@ -196,22 +220,32 @@ serve(async (req: Request) => {
       })
     }
 
-    let candidateIds = candidateAlbums.map((ua) => ua.user_id)
+    let candidateIds = candidateAlbums
+      .map((ua) => ua.user_id)
+      .filter((id) => !blockedUserIds.has(id))
 
-    // Performance pre-filter: if pool >500, only users active in last 30 days
-    // This is done via profiles query below with cutoff date
+    if (candidateIds.length === 0) {
+      return new Response(JSON.stringify({ matches: [] }), {
+        headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
+      })
+    }
+
     const performanceCutoffDate =
       candidateIds.length > MIN_CANDIDATE_POOL
         ? new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
         : new Date(0).toISOString()
 
-    // 5. Batch fetch all candidate data in parallel queries (no N+1)
-    const [profilesRes, otherMissingRes, otherDupRes, rankingsRes] = await Promise.all([
+    // 5. Batch fetch all candidate data + private locations internally (no N+1)
+    const [profilesRes, locsRes, otherMissingRes, otherDupRes, rankingsRes] = await Promise.all([
       supabaseAdmin
         .from("profiles")
-        .select("*")
+        .select("id, name, avatar_url, is_premium, plan_name, department, city, neighborhood, last_active, location_visibility, location_precision")
         .in("id", candidateIds)
         .gte("last_active", performanceCutoffDate),
+      supabaseAdmin
+        .from("user_locations_private")
+        .select("user_id, latitude, longitude")
+        .in("user_id", candidateIds),
       supabaseAdmin
         .from("stickers_missing")
         .select("user_id, sticker_number")
@@ -229,6 +263,11 @@ serve(async (req: Request) => {
     ])
 
     const candidateProfiles = profilesRes.data || []
+    const candidateLocs = new Map<string, { latitude: number; longitude: number }>()
+    for (const l of (locsRes.data || [])) {
+      candidateLocs.set(l.user_id, { latitude: l.latitude, longitude: l.longitude })
+    }
+
     const allOtherMissing = otherMissingRes.data || []
     const allOtherDup = otherDupRes.data || []
     const candidateRankings = rankingsRes.data || []
@@ -237,7 +276,6 @@ serve(async (req: Request) => {
     const results = []
 
     for (const p of candidateProfiles) {
-      // Build per-candidate sets
       const pMissingSet = new Set(
         allOtherMissing.filter((s) => s.user_id === p.id).map((s) => s.sticker_number)
       )
@@ -245,32 +283,28 @@ serve(async (req: Request) => {
         allOtherDup.filter((s) => s.user_id === p.id).map((s) => s.sticker_number)
       )
 
-      // Sticker intersections (core matching logic)
       const theyCanGiveMe = [...pDupSet].filter((n) => myMissingSet.has(n))
       const iCanGiveThem = [...myDupSet].filter((n) => pMissingSet.has(n))
 
-      // QT-1: zero overlap → skip
       const totalCoincidences = theyCanGiveMe.length + iCanGiveThem.length
       if (totalCoincidences === 0) continue
 
-      // Distance (used for both score and distance gate)
+      // Calculate distance securely using private coords
+      const pLoc = candidateLocs.get(p.id)
       const distKm = haversineDistance(
-        currentUserProfile?.lat,
-        currentUserProfile?.lng,
-        p.lat,
-        p.lng
+        currentUserLoc?.latitude ?? null,
+        currentUserLoc?.longitude ?? null,
+        pLoc?.latitude ?? null,
+        pLoc?.longitude ?? null
       )
 
-      // QT-4: distance gate (plan-based)
       if (maxDistance !== Infinity && distKm > maxDistance) continue
 
-      // Activity check for UI 
       const daysSince = p.last_active ? (Date.now() - new Date(p.last_active).getTime()) / (1000 * 60 * 60 * 24) : 999
       if (daysSince > MAX_STALE_DAYS) continue
 
       const rankingData = candidateRankings.find(r => r.user_id === p.id) || null
       
-      // Core Match Relevance (Contextual overlap)
       const compatScore = scoreCompatibility(
         theyCanGiveMe,
         iCanGiveThem,
@@ -278,30 +312,26 @@ serve(async (req: Request) => {
         myDuplicates.length
       )
       const mutScore = scoreMutuality(theyCanGiveMe, iCanGiveThem)
-      
-      // Tiebreakers: global rank & distance
       const globalRankScore = scoreRanking(rankingData)
       const distScore = scoreDistance(distKm)
       
-      // FORMULA: Contextual Relevance (60%) + Distance (20%) + Global User Rank (20%)
-      const contextualScore = compatScore + mutScore // max 60 (35 + 25)
-      const distanceWeighted = (distScore / 15) * 20 // max 20
-      const rankWeighted = (globalRankScore / 100) * 20 // max 20
+      const contextualScore = compatScore + mutScore
+      const distanceWeighted = (distScore / 15) * 20
+      const rankWeighted = (globalRankScore / 100) * 20
       
       let rawScore = contextualScore + distanceWeighted + rankWeighted
-
-      // Apply Boost Multiplier (up to 1.20x max, never replacing relevance)
       const boostMultiplier = rankingData?.premium_boost_applied > 1.0 ? rankingData.premium_boost_applied : 1.0
       rawScore = rawScore * boostMultiplier
       
       const finalScore = Math.max(0, Math.min(100, Math.round(rawScore * 100) / 100))
-
-      // QT-5: minimum score floor
       if (finalScore < SCORE_FLOOR) continue
 
       const isMutual = theyCanGiveMe.length > 0 && iCanGiveThem.length > 0
 
-      // Build safe profile — NEVER include lat, lng, email (S-3, S-4)
+      // APPROXIMATE point for map view (NEVER raw lat/lng)
+      const approxPoint = getApproximatePoint(pLoc?.latitude ?? null, pLoc?.longitude ?? null, p.id)
+
+      // Safe profile with NO raw lat/lng or sensitive columns
       const safeProfile = {
         id: p.id,
         name: p.name,
@@ -310,6 +340,7 @@ serve(async (req: Request) => {
         plan_name: p.plan_name,
         department: p.department,
         city: p.city,
+        neighborhood: p.neighborhood,
         last_active: p.last_active,
         badges: rankingData?.badges || [],
       }
@@ -323,10 +354,11 @@ serve(async (req: Request) => {
         isMutual,
         distance: distKm === Infinity ? null : Math.round(distKm * 10) / 10,
         distanceLabel: distanceLabel(distKm),
+        approx_point: approxPoint,
         isActive: daysSince <= 7,
         daysSinceActive: daysSince,
         score: finalScore,
-        isTopMatch: false, // set after sort
+        isTopMatch: false,
         planBoostApplied: boostMultiplier > 1.0,
         badges: rankingData?.badges || [],
         _scoreBreakdown: {
@@ -339,23 +371,18 @@ serve(async (req: Request) => {
       })
     }
 
-    // 7. Rank by score descending
     results.sort((a, b) => {
       if (b.score !== a.score) return b.score - a.score
-      // Tiebreaker: more recent activity wins
       return a.daysSinceActive - b.daysSinceActive
     })
 
-    // 8. Apply Top Match badge to rank #1
     if (results.length > 0) {
       results[0].isTopMatch = true
     }
 
-    // 9. Apply plan-based result limit (server-side enforcement — ME rule)
     const limitedResults =
       maxResults === Infinity ? results : results.slice(0, maxResults)
 
-    // Strip _scoreBreakdown in production (keep for admin debugging if needed)
     const isProd = Deno.env.get("ENVIRONMENT") === "production"
     const finalResults = isProd
       ? limitedResults.map(({ _scoreBreakdown: _, ...rest }) => rest)

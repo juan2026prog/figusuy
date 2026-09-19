@@ -11,6 +11,7 @@ import { useToast } from '../components/Toast'
 import { LiveBadge, LiveFeed } from '../components/LiveMomentum'
 import { useLiveMomentum } from '../hooks/useLiveMomentum'
 import GamificationIcon from '../components/gamification/icons/GamificationIcon'
+import FigusMap from '../components/FigusMap'
 
 export default function Stores() {
   const toast = useToast()
@@ -585,20 +586,38 @@ export default function Stores() {
 
           <aside className={`sf-map-side ${mobileView === 'list' ? 'mobile-hidden' : ''}`}>
             <section className="sf-map-card">
-              <h3>Mapa Interactivo</h3>
-              <div className="sf-map-frame">
-                <iframe
-                  loading="lazy"
-                  allowFullScreen
-                  referrerPolicy="no-referrer-when-downgrade"
-                  src={selectedLoc 
-                    ? `https://maps.google.com/maps?q=${selectedLoc.lat && selectedLoc.lng ? `${selectedLoc.lat},${selectedLoc.lng}` : encodeURIComponent((selectedLoc.address || '') + ' ' + (selectedLoc.name || ''))}&t=&z=15&ie=UTF8&iwloc=&output=embed`
-                    : `https://maps.google.com/maps?q=${selectedDepartment !== 'Todos' ? encodeURIComponent(selectedDepartment + ', Uruguay') : 'Montevideo, Uruguay'}&t=&z=12&ie=UTF8&iwloc=&output=embed`
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                <h3 style={{ margin: 0 }}>Mapa de Lugares</h3>
+                <span className="sf-count-pill">{sortedPoints.filter(p => p.lat && p.lng).length} puntos</span>
+              </div>
+              <div className="sf-map-frame" style={{ height: '420px', borderRadius: '10px', overflow: 'hidden' }}>
+                <FigusMap
+                  height="100%"
+                  center={selectedLoc?.lat && selectedLoc?.lng ? [selectedLoc.lat, selectedLoc.lng] : (userCoords ? [userCoords.lat, userCoords.lng] : [-34.9011, -56.1645])}
+                  zoom={selectedLoc ? 15 : 12}
+                  items={sortedPoints
+                    .filter(loc => loc.lat && loc.lng)
+                    .map(loc => {
+                      const isEx = permitsExchange(loc)
+                      return {
+                        id: loc.id,
+                        lat: loc.lat,
+                        lng: loc.lng,
+                        title: loc.name,
+                        subtitle: loc.address || loc.neighborhood || '',
+                        details: isEx ? 'Punto de intercambio' : 'Tienda aliada',
+                        type: isEx ? 'safe_point' : 'store',
+                        actionLabel: 'Ver detalle',
+                        raw: loc
+                      }
+                    })
                   }
-                ></iframe>
+                  selectedItemId={selectedLoc?.id}
+                  onItemSelect={(item) => setSelectedLoc(item.raw)}
+                />
               </div>
               {selectedLoc && (
-                <div className="sf-map-selected">
+                <div className="sf-map-selected" style={{ marginTop: '12px' }}>
                   <b>{selectedLoc.name}</b>
                   <span>
                     {selectedLoc.address} 

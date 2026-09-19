@@ -8,29 +8,33 @@ import { usePremiumAccess } from '../hooks/usePremiumAccess'
 import LocationSelector from '../components/LocationSelector'
 import { LiveBadge, LiveFeed } from '../components/LiveMomentum'
 import { useLiveMomentum } from '../hooks/useLiveMomentum'
+import FigusMap from '../components/FigusMap'
 
 const TABS = [
-  { id: 'all',     label: 'Todos' },
-  { id: 'mutual',  label: 'Mutuos' },
-  { id: 'near',    label: 'Cercanos' },
+  { id: 'all',       label: 'Todos' },
+  { id: 'mutual',    label: 'Mutuos' },
+  { id: 'near',      label: 'Cercanos' },
   { id: 'favorites', label: 'Favoritos' },
-  { id: 'best',    label: 'Mejores' },
+  { id: 'best',      label: 'Mejores' },
 ]
 
 export default function MatchesPage() {
-  const navigate   = useNavigate()
+  const navigate = useNavigate()
   const { profile, planRules } = useAuthStore()
   const { matches, matchesLoading, findMatches, selectedAlbum, missingStickers, duplicateStickers, createOrGetChat } = useAppStore()
   const { favoriteIds } = useFavoritesStore()
   const [tab, setTab] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
+  const [viewMode, setViewMode] = useState('list') // 'list' | 'map'
+  const [selectedMatch, setSelectedMatch] = useState(null)
+
   const { summary, feed, nearMatchesCount, mutualMatchesCount } = useLiveMomentum({
     matches,
     missingCount: missingStickers.length,
     duplicateCount: duplicateStickers.length,
   })
 
-  const hasLocation = !!(profile?.lat && profile?.lng)
+  const hasLocation = !!(profile?.department || profile?.neighborhood || profile?.location_source === 'gps')
 
   const handleRefresh = () => {
     if (profile?.id && selectedAlbum?.id) {
@@ -49,7 +53,7 @@ export default function MatchesPage() {
     }
   }, [profile?.id, selectedAlbum?.id])
 
-  // ── Tab Filtering + Sorting + Search ───────────────────────────────
+  // Tab Filtering + Sorting + Search
   const filteredMatches = (() => {
     let list = [...matches]
     switch (tab) {
@@ -60,7 +64,7 @@ export default function MatchesPage() {
         list = list.filter(m => favoriteIds.has(m.userId || m.profile?.id))
         break
       case 'near':
-        if (!hasLocation) return list  // fallback: score sort
+        if (!hasLocation) return list
         list = list
           .filter(m => m.distance !== null)
           .sort((a, b) => (a.distance ?? Infinity) - (b.distance ?? Infinity))
@@ -73,14 +77,14 @@ export default function MatchesPage() {
         })
         break
       default:
-        break // already sorted by score from API
+        break
     }
 
     if (searchQuery.trim()) {
       const q = searchQuery.trim().toLowerCase()
       list = list.filter(m => {
         const name = (m.profile?.name || m.name || '').toLowerCase()
-        const location = (m.profile?.city || m.profile?.department || '').toLowerCase()
+        const location = (m.profile?.city || m.profile?.department || m.profile?.neighborhood || '').toLowerCase()
         const gives = m.theyCanGiveMe || []
         const takes = m.iCanGiveThem || []
         const hasSticker = gives.some(s => String(s).toLowerCase().includes(q)) || takes.some(s => String(s).toLowerCase().includes(q))
@@ -90,15 +94,6 @@ export default function MatchesPage() {
 
     return list
   })()
-
-  const { isPremium, planName: rawPlanName } = usePremiumAccess()
-  const planName = rawPlanName.toLowerCase()
-  const isPro      = planName.includes('pro')
-  const isPlus     = planName.includes('plus')
-
-  const handleGeoUpdate = () => {
-    // handled by LocationSelector now
-  }
 
   const handleOpenChat = async (otherUserId) => {
     if (!profile?.id || !selectedAlbum?.id || !otherUserId) return
@@ -112,13 +107,30 @@ export default function MatchesPage() {
 
   const topMatch = tab === 'all' && filteredMatches.length > 0 ? filteredMatches[0] : null;
 
+  // Map markers for Matches with approximate points
+  const mapItems = filteredMatches
+    .filter(m => m.approx_point?.lat && m.approx_point?.lng)
+    .map(m => {
+      const p = m.profile || {}
+      const area = [p.neighborhood, p.city, p.department].filter(Boolean).join(', ') || 'Uruguay'
+      return {
+        id: m.userId || p.id,
+        lat: m.approx_point.lat,
+        lng: m.approx_point.lng,
+        title: p.name || 'Coleccionista',
+        subtitle: `Zona aproximada: ${area}`,
+        details: `Te da: ${m.theyCanGiveMe?.length || 0} · Le das: ${m.iCanGiveThem?.length || 0} ${m.distanceLabel ? `(${m.distanceLabel})` : ''}`,
+        type: 'person',
+        actionLabel: 'Ver Match',
+        raw: m
+      }
+    })
+
   return (
     <div className="page matches-page">
-      
-
       <header className="topbar">
         <div>
-          <div className="top-kicker">́lbum activo · {selectedAlbum?.name || '́lbum'}</div>
+          <div className="top-kicker">Álbum activo · {selectedAlbum?.name || 'Álbum'}</div>
           <div className="top-title">Intercambios</div>
           <div className="top-live">
             <LiveBadge tone="orange" pulse>{summary.activeNow} activos ahora</LiveBadge>
@@ -145,7 +157,7 @@ export default function MatchesPage() {
             <div className="hero-stats">
               <div className="hero-stat orange"><b>{matches.length}</b><span>Oportunidades activas</span></div>
               <div className="hero-stat green"><b>{matches.filter(m => m.isMutual).length}</b><span>Cierran más rápido</span></div>
-              <div className="hero-stat blue"><b>{matches.filter(m => m.distance !== null).length}</b><span>Con cercan̓­a hoy</span></div>
+              <div className="hero-stat blue"><b>{matches.filter(m => m.distance !== null).length}</b><span>Con cercanía hoy</span></div>
               <div className="hero-stat yellow">
                 <b>{matches.length > 0 && matches[0]._scoreBreakdown?.compatibility ? Math.round(matches[0]._scoreBreakdown.compatibility) : '-'}</b>
                 <span>Fuerza del mejor cruce</span>
@@ -238,10 +250,33 @@ export default function MatchesPage() {
                 )}
               </div>
             </div>
-            <div className="refresh-box">
+            
+            {/* View Mode Toggle: Lista vs Mapa */}
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <div className="view-mode-toggle" style={{ display: 'flex', background: 'var(--panel2, #1e293b)', padding: '4px', borderRadius: '8px', border: '1px solid var(--color-border, #334155)' }}>
+                <button
+                  type="button"
+                  className={`btn btn-sm ${viewMode === 'list' ? 'orange' : ''}`}
+                  style={{ padding: '6px 12px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '4px' }}
+                  onClick={() => setViewMode('list')}
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>format_list_bulleted</span>
+                  Lista
+                </button>
+                <button
+                  type="button"
+                  className={`btn btn-sm ${viewMode === 'map' ? 'orange' : ''}`}
+                  style={{ padding: '6px 12px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '4px' }}
+                  onClick={() => setViewMode('map')}
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>map</span>
+                  Mapa
+                </button>
+              </div>
               <button className="btn orange" onClick={handleRefresh} disabled={matchesLoading}>🔄 Actualizar</button>
             </div>
           </div>
+
           <div className="tabs">
             {TABS.map(t => (
               <button 
@@ -286,90 +321,124 @@ export default function MatchesPage() {
           )}
         </section>
 
-        <section className="layout">
-          <div>
-            <div className="section-title">
+        {viewMode === 'map' ? (
+          <section className="matches-map-section" style={{ marginBottom: '24px' }}>
+            <div style={{ marginBottom: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
-                <div className="kicker">Ranking</div>
-                <h2>Mejores oportunidades</h2>
-                <p>Priorizá los matches con más valor real para tu álbum.</p>
+                <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 'bold' }}>Mapa de Coleccionistas</h3>
+                <p style={{ margin: 0, fontSize: '0.8rem', opacity: 0.8 }}>
+                  🔒 <b>Zonas aproximadas:</b> Por seguridad y privacidad, solo mostramos círculos con radio de barrio (~800m).
+                </p>
               </div>
-              <span className="count-pill">{filteredMatches.length} resultados</span>
+              <span className="count-pill">{mapItems.length} en mapa</span>
             </div>
-            <div className="main-stack">
-              {matchesLoading ? (
-                <div className="empty">
-                  <div className="empty-icon">⏳</div>
-                  <h3>Buscando...</h3>
-                  <p>Encontrando las mejores oportunidades para tu álbum.</p>
-                </div>
-              ) : !selectedAlbum ? (
-                <div className="empty">
-                  <div className="empty-icon">📖</div>
-                  <h3>Seleccioná un álbum</h3>
-                  <p>Necesitas un álbum activo para buscar intercambios.</p>
-                  <button className="btn orange" onClick={() => navigate('/album')}>Ir al ́lbum</button>
-                </div>
-              ) : missingStickers.length === 0 && duplicateStickers.length === 0 ? (
-                <div className="empty">
-                  <div className="empty-icon">🏷️</div>
-                  <h3>No tenés figuritas marcadas</h3>
-                  <p>Marcá tus faltantes y repetidas para encontrar intercambios.</p>
-                  <button className="btn orange" onClick={() => navigate('/album')}>Ir al ́lbum</button>
-                </div>
-              ) : filteredMatches.length === 0 ? (
-                <div className="empty">
-                  <div className="empty-icon">🔍</div>
-                  <h3>No hay resultados</h3>
-                  <p>
-                    {tab === 'mutual'
-                      ? 'No tenés intercambios mutuos todavía.'
-                      : tab === 'near'
-                      ? 'No se encontraron intercambios cercanos.'
-                      : 'No se encontraron intercambios para este álbum.'}
-                  </p>
-                </div>
-              ) : (
-                filteredMatches.map((match, idx) => (
-                  <MatchCard
-                    key={match.userId || match.profile?.id}
-                    match={match}
-                    idx={idx}
-                    isTopMatch={tab === 'all' && idx === 0 && match.isTopMatch}
-                  />
-                ))
-              )}
-            </div>
-          </div>
-          
-          <aside className="side-stack">
-            <section className="side-card side-cta">
-              <h3>Tu mejor jugada</h3>
-              <p>Empezá por los matches mutuos: son los que tienen más chances de cerrar rápido.</p>
-              <button className="btn" onClick={() => setTab('mutual')}>Ver mutuos</button>
-            </section>
-            <LiveFeed title="Ahora en FigusUY" items={feed} refreshedAt={summary.refreshedAt} />
-            <section className="side-card">
-              <h3>Score</h3>
-              <div className="side-row"><span>Compatibilidad</span><b>figuritas</b></div>
-              <div className="side-row"><span>Cercanía</span><b>zona</b></div>
-              <div className="side-row"><span>Reciprocidad</span><b>mutuo</b></div>
-              <div className="side-row"><span>Actividad</span><b>respuesta</b></div>
-            </section>
-            {!hasLocation && (
-              <section className="side-card location-warning">
-                <h3>Ubicación</h3>
-                <p>Activá tu zona para ordenar mejor los matches cercanos. Nunca mostramos tu ubicación exacta.</p>
-                <button className="btn location-selector-btn" style={{marginTop: '14px', width: '100%'}} onClick={() => setTab('near')}>Configurar ubicación</button>
-              </section>
-            )}
-            <section className="side-card">
-              <h3>Consejo</h3>
-              <p>Un match con menos figuritas pero más cerca puede ser mejor que uno grande y difícil de coordinar.</p>
-            </section>
-          </aside>
-        </section>
 
+            <FigusMap
+              height="450px"
+              items={mapItems}
+              selectedItemId={selectedMatch?.userId || selectedMatch?.profile?.id}
+              onItemSelect={(item) => setSelectedMatch(item.raw)}
+            />
+
+            {selectedMatch && (
+              <div style={{ marginTop: '16px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <span style={{ fontSize: '0.85rem', fontWeight: 'bold', color: '#f97316' }}>Coleccionista seleccionado:</span>
+                  <button className="btn btn-sm" onClick={() => setSelectedMatch(null)}>Cerrar detalle</button>
+                </div>
+                <MatchCard
+                  match={selectedMatch}
+                  idx={0}
+                  isTopMatch={false}
+                />
+              </div>
+            )}
+          </section>
+        ) : (
+          <section className="layout">
+            <div>
+              <div className="section-title">
+                <div>
+                  <div className="kicker">Ranking</div>
+                  <h2>Mejores oportunidades</h2>
+                  <p>Priorizá los matches con más valor real para tu álbum.</p>
+                </div>
+                <span className="count-pill">{filteredMatches.length} resultados</span>
+              </div>
+              <div className="main-stack">
+                {matchesLoading ? (
+                  <div className="empty">
+                    <div className="empty-icon">⏳</div>
+                    <h3>Buscando...</h3>
+                    <p>Encontrando las mejores oportunidades para tu álbum.</p>
+                  </div>
+                ) : !selectedAlbum ? (
+                  <div className="empty">
+                    <div className="empty-icon">📖</div>
+                    <h3>Seleccioná un álbum</h3>
+                    <p>Necesitas un álbum activo para buscar intercambios.</p>
+                    <button className="btn orange" onClick={() => navigate('/album')}>Ir al álbum</button>
+                  </div>
+                ) : missingStickers.length === 0 && duplicateStickers.length === 0 ? (
+                  <div className="empty">
+                    <div className="empty-icon">🏷️</div>
+                    <h3>No tenés figuritas marcadas</h3>
+                    <p>Marcá tus faltantes y repetidas para encontrar intercambios.</p>
+                    <button className="btn orange" onClick={() => navigate('/album')}>Ir al álbum</button>
+                  </div>
+                ) : filteredMatches.length === 0 ? (
+                  <div className="empty">
+                    <div className="empty-icon">🔍</div>
+                    <h3>No hay resultados</h3>
+                    <p>
+                      {tab === 'mutual'
+                        ? 'No tenés intercambios mutuos todavía.'
+                        : tab === 'near'
+                        ? 'No se encontraron intercambios cercanos.'
+                        : 'No se encontraron intercambios para este álbum.'}
+                    </p>
+                  </div>
+                ) : (
+                  filteredMatches.map((match, idx) => (
+                    <MatchCard
+                      key={match.userId || match.profile?.id}
+                      match={match}
+                      idx={idx}
+                      isTopMatch={tab === 'all' && idx === 0 && match.isTopMatch}
+                    />
+                  ))
+                )}
+              </div>
+            </div>
+            
+            <aside className="side-stack">
+              <section className="side-card side-cta">
+                <h3>Tu mejor jugada</h3>
+                <p>Empezá por los matches mutuos: son los que tienen más chances de cerrar rápido.</p>
+                <button className="btn" onClick={() => setTab('mutual')}>Ver mutuos</button>
+              </section>
+              <LiveFeed title="Ahora en FigusUY" items={feed} refreshedAt={summary.refreshedAt} />
+              <section className="side-card">
+                <h3>Score</h3>
+                <div className="side-row"><span>Compatibilidad</span><b>figuritas</b></div>
+                <div className="side-row"><span>Cercanía</span><b>zona</b></div>
+                <div className="side-row"><span>Reciprocidad</span><b>mutuo</b></div>
+                <div className="side-row"><span>Actividad</span><b>respuesta</b></div>
+              </section>
+              {!hasLocation && (
+                <section className="side-card location-warning">
+                  <h3>Ubicación</h3>
+                  <p>Activá tu zona para ordenar mejor los matches cercanos. Nunca mostramos tu ubicación exacta.</p>
+                  <button className="btn location-selector-btn" style={{marginTop: '14px', width: '100%'}} onClick={() => setTab('near')}>Configurar ubicación</button>
+                </section>
+              )}
+              <section className="side-card">
+                <h3>Consejo</h3>
+                <p>Un match con menos figuritas pero más cerca puede ser mejor que uno grande y difícil de coordinar.</p>
+              </section>
+            </aside>
+          </section>
+        )}
       </main>
     </div>
   )
