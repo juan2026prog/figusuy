@@ -23,6 +23,7 @@ export default function MatchesPage() {
   const { matches, matchesLoading, findMatches, selectedAlbum, missingStickers, duplicateStickers, createOrGetChat } = useAppStore()
   const { favoriteIds } = useFavoritesStore()
   const [tab, setTab] = useState('all')
+  const [searchQuery, setSearchQuery] = useState('')
   const { summary, feed, nearMatchesCount, mutualMatchesCount } = useLiveMomentum({
     matches,
     missingCount: missingStickers.length,
@@ -48,7 +49,7 @@ export default function MatchesPage() {
     }
   }, [profile?.id, selectedAlbum?.id])
 
-  // ── Tab Filtering + Sorting ───────────────────────────────
+  // ── Tab Filtering + Sorting + Search ───────────────────────────────
   const filteredMatches = (() => {
     let list = [...matches]
     switch (tab) {
@@ -74,6 +75,19 @@ export default function MatchesPage() {
       default:
         break // already sorted by score from API
     }
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase()
+      list = list.filter(m => {
+        const name = (m.profile?.name || m.name || '').toLowerCase()
+        const location = (m.profile?.city || m.profile?.department || '').toLowerCase()
+        const gives = m.theyCanGiveMe || []
+        const takes = m.iCanGiveThem || []
+        const hasSticker = gives.some(s => String(s).toLowerCase().includes(q)) || takes.some(s => String(s).toLowerCase().includes(q))
+        return name.includes(q) || location.includes(q) || hasSticker
+      })
+    }
+
     return list
   })()
 
@@ -191,7 +205,16 @@ export default function MatchesPage() {
               </div>
               <div className="top-actions-grid">
                 <button className="btn orange" onClick={() => handleOpenChat(topMatch.userId || topMatch.profile?.id)}>Abrir chat</button>
-                <button className="btn" disabled style={{ opacity: 0.5 }}>Ver perfil</button>
+                <button 
+                  className="btn" 
+                  onClick={() => {
+                    const username = topMatch.profile?.username
+                    if (username) navigate(`/u/${username}`)
+                    else navigate('/profile')
+                  }}
+                >
+                  Ver perfil
+                </button>
               </div>
             </aside>
           )}
@@ -201,9 +224,18 @@ export default function MatchesPage() {
           <div className="controls-top">
             <div className="search-box">
               <label>Buscar match</label>
-              <div className="search-line">
-                <input placeholder="Buscar usuario, figurita o zona..." />
-                <button className="btn orange" disabled>Buscar</button>
+              <div className="search-line" style={{ display: 'flex', gap: '0.5rem' }}>
+                <input 
+                  placeholder="Buscar usuario, figurita o zona..." 
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  style={{ fontSize: '16px' }}
+                />
+                {searchQuery && (
+                  <button className="btn btn-sm" onClick={() => setSearchQuery('')} style={{ minHeight: '44px', padding: '0 12px' }}>
+                    Limpiar
+                  </button>
+                )}
               </div>
             </div>
             <div className="refresh-box">

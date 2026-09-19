@@ -281,7 +281,7 @@ h1, h2, h3, h4, h5, h6 {
   max-width: 100%;
 }
 
-@media (min-width: 768px) {
+@media (min-width: 1024px) {
   .app-sidebar-wrapper {
     display: block;
     width: 208px;
@@ -510,7 +510,7 @@ h1, h2, h3, h4, h5, h6 {
   padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
 }
 
-@media (min-width: 768px) {
+@media (min-width: 1024px) {
   .bottom-nav {
     display: none;
   }

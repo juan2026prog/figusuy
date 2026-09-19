@@ -16,26 +16,20 @@ export default function Sidebar() {
 
   const isFeatureEnabled = useFeatureFlagStore(state => state.isFeatureEnabled)
 
-  let navItems = [
+  const navItems = [
+    { path: '/home', icon: 'home', label: 'Inicio' },
     { path: '/album', icon: 'menu_book', label: 'Álbumes', feature: 'album' },
     { path: '/matches', icon: 'swap_horiz', label: 'Intercambios', badge: matchCount },
     { path: '/chats', icon: 'chat', label: 'Chats', badge: unreadChats, feature: 'chats' },
+    { path: '/stores', icon: 'location_on', label: 'Lugares' },
     { path: '/favorites', icon: 'favorite', label: 'Favoritos' },
     { path: '/achievements', icon: 'military_tech', label: 'Mis Logros' },
     { path: '/referidos', icon: 'group_add', label: 'Invitar Amigos' },
-    { path: '/stores', icon: 'location_on', label: 'Lugares' },
     { path: '/premium', icon: 'workspace_premium', label: 'Premium' },
     ...(profile?.role === 'influencer' ? [{ path: '/influencer/dashboard', icon: 'campaign', label: 'Mi campaña' }] : []),
     ...(canAccessBusinessDashboard(profile) ? [{ path: '/business', icon: 'storefront', label: 'Mi local' }] : []),
     { path: '/profile', icon: 'person', label: 'Perfil' },
   ].filter(item => !item.feature || isFeatureEnabled(item.feature))
-
-  if (profile?.role === 'influencer') {
-    navItems = [
-      { path: '/influencer/dashboard', icon: 'campaign', label: 'Mi campaña' },
-      { path: '/profile', icon: 'person', label: 'Mi Perfil' },
-    ]
-  }
 
   return (
     <aside className="app-sidebar" style={{ position: 'fixed', left: 0, top: 0, height: '100vh', zIndex: 50 }}>

@@ -28,6 +28,7 @@ export default function Stores() {
   const [locationPromos, setLocationPromos] = useState({})
   const [activePromoModal, setActivePromoModal] = useState(null)
   const [activePromoLocation, setActivePromoLocation] = useState(null)
+  const [mobileView, setMobileView] = useState('list') // 'list' or 'map'
 
   // Location filters
   const [selectedDepartment, setSelectedDepartment] = useState('Todos')
@@ -350,10 +351,30 @@ export default function Stores() {
             <button className={`sf-tab ${tab === 'store' ? 'sf-active' : ''}`} onClick={() => setTab('store')}>Solo tiendas</button>
             <button className={`sf-tab ${tab === 'featured' ? 'sf-active' : ''}`} onClick={() => setTab('featured')}>⭐ Destacados</button>
           </div>
+
+          {/* Mobile View Toggle: Lista vs Mapa */}
+          <div className="sf-mobile-view-toggle" style={{ display: 'none', gap: '6px', marginTop: '10px' }}>
+            <button 
+              className={`sf-tab ${mobileView === 'list' ? 'sf-active' : ''}`} 
+              style={{ flex: 1, padding: '10px', fontSize: '0.85rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+              onClick={() => setMobileView('list')}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>format_list_bulleted</span>
+              Lista ({sortedPoints.length})
+            </button>
+            <button 
+              className={`sf-tab ${mobileView === 'map' ? 'sf-active' : ''}`} 
+              style={{ flex: 1, padding: '10px', fontSize: '0.85rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+              onClick={() => setMobileView('map')}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>map</span>
+              Ver en Mapa
+            </button>
+          </div>
         </section>
 
         <section className="sf-layout">
-          <div>
+          <div className={`sf-list-column ${mobileView === 'map' ? 'mobile-hidden' : ''}`}>
             <div className="sf-section-title">
               <div>
                 <div className="sf-top-kicker">// PointScore Ranking</div>
@@ -562,7 +583,7 @@ export default function Stores() {
             </div>
           </div>
 
-          <aside className="sf-map-side">
+          <aside className={`sf-map-side ${mobileView === 'list' ? 'mobile-hidden' : ''}`}>
             <section className="sf-map-card">
               <h3>Mapa Interactivo</h3>
               <div className="sf-map-frame">

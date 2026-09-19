@@ -92,7 +92,7 @@ body {
 }
 
 /* === BOTTOM NAV SAFE AREA === */
-@media (max-width: 768px) {
+@media (max-width: 1023px) {
   .bottom-nav {
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }

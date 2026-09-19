@@ -51,6 +51,8 @@ describe('Achievement Definitions', () => {
       'coleccion',
       'comunidad',
       'growth',
+      'impacto',
+      'curacion',
       'partner',
     ])
   })

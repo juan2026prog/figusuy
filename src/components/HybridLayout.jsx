@@ -16,7 +16,7 @@ export default function HybridLayout() {
   }
 
   return (
-    <div className="app-layout" style={{ height: '100vh', overflow: 'hidden' }}>
+    <div className="app-layout" style={{ height: '100dvh', minHeight: '100vh', overflow: 'hidden' }}>
       <div className="app-sidebar-wrapper">
         <Sidebar />
       </div>

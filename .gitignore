@@ -28,5 +28,11 @@ dist-ssr
 supabase/.temp/
 .vercel
 
+# Playwright test artifacts
+test-results/
+playwright-report/
+blob-report/
+
 recursos/Google Auth credencials
 recursos/errores
+

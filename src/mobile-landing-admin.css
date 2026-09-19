@@ -275,8 +275,8 @@
   /* Album page 360px */
   .album-page-v2 .album-hero-copy h1 { font-size: 1.4rem; }
   .album-page-v2 .state-card strong { font-size: 1.3rem; }
-  .album-page-v2 .stickers-grid { grid-template-columns: repeat(auto-fill, minmax(34px, 1fr)) !important; }
-  .album-page-v2 .sticker-cell { width: 34px; height: 34px; font-size: 0.62rem; }
+  .album-page-v2 .stickers-grid { grid-template-columns: repeat(auto-fill, minmax(44px, 1fr)) !important; gap: 5px !important; }
+  .album-page-v2 .sticker-cell { width: auto; min-width: 44px; min-height: 44px; font-size: 0.85rem; }
 }
 
 /* ═══════════════════════════════════════════

@@ -1045,213 +1045,95 @@ export default function AlbumPage() {
         </div>
       </section>
 
-      <section className="album-middle-panels animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
-        <div className="album-panel album-state-panel">
-          <span className="album-kicker">ESTADO DEL ́LBUM</span>
-          <div className="album-state-grid">
-            <div className="state-card have">
-              <strong>{ownedCount}</strong>
-              <span>TENGO</span>
-            </div>
-            <div className="state-card duplicate">
-              <strong>{duplicateCount}</strong>
-              <span>REPETIDAS</span>
-            </div>
-            <div className="state-card missing">
-              <strong>{missingCount}</strong>
-              <span>FALTANTES</span>
-            </div>
-            <div className="state-card">
-              <strong>{progressPercent}%</strong>
-              <span>COMPLETO</span>
-            </div>
-          </div>
-          
-          <div className="album-category-bars">
-            <div className="category-bar">
-              <div className="category-bar-head"><span>BASE</span><span>{progressPercent}%</span></div>
-              <div className="progress-bar progress-bar-v2"><div className="progress-fill" style={{ width: `${progressPercent}%` }} /></div>
-            </div>
-            <div className="category-bar">
-              <div className="category-bar-head"><span>ESPECIALES</span><span>{Math.round(progressPercent * 0.8)}%</span></div>
-              <div className="progress-bar progress-bar-v2"><div className="progress-fill" style={{ width: `${Math.round(progressPercent * 0.8)}%` }} /></div>
-            </div>
-            <div className="category-bar">
-              <div className="category-bar-head"><span>LEYENDAS</span><span>{Math.round(progressPercent * 0.4)}%</span></div>
-              <div className="progress-bar progress-bar-v2"><div className="progress-fill" style={{ width: `${Math.round(progressPercent * 0.4)}%` }} /></div>
-            </div>
-          </div>
-        </div>
-
-        <div className="album-panel album-opportunity-panel">
-          <div className="opportunity-head">
-            <span className="album-kicker">QUÉ CONVIENE HACER</span>
-            <h2>OPORTUNIDAD AHORA</h2>
-            <p>Tenés {nearMatchesCount || 0} cruces muy fuertes cerca y un usuario que puede cerrarte {mutualMatchesCount || 0} hoy.</p>
-          </div>
-          
-          <div className="opportunity-cards">
-            <div className="opp-card highlight">
-              <strong>{mutualMatchesCount || 0}</strong>
-              <span>TE PUEDE DAR HOY</span>
-            </div>
-            <div className="opp-card">
-              <strong>{Math.round((mutualMatchesCount || 0) / 1.5) || 0}</strong>
-              <span>MUTUOS LISTOS</span>
-            </div>
-            <div className="opp-card">
-              <strong>{nearMatchesCount || 0}</strong>
-              <span>CRUCES CERCA</span>
-            </div>
-            <div className="opp-card">
-              <strong>Match</strong>
-              <span>MEJOR MATCH AHORA</span>
-            </div>
-          </div>
-          <button className="album-primary-btn w-full" onClick={nextAction.action}>ABRIR MEJOR MATCH</button>
-        </div>
-      </section>
-
-      {!loadingActivities && liveActivities.length > 0 && (
-        <section className="album-live-feed-strip">
-          <span className="album-kicker">AHORA EN FIGUSUY</span>
-          <div className="live-feed-grid">
-            {liveActivities.map((activity) => (
-              <div key={activity.id} className="live-feed-card">
-                <strong>{activity.title}</strong>
-                <p>{activity.desc} {formatRelativeTime(activity.date)}.</p>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      <div className="album-workspace animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
+      <div className="album-workspace animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
         <div className="album-editor-column">
-          <section className="album-panel album-tools-panel">
-            <div className="album-tools-copy">
-              <span className="album-kicker">Carga rapida</span>
-              <h2>Actualiza figuritas sin salir del tablero</h2>
-              <p>Pega numeros separados por coma o espacio y se cargaran segun el modo actual.</p>
-            </div>
-            <div className="album-bulk-form">
-              <input
-                placeholder="Ej: 10, 45, 89, M1"
-                value={bulkInput}
-                onChange={(event) => setBulkInput(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter') handleBulkAdd()
-                }}
-              />
-              <button className="album-primary-btn" onClick={handleBulkAdd}>Guardar</button>
-            </div>
-          </section>
-
-          <section className="album-panel">
-            <div className="album-section-head">
-              <div>
-                <span className="album-kicker">Modo de carga</span>
-                <h2>Define como quieres recorrer el album</h2>
-              </div>
-            </div>
-
-            <div className="modes-grid modes-grid-v2 stagger-children">
+          {/* Mode Selector (Tengo, Repetida, Faltante, Borrar) */}
+          <section className="album-panel" style={{ padding: '0.875rem 1rem' }}>
+            <div className="modes-grid modes-grid-v2 stagger-children" style={{ marginBottom: 0 }}>
               {Object.entries(MODE_META).map(([key, meta]) => (
                 <button
+                  type="button"
                   key={key}
                   className={`mode-card mode-card-v2 ${key} ${mode === key ? 'active' : ''}`}
                   onClick={() => setMode(key)}
+                  aria-pressed={mode === key}
+                  style={{ minHeight: '44px' }}
                 >
-                  <small>{mode === key ? meta.eyebrow : 'Modo disponible'}</small>
+                  <small>{mode === key ? meta.eyebrow : 'Modo'}</small>
                   <b><span className="material-symbols-outlined">{meta.icon}</span>{meta.title}</b>
-                  <span>{meta.description}</span>
                 </button>
               ))}
             </div>
           </section>
 
+          {/* Sticker Grid Panel */}
           <section className="album-panel album-grid-panel">
             <div className="tabs-header album-tabs-header">
-              <div>
-                <span className="album-kicker">Explorador</span>
-                <h2>Recorre la coleccion por bloque o por estado</h2>
+              <div className="album-search-row" style={{ width: '100%', marginBottom: '0.75rem' }}>
+                <input
+                  className="album-search-input"
+                  placeholder="Buscar figurita por número, jugador..."
+                  value={searchFilter}
+                  onChange={(event) => setSearchFilter(event.target.value)}
+                  style={{ fontSize: '16px', minHeight: '44px' }}
+                />
               </div>
-              <div className="album-view-switch">
-                <button className={viewMode === 'numbers' ? 'active' : ''} onClick={() => setViewMode('numbers')}>Rapida</button>
-                {canUseChecklist ? (
-                  <button className={viewMode === 'checklist' ? 'active' : ''} onClick={() => setViewMode('checklist')}>Checklist</button>
-                ) : null}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', gap: '0.5rem' }}>
+                <div className="album-view-switch">
+                  <button className={viewMode === 'numbers' ? 'active' : ''} onClick={() => setViewMode('numbers')}>Rápida</button>
+                  {canUseChecklist ? (
+                    <button className={viewMode === 'checklist' ? 'active' : ''} onClick={() => setViewMode('checklist')}>Checklist</button>
+                  ) : null}
+                </div>
+                <div className="album-search-meta" style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)' }}>
+                  <strong>{numbers.length}</strong> <span>figus</span>
+                </div>
               </div>
             </div>
 
-            <div className="filter-tabs">
+            <div className="filter-tabs" style={{ marginBottom: '1rem' }}>
               {tabs.map((tab) => (
                 <button
+                  type="button"
                   key={tab.key}
                   className={`filter-tab ${activeTab === tab.key ? 'active' : ''}`}
                   onClick={() => setActiveTab(tab.key)}
+                  style={{ minHeight: '38px' }}
                 >
                   {tab.label}
                 </button>
               ))}
             </div>
 
-            <div className="album-search-row">
-              <input
-                className="album-search-input"
-                placeholder="Buscar por numero, nombre, equipo o pais..."
-                value={searchFilter}
-                onChange={(event) => setSearchFilter(event.target.value)}
-              />
-              <div className="album-search-meta">
-                <strong>{numbers.length}</strong>
-                <span>resultados</span>
-              </div>
-            </div>
-
             {viewMode === 'numbers' ? (
               <>
                 {shouldPaginateMobileGrid ? (
-                  <div className="mobile-grid-toolbar" style={{ background: 'rgba(255,255,255,0.03)', padding: '1.25rem', borderRadius: '1rem', marginBottom: '1.5rem', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                    <div className="mobile-grid-meta" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        <b style={{ color: 'var(--color-primary)', textTransform: 'uppercase', letterSpacing: '0.1em', fontSize: '0.875rem', fontStyle: 'italic' }}>Pagina {safeMobileGridPage + 1}</b>
-                        <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.75rem', fontWeight: 600 }}>
-                          {safeMobileGridPage * mobileGridPageSize + 1}-{Math.min((safeMobileGridPage + 1) * mobileGridPageSize, numbers.length)} de {numbers.length}
-                        </span>
-                      </div>
-                      <div style={{ background: 'rgba(249, 115, 22, 0.1)', padding: '0.35rem 0.75rem', borderRadius: '2rem', fontSize: '0.7rem', color: 'var(--color-primary)', fontWeight: 800 }}>
-                        {Math.round(((safeMobileGridPage + 1) / totalMobileGridPages) * 100)}% EXPLORADO
-                      </div>
+                  <div className="mobile-grid-toolbar-compact" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--color-surface)', padding: '0.625rem 0.875rem', borderRadius: '10px', border: '1px solid var(--color-border)', marginBottom: '1rem', gap: '0.5rem' }}>
+                    <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-text-secondary)' }}>
+                      <strong style={{ color: 'var(--color-text)', fontSize: '0.85rem' }}>
+                        {safeMobileGridPage * mobileGridPageSize + 1}–{Math.min((safeMobileGridPage + 1) * mobileGridPageSize, numbers.length)}
+                      </strong> de {numbers.length} <span style={{ opacity: 0.6 }}>· Pág. {safeMobileGridPage + 1}/{totalMobileGridPages}</span>
                     </div>
-                    <div className="mobile-grid-nav" style={{ display: 'flex', gap: '0.75rem' }}>
+                    <div className="mobile-grid-nav" style={{ display: 'flex', gap: '0.375rem' }}>
                       <button 
+                        type="button"
+                        aria-label="Página anterior"
                         onClick={() => setMobileGridPage((page) => Math.max(page - 1, 0))} 
                         disabled={safeMobileGridPage === 0}
-                        style={{ 
-                          flex: 1, padding: '1rem', borderRadius: '0.75rem', 
-                          background: 'rgba(255,255,255,0.05)', color: 'white', 
-                          border: '1px solid rgba(255,255,255,0.1)', 
-                          fontWeight: 900, fontSize: '0.8rem', letterSpacing: '0.05em',
-                          opacity: safeMobileGridPage === 0 ? 0.3 : 1,
-                          cursor: 'pointer', transition: 'all 0.2s'
-                        }}
+                        className="btn btn-sm"
+                        style={{ padding: '6px 12px', minHeight: '38px', fontSize: '0.78rem', fontWeight: 800, opacity: safeMobileGridPage === 0 ? 0.35 : 1 }}
                       >
-                        ANTERIOR
+                        Anterior
                       </button>
                       <button 
+                        type="button"
+                        aria-label="Página siguiente"
                         onClick={() => setMobileGridPage((page) => Math.min(page + 1, totalMobileGridPages - 1))} 
                         disabled={safeMobileGridPage >= totalMobileGridPages - 1}
-                        style={{ 
-                          flex: 1, padding: '1rem', borderRadius: '0.75rem', 
-                          background: 'var(--color-primary)', color: 'white', 
-                          border: 'none', fontWeight: 900, fontSize: '0.8rem', letterSpacing: '0.05em',
-                          opacity: safeMobileGridPage >= totalMobileGridPages - 1 ? 0.3 : 1,
-                          cursor: 'pointer', boxShadow: '0 4px 12px rgba(249, 115, 22, 0.3)',
-                          transition: 'all 0.2s'
-                        }}
+                        className="btn btn-sm orange"
+                        style={{ padding: '6px 12px', minHeight: '38px', fontSize: '0.78rem', fontWeight: 800, opacity: safeMobileGridPage >= totalMobileGridPages - 1 ? 0.35 : 1 }}
                       >
-                        SIGUIENTE
+                        Siguiente
                       </button>
                     </div>
                   </div>
@@ -1261,13 +1143,13 @@ export default function AlbumPage() {
                   {visibleNumbers.map((item, idx) => {
                     if (typeof item === 'object' && item.type === 'subtitle') {
                       return (
-                        <div key={`sub-${idx}`} className="grid-subtitle" style={{ gridColumn: '1 / -1', padding: '1.5rem 0.5rem 0.5rem', display: 'flex', alignItems: 'center', gap: '1rem', borderBottom: '1px solid var(--color-surface-hover)', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
-                          <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--color-primary)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>{item.label}</span>
+                        <div key={`sub-${idx}`} className="grid-subtitle" style={{ gridColumn: '1 / -1', padding: '1.25rem 0.5rem 0.5rem', display: 'flex', alignItems: 'center', gap: '1rem', borderBottom: '1px solid var(--color-surface-hover)', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
+                          <span style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--color-primary)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{item.label}</span>
                           <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
                             {item.flags?.map((f, fi) => (
                               <div key={fi} style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                                 <img src={`https://flagcdn.com/w40/${f.iso}.png`} alt={f.name} style={{ height: '12px', borderRadius: '2px', boxShadow: '0 1px 2px rgba(0,0,0,0.3)' }} />
-                                <span style={{ fontSize: '0.65rem', fontWeight: 600, color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>{f.name}</span>
+                                <span style={{ fontSize: '0.68rem', fontWeight: 600, color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>{f.name}</span>
                               </div>
                             ))}
                           </div>
@@ -1280,9 +1162,11 @@ export default function AlbumPage() {
                     const dupRow = status === 'dup' ? duplicateStickers.find(d => String(d.sticker_number) === String(num)) : null
                     const quantity = dupRow ? dupRow.quantity || 1 : 0
                     return (
-                      <div
+                      <button
+                        type="button"
                         key={num}
                         className={`sticker-cell ${status} animate-scale-in`}
+                        aria-label={`Figurita ${num}, estado ${status === 'have' ? 'tengo' : status === 'dup' ? `repetida x${quantity}` : status === 'miss' ? 'faltante' : 'sin marcar'}`}
                         style={{ animationDelay: `${(idx % 20) * 0.02}s` }}
                         onClick={() => handleToggle(num)}
                         onMouseEnter={(e) => handlePokemonHover(e, num)}
@@ -1295,11 +1179,11 @@ export default function AlbumPage() {
                         )}
                         {mode === 'duplicate' && status === 'dup' && (
                           <div className="dup-controls" onClick={(e) => e.stopPropagation()}>
-                            <button className="control-btn minus" onClick={(e) => handleDecrement(num, e)}>−</button>
-                            <button className="control-btn plus" onClick={(e) => handleIncrement(num, e)}>+</button>
+                            <button type="button" aria-label="Restar repetida" className="control-btn minus" onClick={(e) => handleDecrement(num, e)}>−</button>
+                            <button type="button" aria-label="Sumar repetida" className="control-btn plus" onClick={(e) => handleIncrement(num, e)}>+</button>
                           </div>
                         )}
-                      </div>
+                      </button>
                     )
                   })}
                 </div>
@@ -1309,13 +1193,13 @@ export default function AlbumPage() {
                 {numbers.map((item, idx) => {
                   if (typeof item === 'object' && item.type === 'subtitle') {
                     return (
-                      <div key={`sub-chk-${idx}`} className="checklist-subtitle" style={{ gridColumn: '1 / -1', padding: '2rem 1rem 0.5rem', display: 'flex', alignItems: 'center', gap: '1.5rem', borderBottom: '2px solid var(--color-surface-hover)', marginBottom: '1rem', flexWrap: 'wrap' }}>
-                        <span style={{ fontSize: '0.875rem', fontWeight: 900, color: 'var(--color-primary)', textTransform: 'uppercase', letterSpacing: '0.15em' }}>{item.label}</span>
-                        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                      <div key={`sub-chk-${idx}`} className="checklist-subtitle" style={{ gridColumn: '1 / -1', padding: '1.5rem 0.75rem 0.5rem', display: 'flex', alignItems: 'center', gap: '1rem', borderBottom: '2px solid var(--color-surface-hover)', marginBottom: '1rem', flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: '0.85rem', fontWeight: 900, color: 'var(--color-primary)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>{item.label}</span>
+                        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
                           {item.flags?.map((f, fi) => (
                             <div key={fi} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                              <img src={`https://flagcdn.com/w40/${f.iso}.png`} alt={f.name} style={{ height: '16px', borderRadius: '3px', boxShadow: '0 2px 4px rgba(0,0,0,0.4)' }} />
-                              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-text-secondary)', textTransform: 'uppercase' }}>{f.name}</span>
+                              <img src={`https://flagcdn.com/w40/${f.iso}.png`} alt={f.name} style={{ height: '14px', borderRadius: '3px', boxShadow: '0 1px 3px rgba(0,0,0,0.4)' }} />
+                              <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--color-text-secondary)', textTransform: 'uppercase' }}>{f.name}</span>
                             </div>
                           ))}
                         </div>
@@ -1355,7 +1239,7 @@ export default function AlbumPage() {
                   }
 
                   return (
-                    <div key={sticker} className={cardCls} onClick={() => handleToggle(sticker)}>
+                    <button type="button" key={sticker} className={cardCls} onClick={() => handleToggle(sticker)} style={{ textAlign: 'left', width: '100%', cursor: 'pointer', minHeight: '48px' }}>
                       <div className="checklist-img-wrapper">
                         {stickerData?.image_url ? (
                           <img src={stickerData.image_url} alt={stickerData.name || sticker} className="checklist-img" loading="lazy" />
@@ -1385,18 +1269,109 @@ export default function AlbumPage() {
                           <span className="status-text" style={{ color: statusTextCol }}>{statusText}</span>
                           {mode === 'duplicate' && isDuplicate && (
                             <div className="checklist-dup-controls" onClick={(e) => e.stopPropagation()} style={{ marginLeft: 'auto', display: 'flex', gap: '0.5rem' }}>
-                              <button className="control-btn-chk" onClick={(e) => handleDecrement(sticker, e)} style={{ padding: '2px 8px', borderRadius: '4px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', cursor: 'pointer' }}>−</button>
-                              <button className="control-btn-chk" onClick={(e) => handleIncrement(sticker, e)} style={{ padding: '2px 8px', borderRadius: '4px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', cursor: 'pointer' }}>+</button>
+                              <button type="button" aria-label="Restar repetida" className="control-btn-chk" onClick={(e) => handleDecrement(sticker, e)} style={{ padding: '2px 8px', minHeight: '32px', minWidth: '32px', borderRadius: '4px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', cursor: 'pointer' }}>−</button>
+                              <button type="button" aria-label="Sumar repetida" className="control-btn-chk" onClick={(e) => handleIncrement(sticker, e)} style={{ padding: '2px 8px', minHeight: '32px', minWidth: '32px', borderRadius: '4px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', cursor: 'pointer' }}>+</button>
                             </div>
                           )}
                         </div>
                       </div>
-                    </div>
+                    </button>
                   )
                 })}
               </div>
             )}
           </section>
+
+          {/* Quick Bulk Input Form */}
+          <section className="album-panel album-tools-panel" style={{ padding: '1rem' }}>
+            <div className="album-tools-copy" style={{ marginBottom: '0.5rem' }}>
+              <span className="album-kicker" style={{ fontSize: '0.75rem' }}>Carga rápida</span>
+              <h3 style={{ fontSize: '1rem', fontWeight: 800, margin: '2px 0' }}>Pegar números por lote</h3>
+              <p style={{ fontSize: '0.8rem', margin: 0 }}>Pegá números separados por coma o espacio para marcarlos según el modo actual ({MODE_META[mode]?.title}).</p>
+            </div>
+            <div className="album-bulk-form" style={{ marginTop: '0.5rem' }}>
+              <input
+                placeholder="Ej: 10, 45, 89, M1"
+                value={bulkInput}
+                onChange={(event) => setBulkInput(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') handleBulkAdd()
+                }}
+                style={{ fontSize: '16px', minHeight: '44px' }}
+              />
+              <button className="album-primary-btn" onClick={handleBulkAdd} style={{ minHeight: '44px' }}>Guardar lote</button>
+            </div>
+          </section>
+
+          {/* Secondary Stats and Opportunities Panels */}
+          <section className="album-middle-panels" style={{ marginTop: '1rem' }}>
+            <div className="album-panel album-state-panel">
+              <span className="album-kicker">ESTADO DE LA COLECCIÓN</span>
+              <div className="album-state-grid">
+                <div className="state-card have">
+                  <strong>{ownedCount}</strong>
+                  <span>TENGO</span>
+                </div>
+                <div className="state-card duplicate">
+                  <strong>{duplicateCount}</strong>
+                  <span>REPETIDAS</span>
+                </div>
+                <div className="state-card missing">
+                  <strong>{missingCount}</strong>
+                  <span>FALTANTES</span>
+                </div>
+                <div className="state-card">
+                  <strong>{progressPercent}%</strong>
+                  <span>COMPLETO</span>
+                </div>
+              </div>
+              
+              <div className="album-category-bars">
+                <div className="category-bar">
+                  <div className="category-bar-head"><span>BASE</span><span>{progressPercent}%</span></div>
+                  <div className="progress-bar progress-bar-v2"><div className="progress-fill" style={{ width: `${progressPercent}%` }} /></div>
+                </div>
+                <div className="category-bar">
+                  <div className="category-bar-head"><span>ESPECIALES</span><span>{Math.round(progressPercent * 0.8)}%</span></div>
+                  <div className="progress-bar progress-bar-v2"><div className="progress-fill" style={{ width: `${Math.round(progressPercent * 0.8)}%` }} /></div>
+                </div>
+              </div>
+            </div>
+
+            <div className="album-panel album-opportunity-panel">
+              <div className="opportunity-head">
+                <span className="album-kicker">CRUCES DISPONIBLES</span>
+                <h2>OPORTUNIDAD AHORA</h2>
+                <p>Tenés {nearMatchesCount || 0} cruces cerca y usuarios que pueden darte hasta {mutualMatchesCount || 0} figuritas hoy.</p>
+              </div>
+              
+              <div className="opportunity-cards">
+                <div className="opp-card highlight">
+                  <strong>{mutualMatchesCount || 0}</strong>
+                  <span>TE PUEDEN DAR HOY</span>
+                </div>
+                <div className="opp-card">
+                  <strong>{nearMatchesCount || 0}</strong>
+                  <span>CRUCES CERCA</span>
+                </div>
+              </div>
+              <button className="album-primary-btn w-full" onClick={nextAction.action} style={{ minHeight: '44px', marginTop: '0.75rem' }}>VER CRUCES ACTIVOS</button>
+            </div>
+          </section>
+
+          {!loadingActivities && liveActivities.length > 0 && (
+            <section className="album-live-feed-strip" style={{ marginTop: '1rem' }}>
+              <span className="album-kicker">ACTIVIDAD EN FIGUSUY</span>
+              <div className="live-feed-grid">
+                {liveActivities.map((activity) => (
+                  <div key={activity.id} className="live-feed-card">
+                    <strong>{activity.title}</strong>
+                    <p>{activity.desc} {formatRelativeTime(activity.date)}.</p>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
         </div>
 
         <aside className="album-sidebar album-sidebar-v2">

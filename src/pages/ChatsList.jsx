@@ -14,6 +14,7 @@ export default function ChatsListPage() {
   const [blockedUsers, setBlockedUsers] = useState([])
   const [loadingBlocked, setLoadingBlocked] = useState(false)
   const [activeTab, setActiveTab] = useState('todos')
+  const [searchQuery, setSearchQuery] = useState('')
   const { summary, feed } = useLiveMomentum({ chats })
 
   const loadBlockedUsers = async () => {
@@ -67,14 +68,23 @@ export default function ChatsListPage() {
     return chat.user_1 === profile?.id ? chat.profile2 : chat.profile1
   }
 
-  const filteredChats = chats.filter((chat, index) => {
+  const filteredChats = chats.filter((chat) => {
+    const other = getOtherUser(chat)
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase()
+      const matchesName = (other?.name || '').toLowerCase().includes(q)
+      const matchesLoc = (other?.city || other?.department || '').toLowerCase().includes(q)
+      const matchesAlbum = (chat.album?.name || '').toLowerCase().includes(q)
+      const matchesMsg = (chat.last_message_preview || '').toLowerCase().includes(q)
+      if (!matchesName && !matchesLoc && !matchesAlbum && !matchesMsg) return false
+    }
+
     if (activeTab === 'todos') return true
-    if (activeTab === 'fuertes') return index < 2 // Simulando matches fuertes
+    if (activeTab === 'activos') return Boolean(chat.last_message_preview)
     if (activeTab === 'cerca') {
-      const other = getOtherUser(chat)
       return other?.city === profile?.city || other?.department === profile?.department
     }
-    if (activeTab === 'sin responder') return !chat.last_message_preview // O sin respuesta tuya
+    if (activeTab === 'sin responder') return !chat.last_message_preview
     return true
   })
 
@@ -124,7 +134,12 @@ export default function ChatsListPage() {
             {!showBlocked && (
               <div className="search-box">
                 <label>Buscar chat</label>
-                <input type="text" placeholder="Buscar usuario, zona o figurita..." />
+                <input 
+                  type="text" 
+                  placeholder="Buscar por usuario, zona o figurita..." 
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
               </div>
             )}
             <div className="blocked-toggle">
@@ -136,8 +151,8 @@ export default function ChatsListPage() {
           {!showBlocked && (
             <div className="tabs">
               <button className={`tab ${activeTab === 'todos' ? 'active' : ''}`} onClick={() => setActiveTab('todos')}>Todos</button>
-              <button className={`tab ${activeTab === 'fuertes' ? 'active' : ''}`} onClick={() => setActiveTab('fuertes')}>Fuertes</button>
-              <button className={`tab ${activeTab === 'cerca' ? 'active' : ''}`} onClick={() => setActiveTab('cerca')}>Cerca</button>
+              <button className={`tab ${activeTab === 'activos' ? 'active' : ''}`} onClick={() => setActiveTab('activos')}>Con actividad</button>
+              <button className={`tab ${activeTab === 'cerca' ? 'active' : ''}`} onClick={() => setActiveTab('cerca')}>Cerca mío</button>
               <button className={`tab ${activeTab === 'sin responder' ? 'active' : ''}`} onClick={() => setActiveTab('sin responder')}>Sin responder</button>
             </div>
           )}
@@ -151,7 +166,7 @@ export default function ChatsListPage() {
                 <h2>{showBlocked ? 'Usuarios bloqueados' : 'Conversaciones activas'}</h2>
                 <p>{showBlocked ? 'Revisa bloqueos aplicados desde tus interacciones y desbloquea si queres reabrir el contacto.' : 'Entra al chat, confirma figuritas y coordina el punto de encuentro.'}</p>
               </div>
-              <span className="count-pill">{showBlocked ? `${blockedUsers.length} bloqueados` : `${chats.length} activos`}</span>
+              <span className="count-pill">{showBlocked ? `${blockedUsers.length} bloqueados` : `${filteredChats.length} en vista`}</span>
             </div>
 
             <div className="main-stack">
@@ -201,13 +216,13 @@ export default function ChatsListPage() {
                   <button className="btn orange" onClick={() => navigate('/matches')}>Ver intercambios</button>
                 </div>
               ) : (
-                filteredChats.map((chat, index) => {
+                filteredChats.map((chat) => {
                   const other = getOtherUser(chat)
-                  const isHot = activeTab === 'fuertes' || (activeTab === 'todos' && index < 2)
+                  const hasActivity = Boolean(chat.last_message_preview)
                   return (
                     <button
                       key={chat.id}
-                      className={`chat-card ${isHot ? 'hot' : ''}`}
+                      className={`chat-card ${hasActivity ? 'hot' : ''}`}
                       onClick={() => navigate(`/chat/${chat.id}`)}
                     >
                       <div className="chat-avatar-wrap">
@@ -234,7 +249,7 @@ export default function ChatsListPage() {
                         </div>
                         <p className="last-msg">{chat.last_message_preview || 'Toca para ver la conversacion'}</p>
                         <div className="chat-tags">
-                          {isHot && <span className="tag orange">Intercambio fuerte</span>}
+                          {hasActivity && <span className="tag orange">Con actividad</span>}
                           <span className="tag green">Ir al chat</span>
                           <span className="tag blue">{chat.last_message_preview ? 'Activo' : 'Nuevo'}</span>
                         </div>

@@ -34,7 +34,6 @@ export default function ProfilePage() {
   const { openConfirm } = useLogoutStore()
   const [locationName, setLocationName] = useState(profile?.city || '')
   const [displayName, setDisplayName] = useState(profile?.name || '')
-  const [notifEnabled, setNotifEnabled] = useState(true)
   const [saving, setSaving] = useState(false)
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
@@ -458,13 +457,8 @@ export default function ProfilePage() {
                 <option value="matches">Solo Matches (Quienes cruzan conmigo)</option>
                 <option value="private">Privado (Nadie)</option>
               </select>
-              
-              <div className="settings-row" style={{ marginTop: '16px' }}>
-                <span>Notificaciones</span>
-                <div className={`switch ${notifEnabled ? '' : 'off'}`} onClick={() => setNotifEnabled(!notifEnabled)}></div>
-              </div>
 
-              <div style={{ marginTop: '12px', marginBottom: '12px' }}>
+              <div style={{ marginTop: '16px', marginBottom: '12px' }}>
                 <LocationSelector onLocationSaved={() => toast.success('Ubicación guardada.')} />
               </div>
 

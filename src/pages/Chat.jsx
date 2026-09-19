@@ -33,6 +33,8 @@ export default function ChatPage() {
   const [showReportModal, setShowReportModal] = useState(false)
   const [reportReason, setReportReason] = useState('')
   const [reporting, setReporting] = useState(false)
+  const [showMenu, setShowMenu] = useState(false)
+  const [showSummaryDetails, setShowSummaryDetails] = useState(false)
   const bottomRef = useRef(null)
   const toast = useToast()
   const { summary, feed } = useLiveMomentum()
@@ -165,14 +167,18 @@ export default function ChatPage() {
 
   return (
     <div className="chat-page-root">
-      
-
       <div className="chat-layout">
         <main className="chat-main">
           <header className="chat-header">
             <div className="header-left">
               <button className="chat-back-btn" onClick={() => navigate('/chats')}>&larr;</button>
-              <div className="chat-avatar">
+              <div 
+                className="chat-avatar" 
+                style={{ cursor: otherUser?.username ? 'pointer' : 'default' }}
+                onClick={() => {
+                  if (otherUser?.username) navigate(`/u/${otherUser.username}`)
+                }}
+              >
                 {otherUser?.avatar_url ? (
                   <img src={otherUser.avatar_url} alt={otherName} />
                 ) : (
@@ -185,54 +191,217 @@ export default function ChatPage() {
               </div>
               <div className="header-copy">
                 <div className="chat-name-row">
-                  <h2 className="chat-header-name">{otherName}</h2>
+                  <h2 
+                    className="chat-header-name" 
+                    style={{ cursor: otherUser?.username ? 'pointer' : 'default' }}
+                    onClick={() => {
+                      if (otherUser?.username) navigate(`/u/${otherUser.username}`)
+                    }}
+                  >
+                    {otherName}
+                  </h2>
                   <ReputationStars stars={otherStars} size="sm" inline />
-                  {otherUser?.id && <FavoriteButton targetUserId={otherUser.id} size="sm" showLabel />}
                   <span className="status-pill green">{presenceLabel}</span>
-                  <span className="status-pill orange">Intercambio fuerte</span>
                 </div>
                 <p className="chat-header-loc">{locationText}</p>
               </div>
             </div>
-            <div className="header-actions">
+
+            {/* Desktop Actions */}
+            <div className="header-actions desktop-only">
+              {otherUser?.id && <FavoriteButton targetUserId={otherUser.id} size="sm" showLabel />}
               <button className="ghost-btn" onClick={() => setShowBlockConfirm(true)}>Bloquear</button>
               <button className="danger-btn" onClick={() => setShowReportModal(true)}>Reportar</button>
             </div>
+
+            {/* Mobile Kebab Menu */}
+            <div className="chat-mobile-menu-container" style={{ position: 'relative' }}>
+              <button 
+                className="chat-kebab-btn"
+                aria-label="Opciones del chat"
+                onClick={() => setShowMenu(!showMenu)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'var(--text-main, #fff)',
+                  fontSize: '1.4rem',
+                  padding: '8px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  minWidth: '44px',
+                  minHeight: '44px'
+                }}
+              >
+                ⋮
+              </button>
+
+              {showMenu && (
+                <div 
+                  className="chat-dropdown-menu"
+                  style={{
+                    position: 'absolute',
+                    top: '100%',
+                    right: 0,
+                    zIndex: 100,
+                    background: '#1a1a1a',
+                    border: '1px solid rgba(255,255,255,0.15)',
+                    borderRadius: '8px',
+                    boxShadow: '0 8px 24px rgba(0,0,0,0.6)',
+                    minWidth: '180px',
+                    padding: '6px 0',
+                    display: 'flex',
+                    flexDirection: 'column'
+                  }}
+                >
+                  {otherUser?.username && (
+                    <button
+                      onClick={() => {
+                        setShowMenu(false)
+                        navigate(`/u/${otherUser.username}`)
+                      }}
+                      style={{
+                        padding: '10px 14px',
+                        background: 'transparent',
+                        border: 'none',
+                        color: '#fff',
+                        textAlign: 'left',
+                        fontSize: '0.85rem',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px'
+                      }}
+                    >
+                      <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>person</span>
+                      Ver perfil
+                    </button>
+                  )}
+                  {otherUser?.id && (
+                    <div style={{ padding: '8px 14px' }}>
+                      <FavoriteButton targetUserId={otherUser.id} size="sm" showLabel />
+                    </div>
+                  )}
+                  <button
+                    onClick={() => {
+                      setShowMenu(false)
+                      setShowBlockConfirm(true)
+                    }}
+                    style={{
+                      padding: '10px 14px',
+                      background: 'transparent',
+                      border: 'none',
+                      color: '#ffaa00',
+                      textAlign: 'left',
+                      fontSize: '0.85rem',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}
+                  >
+                    <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>block</span>
+                    Bloquear usuario
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowMenu(false)
+                      setShowReportModal(true)
+                    }}
+                    style={{
+                      padding: '10px 14px',
+                      background: 'transparent',
+                      border: 'none',
+                      color: '#ff4444',
+                      textAlign: 'left',
+                      fontSize: '0.85rem',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}
+                  >
+                    <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>flag</span>
+                    Reportar
+                  </button>
+                </div>
+              )}
+            </div>
           </header>
 
-          <section className="hero-strip">
-            <div className="hero-main">
-              <div className="header-kicker">// intercambio activo</div>
-              <h1 className="hero-title">Todav̓­a podés cerrar este <span>cruce hoy</span>.</h1>
-              <p className="hero-copy">Usá el chat para confirmar figuritas, fijar lugar y convertir esta ventana activa en intercambio real antes de que se enfr̓­e.</p>
-              <div className="hero-stats">
-                <div className="hero-stat">
-                  <b>{incomingCount}</b>
-                  <span>Te puede dar</span>
-                </div>
-                <div className="hero-stat">
-                  <b>{outgoingCount}</b>
-                  <span>Vos le das</span>
-                </div>
-                <div className="hero-stat">
-                  <b>{totalMoves}</b>
-                  <span>Figus en juego</span>
-                </div>
-              </div>
+          {/* Compact summary bar with expand toggle */}
+          <section className="chat-summary-strip" style={{
+            background: 'rgba(255,255,255,0.03)',
+            borderBottom: '1px solid rgba(255,255,255,0.08)',
+            padding: '8px 12px',
+            fontSize: '0.82rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '8px'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <span className="mini-pill blue" style={{ padding: '2px 8px', borderRadius: '4px', background: 'rgba(37,99,235,0.2)', color: '#60a5fa', fontWeight: 'bold' }}>
+                {exchangeData.albumName || 'Album'}
+              </span>
+              <span>
+                Te da: <b style={{ color: '#10b981' }}>{incomingCount}</b> · Le das: <b style={{ color: '#ff5a00' }}>{outgoingCount}</b>
+              </span>
             </div>
-            <aside className="hero-side">
-              <div>
-                <div className="summary-label">Siguiente accion</div>
-                <div className="hero-side-title">Coordina punto, horario y canje.</div>
-                <p>Si el cruce está claro, avanzá ahora a una confirmación concreta en un lugar público.</p>
-              </div>
-              <div className="hero-stats">
-                <span className="mini-pill blue">{exchangeData.albumName || 'Album'}</span>
-                <span className="mini-pill green">{presenceLabel}</span>
-                <span className="mini-pill orange">{summary.exchangesToday} cierres hoy</span>
-              </div>
-            </aside>
+            <button 
+              onClick={() => setShowSummaryDetails(!showSummaryDetails)}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--orange, #ff5a00)',
+                cursor: 'pointer',
+                fontSize: '0.78rem',
+                fontWeight: 'bold',
+                padding: '4px 8px'
+              }}
+            >
+              {showSummaryDetails ? 'Ocultar detalles ▲' : 'Ver figuritas ▼'}
+            </button>
           </section>
+
+          {/* Expandable exchange details (or desktop hero) */}
+          {(showSummaryDetails || window.innerWidth >= 1024) && (
+            <section className="hero-strip">
+              <div className="hero-main">
+                <div className="header-kicker">// intercambio activo</div>
+                <h1 className="hero-title">Todavía podés cerrar este <span>cruce hoy</span>.</h1>
+                <p className="hero-copy">Usá el chat para confirmar figuritas, fijar lugar y convertir esta ventana activa en intercambio real.</p>
+                <div className="hero-stats">
+                  <div className="hero-stat">
+                    <b>{incomingCount}</b>
+                    <span>Te puede dar</span>
+                  </div>
+                  <div className="hero-stat">
+                    <b>{outgoingCount}</b>
+                    <span>Vos le das</span>
+                  </div>
+                  <div className="hero-stat">
+                    <b>{totalMoves}</b>
+                    <span>Figus en juego</span>
+                  </div>
+                </div>
+              </div>
+              <aside className="hero-side">
+                <div>
+                  <div className="summary-label">Siguiente acción</div>
+                  <div className="hero-side-title">Coordina punto, horario y canje.</div>
+                  <p>Si el cruce está claro, avanzá ahora a una confirmación concreta en un lugar público.</p>
+                </div>
+                <div className="hero-stats">
+                  <span className="mini-pill blue">{exchangeData.albumName || 'Album'}</span>
+                  <span className="mini-pill green">{presenceLabel}</span>
+                  <span className="mini-pill orange">{summary.exchangesToday} cierres hoy</span>
+                </div>
+              </aside>
+            </section>
+          )}
 
           {promptVisibility.visible && (
             <section className="completion-card">

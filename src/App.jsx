@@ -16,6 +16,7 @@ const AdminRoleGuard = lazy(() => import('./components/AdminRoleGuard'))
 import { useInfluencerStore } from './stores/influencerStore'
 
 const Landing = lazy(() => import('./pages/Landing'))
+const Home = lazy(() => import('./pages/Home'))
 const Login = lazy(() => import('./pages/Login'))
 const Points = lazy(() => import('./pages/Points'))
 const InfluencersPage = lazy(() => import('./pages/InfluencersPage'))
@@ -210,7 +211,7 @@ function AuthRedirector() {
   if (isPendingDeletion) {
     return <Navigate to="/account-suspended" replace />
   }
-  return <Navigate to="/profile" replace />
+  return <Navigate to="/home" replace />
 }
 
 function PublicRoute({ children }) {
@@ -249,7 +250,7 @@ function FeatureGuard({ featureKey, children }) {
         <span className="material-symbols-outlined" style={{ fontSize: '4rem', color: 'var(--color-text-muted)' }}>construction</span>
         <h2 style={{ fontSize: '1.5rem', fontWeight: 900, color: 'var(--color-surface)' }}>Función Desactivada</h2>
         <p style={{ color: 'var(--color-text-muted)', maxWidth: '400px' }}>Esta sección se encuentra temporalmente desactivada o en mantenimiento.</p>
-        <Navigate to="/profile" replace />
+        <Navigate to="/home" replace />
       </div>
     )
   }
@@ -296,18 +297,21 @@ function AppChrome() {
 }
 
 function AppLayout({ children }) {
+  const location = useLocation()
+  const isChatDetailPage = location.pathname.startsWith('/chat/')
+
   return (
-    <div className="app-layout" style={{ height: '100vh', overflow: 'hidden' }}>
+    <div className="app-layout" style={{ height: '100dvh', minHeight: '100vh', overflow: 'hidden' }}>
       <div className="app-sidebar-wrapper">
         <Sidebar />
       </div>
-      <main className="app-main" style={{ height: '100%', overflowY: 'auto' }}>
+      <main className={`app-main ${isChatDetailPage ? 'chat-detail-main' : ''}`} style={{ height: '100%', overflowY: 'auto' }}>
         <PageTransitionWrapper>
           {children || <Outlet />}
         </PageTransitionWrapper>
-        <GlobalFooter />
+        {!isChatDetailPage && <GlobalFooter />}
       </main>
-      <BottomNav />
+      {!isChatDetailPage && <BottomNav />}
     </div>
   )
 }
@@ -374,14 +378,9 @@ export default function App() {
           <Route path="/albums/:albumId" element={<PageTransitionWrapper><AlbumProfile /></PageTransitionWrapper>} />
         </Route>
 
-        {/* App */}
-        <Route path="/home" element={
-          <ProtectedRoute>
-            <AuthRedirector />
-          </ProtectedRoute>
-        } />
         {/* App Routes with persistent Layout */}
         <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
+          <Route path="/home" element={<Home />} />
           <Route path="/album" element={<FeatureGuard featureKey="album"><Album /></FeatureGuard>} />
           <Route path="/matches" element={<Matches />} />
           <Route path="/chats" element={<FeatureGuard featureKey="chats"><ChatsList /></FeatureGuard>} />
