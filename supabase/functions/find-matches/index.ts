@@ -338,10 +338,15 @@ serve(async (req: Request) => {
       const finalScore = Math.max(0, Math.min(100, Math.round(rawScore * 100) / 100))
       if (finalScore < SCORE_FLOOR) continue
 
-      const isMutual = theyCanGiveMe.length > 0 && iCanGiveThem.length > 0
-
-      // Approximate neighborhood centroid for map view
-      const approxPoint = getApproximatePoint(pLoc?.latitude, pLoc?.longitude, p.id)
+      // Apply candidate location_visibility preferences:
+      // 'full' -> department, city, neighborhood + approx_point
+      // 'city' -> department, city (neighborhood hidden) + approx_point
+      // 'none' -> no geographic labels + NO approx_point (distance calculated server-side only)
+      const locVis = p.location_visibility || 'full'
+      const safeNeighborhood = locVis === 'full' ? p.neighborhood : null
+      const safeCity = locVis === 'none' ? null : p.city
+      const safeDept = locVis === 'none' ? null : p.department
+      const approxPoint = locVis === 'none' ? null : getApproximatePoint(pLoc?.latitude, pLoc?.longitude, p.id)
 
       // Strict safe profile (NEVER lat, lng, latitude, longitude, email)
       const safeProfile = {
@@ -351,9 +356,9 @@ serve(async (req: Request) => {
         avatar_url: p.avatar_url,
         is_premium: p.is_premium,
         plan_name: p.plan_name,
-        department: p.department,
-        city: p.city,
-        neighborhood: p.neighborhood,
+        department: safeDept,
+        city: safeCity,
+        neighborhood: safeNeighborhood,
         last_active: p.last_active,
         badges: rankingData?.badges || [],
       }

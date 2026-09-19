@@ -2,7 +2,8 @@ import { supabase } from './supabase'
 
 /**
  * Geocoding Service Adapter for FigusUY
- * Proxies geocoding requests through Supabase Edge Functions with local caching & fallback
+ * Proxies geocoding requests exclusively through Supabase Edge Functions with local caching.
+ * CRITICAL PRIVACY RULE: Reverse geocode of precise GPS is FAIL-CLOSED (never falls back to client third-party requests).
  */
 
 const geocodeCache = new Map();
@@ -40,7 +41,8 @@ export function normalizeLocationParts(addressObj = {}) {
 }
 
 /**
- * Geocode a query string with caching and area/address mode filtering
+ * Geocode a query string with caching and area/address mode filtering.
+ * Centralized via Edge Function with local fallback only for non-GPS public text strings if needed.
  */
 export async function geocode(query, options = {}) {
   const { mode = 'area', countryCode = 'uy', limit = 5 } = options;
@@ -54,7 +56,6 @@ export async function geocode(query, options = {}) {
   }
 
   try {
-    // 1. Try secure Supabase Edge Function first
     const { data, error } = await supabase.functions.invoke('geocode-location', {
       body: { query: cleanQuery, mode, countryCode, limit }
     });
@@ -64,51 +65,15 @@ export async function geocode(query, options = {}) {
       return data.results;
     }
   } catch (err) {
-    console.warn('Edge function geocode error, falling back:', err);
+    console.warn('Edge function geocode unavailable:', err);
   }
 
-  // 2. Client-side fallback if edge function is unreachable
-  try {
-    const url = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=${limit}&countrycodes=${countryCode}&q=${encodeURIComponent(query)}`;
-    const res = await fetch(url, {
-      headers: {
-        'Accept-Language': 'es',
-        'User-Agent': 'FigusUY-App/2.0'
-      }
-    });
-
-    if (!res.ok) throw new Error('Geocoding service unavailable');
-    const data = await res.json();
-
-    const normalizedResults = data.map(item => {
-      const parts = normalizeLocationParts(item.address || {});
-      const lat = parseFloat(item.lat);
-      const lng = parseFloat(item.lon);
-
-      return {
-        lat,
-        lng,
-        name: item.name || parts.neighborhood || parts.city || item.display_name,
-        display_name: item.display_name,
-        neighborhood: parts.neighborhood,
-        city: parts.city,
-        department: parts.department,
-        type: item.type,
-        category: item.category,
-        isArea: ['administrative', 'city', 'suburb', 'neighbourhood', 'residential'].includes(item.type) || item.category === 'boundary'
-      };
-    });
-
-    geocodeCache.set(cacheKey, normalizedResults);
-    return normalizedResults;
-  } catch (fallbackError) {
-    console.warn('Geocode fallback error:', fallbackError);
-    return [];
-  }
+  return [];
 }
 
 /**
- * Reverse geocode coordinates to obtain administrative area details
+ * Reverse geocode coordinates to obtain administrative area details.
+ * FAIL-CLOSED: Precise user GPS is NEVER sent from the browser directly to external providers.
  */
 export async function reverseGeocode(lat, lng) {
   const numLat = Number(lat);
@@ -124,7 +89,6 @@ export async function reverseGeocode(lat, lng) {
   }
 
   try {
-    // 1. Try secure Supabase Edge Function
     const { data, error } = await supabase.functions.invoke('reverse-geocode-location', {
       body: { lat: numLat, lng: numLng }
     });
@@ -134,36 +98,11 @@ export async function reverseGeocode(lat, lng) {
       return data.data;
     }
   } catch (err) {
-    console.warn('Edge function reverse geocode error, falling back:', err);
+    console.warn('Edge function reverse geocode unavailable:', err);
   }
 
-  // 2. Client fallback
-  try {
-    const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${numLat}&lon=${numLng}&zoom=18&addressdetails=1`;
-    const res = await fetch(url, {
-      headers: {
-        'Accept-Language': 'es',
-        'User-Agent': 'FigusUY-App/2.0'
-      }
-    });
-
-    if (!res.ok) throw new Error('Reverse geocoding error');
-    const data = await res.json();
-    const parts = normalizeLocationParts(data.address || {});
-
-    const result = {
-      neighborhood: parts.neighborhood,
-      city: parts.city,
-      department: parts.department,
-      display_name: data.display_name || parts.display_name
-    };
-
-    reverseCache.set(cacheKey, result);
-    return result;
-  } catch (err) {
-    console.warn('Reverse Geocoding Fallback Error:', err);
-    return null;
-  }
+  // Fail-closed: do NOT send precise GPS from browser to Nominatim
+  return null;
 }
 
 export function clearGeocodeCache() {

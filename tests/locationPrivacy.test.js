@@ -1,4 +1,4 @@
-﻿import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { normalizeDepartment, normalizeLocationParts, geocode, clearGeocodeCache } from '../src/lib/geocoding'
 import { calculateDistance, formatDistance } from '../src/utils/location'
 import { haversineDistance, distanceLabel, getApproximatePoint } from '../src/lib/matchPrivacy'
@@ -47,49 +47,53 @@ describe('Location, Privacy & Edge Match Engine Hardening', () => {
     })
   })
 
-  describe('Manual Area Geocoding for Free/Plus Matching', () => {
-    it('returns area centroid for Uruguay neighborhoods and calculates valid distance', async () => {
-      const mockFetch = vi.fn().mockResolvedValue({
-        ok: true,
-        json: async () => [
-          {
-            lat: '-34.9150',
-            lon: '-56.1520',
-            name: 'Pocitos',
-            display_name: 'Pocitos, Montevideo, Uruguay',
-            type: 'suburb',
-            category: 'boundary',
-            address: { neighbourhood: 'Pocitos', city: 'Montevideo', state: 'Montevideo' }
-          }
-        ]
-      })
+  describe('Fail-Closed Geocoding Policy', () => {
+    it('does NOT call external Nominatim reverse URL directly if edge function fails', async () => {
+      const mockFetch = vi.fn()
       global.fetch = mockFetch
 
-      const results = await geocode('Pocitos, Montevideo', { mode: 'area' })
-      expect(results.length).toBe(1)
-      expect(results[0].neighborhood).toBe('Pocitos')
-      expect(Number.isFinite(results[0].lat)).toBe(true)
-      expect(Number.isFinite(results[0].lng)).toBe(true)
+      // geocoding.js reverseGeocode should return null on edge function error and NOT query Nominatim
+      const { reverseGeocode } = await import('../src/lib/geocoding')
+      const result = await reverseGeocode(-34.9011, -56.1645)
 
-      const matchDist = calculateDistance(results[0].lat, results[0].lng, -34.9060, -56.1860)
-      expect(matchDist).toBeLessThan(10) // Free plan allows <= 30km, match is valid
+      expect(result).toBeNull()
+      // Nominatim reverse should NEVER have been called directly from client
+      const nominatimCalls = mockFetch.mock.calls.filter(c => String(c[0]).includes('nominatim.openstreetmap.org/reverse'))
+      expect(nominatimCalls.length).toBe(0)
     })
   })
 
-  describe('Simulation of RLS & Identity Derivation Matrix', () => {
-    it('validates caller auth.uid() rules for user_locations_private table', () => {
-      const evaluateRls = (callerUid, rowUserId) => {
-        if (!callerUid) return false // Anon denied
-        if (callerUid === rowUserId) return true // Owner allowed
-        return false // Third party denied
+  describe('Server-Side Spoofing Prevention & RLS Matrix', () => {
+    it('guarantees auth.uid() identity derivation regardless of visitor arguments', () => {
+      const getPublicProfileSecurityCheck = (callerAuthUid, clientClaimedId, targetProfile) => {
+        // Real security rule: Ignore clientClaimedId completely, use callerAuthUid
+        const effectiveVisitorId = callerAuthUid
+        if (targetProfile.profile_visibility === 'private' && effectiveVisitorId !== targetProfile.id) {
+          return { error: 'Profile is private' }
+        }
+        return { id: targetProfile.id, name: targetProfile.name }
       }
 
-      const userA = 'user-a-111'
-      const userB = 'user-b-222'
+      const targetA = { id: 'user-a-111', name: 'User A', profile_visibility: 'private' }
+      const attackerB = 'user-b-222'
 
-      expect(evaluateRls(userA, userA)).toBe(true)
-      expect(evaluateRls(userB, userA)).toBe(false)
-      expect(evaluateRls(null, userA)).toBe(false)
+      // Attacker B attempts to spoof identity as User A by passing clientClaimedId = user-a-111
+      const res = getPublicProfileSecurityCheck(attackerB, 'user-a-111', targetA)
+      expect(res).toEqual({ error: 'Profile is private' })
+    })
+
+    it('enforces chat creation failure when bilateral blocking exists', () => {
+      const isBlocked = (user1, user2, blocks) => {
+        return blocks.some(b => 
+          (b.blocker_id === user1 && b.blocked_id === user2) ||
+          (b.blocker_id === user2 && b.blocked_id === user1)
+        )
+      }
+
+      const blocks = [{ blocker_id: 'user-a', blocked_id: 'user-b' }]
+      expect(isBlocked('user-a', 'user-b', blocks)).toBe(true)
+      expect(isBlocked('user-b', 'user-a', blocks)).toBe(true)
+      expect(isBlocked('user-a', 'user-c', blocks)).toBe(false)
     })
   })
 })

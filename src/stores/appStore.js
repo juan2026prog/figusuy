@@ -428,7 +428,26 @@ export const useAppStore = create((set, get) => ({
   },
 
   createOrGetChat: async (userId, otherUserId, albumId) => {
-    // Check bilateral blocks before creating or fetching chat
+    // 1. Attempt secure server-side RPC with bilateral block check
+    try {
+      const { data: rpcChat, error: rpcError } = await supabase.rpc('create_or_get_chat_secure', {
+        p_other_user_id: otherUserId,
+        p_album_id: albumId
+      })
+      if (!rpcError && rpcChat) {
+        return rpcChat
+      }
+      if (rpcError && rpcError.message && rpcError.message.includes('Cannot initiate chat')) {
+        throw new Error('No puedes iniciar un chat con este usuario.')
+      }
+    } catch (rpcErr) {
+      if (rpcErr.message && rpcErr.message.includes('No puedes iniciar un chat')) {
+        throw rpcErr
+      }
+      console.warn('RPC create_or_get_chat_secure fallback:', rpcErr)
+    }
+
+    // 2. Client-side fallback check
     const { data: blockData } = await supabase
       .from('user_blocks')
       .select('id')

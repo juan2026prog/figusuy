@@ -2,10 +2,36 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { getCorsHeaders, handleOptions } from "../_shared/cors.ts"
 
 const serverReverseCache = new Map<string, any>()
+const ipRateLimits = new Map<string, { count: number; resetAt: number }>()
+
+const RATE_LIMIT_MAX = 30
+const RATE_LIMIT_WINDOW = 60 * 1000
+
+function isRateLimited(clientIp: string): boolean {
+  const now = Date.now()
+  const record = ipRateLimits.get(clientIp)
+  if (!record || now > record.resetAt) {
+    ipRateLimits.set(clientIp, { count: 1, resetAt: now + RATE_LIMIT_WINDOW })
+    return false
+  }
+  if (record.count >= RATE_LIMIT_MAX) {
+    return true
+  }
+  record.count++
+  return false
+}
 
 serve(async (req: Request) => {
   const options = handleOptions(req)
   if (options) return options
+
+  const clientIp = req.headers.get("x-real-ip") || req.headers.get("x-forwarded-for") || "anonymous"
+  if (isRateLimited(clientIp)) {
+    return new Response(JSON.stringify({ error: "Rate limit exceeded", data: null }), {
+      status: 429,
+      headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
+    })
+  }
 
   try {
     const { lat, lng } = await req.json()

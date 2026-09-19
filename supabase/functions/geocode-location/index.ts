@@ -1,12 +1,38 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { getCorsHeaders, handleOptions } from "../_shared/cors.ts"
 
-// In-memory cache for Deno Edge runtime
+// Server-side cache and sliding-window rate limiter
 const serverCache = new Map<string, any>()
+const ipRateLimits = new Map<string, { count: number; resetAt: number }>()
+
+const RATE_LIMIT_MAX = 30 // max requests per minute per IP
+const RATE_LIMIT_WINDOW = 60 * 1000 // 1 minute
+
+function isRateLimited(clientIp: string): boolean {
+  const now = Date.now()
+  const record = ipRateLimits.get(clientIp)
+  if (!record || now > record.resetAt) {
+    ipRateLimits.set(clientIp, { count: 1, resetAt: now + RATE_LIMIT_WINDOW })
+    return false
+  }
+  if (record.count >= RATE_LIMIT_MAX) {
+    return true
+  }
+  record.count++
+  return false
+}
 
 serve(async (req: Request) => {
   const options = handleOptions(req)
   if (options) return options
+
+  const clientIp = req.headers.get("x-real-ip") || req.headers.get("x-forwarded-for") || "anonymous"
+  if (isRateLimited(clientIp)) {
+    return new Response(JSON.stringify({ error: "Rate limit exceeded", results: [] }), {
+      status: 429,
+      headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
+    })
+  }
 
   try {
     const { query, mode = "area", countryCode = "uy", limit = 5 } = await req.json()
@@ -68,7 +94,7 @@ serve(async (req: Request) => {
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Geocoding error"
     return new Response(JSON.stringify({ error: message, results: [] }), {
-      status: 200, // Return safe fallback results
+      status: 200,
       headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
     })
   }
