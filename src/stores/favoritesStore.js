@@ -1,4 +1,4 @@
-﻿import { create } from 'zustand'
+import { create } from 'zustand'
 import { supabase } from '../lib/supabase'
 
 export const useFavoritesStore = create((set, get) => ({
@@ -11,7 +11,7 @@ export const useFavoritesStore = create((set, get) => ({
     set({ loading: true })
     const { data, error } = await supabase
       .from('user_favorites')
-      .select('favorite_user_id, profile:profiles!user_favorites_favorite_user_id_fkey(*)')
+      .select('favorite_user_id, profile:profiles!user_favorites_favorite_user_id_fkey(id, name, username, avatar_url, city, department, neighborhood, is_premium, plan_name, is_verified, last_active)')
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
     

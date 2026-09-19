@@ -3,62 +3,80 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 import { getCorsHeaders, handleOptions } from "../_shared/cors.ts"
 
 // ============================================================
-//  MATCH ENGINE v2.1 — FigusUY (Hardened Privacy & Distance)
-//  Agent: Match Engine Agent
-//  Scoring: 6-component normalized (0-100)
-//  Privacy: Strip all private user lat/lng, calculate distance server-side
+//  MATCH ENGINE v2.2 — FigusUY (Hardened Privacy & Finite Haversine)
+//  Privacy: Strict zero coordinates leak, neighborhood centroid fuzzy areas
 // ============================================================
 
 // ── Distance Calculation ─────────────────────────────────────
-function haversineDistance(
-  lat1: number | null,
-  lng1: number | null,
-  lat2: number | null,
-  lng2: number | null
+export function haversineDistance(
+  lat1: number | null | undefined,
+  lng1: number | null | undefined,
+  lat2: number | null | undefined,
+  lng2: number | null | undefined
 ): number {
-  if (!lat1 || !lng1 || !lat2 || !lng2) return Infinity
+  const isValid = [lat1, lng1, lat2, lng2].every(
+    (v) => v !== null && v !== undefined && Number.isFinite(v)
+  )
+  if (!isValid) return Infinity
+
+  const l1 = Number(lat1)
+  const g1 = Number(lng1)
+  const l2 = Number(lat2)
+  const g2 = Number(lng2)
+
   const R = 6371
-  const dLat = (lat2 - lat1) * (Math.PI / 180)
-  const dLng = (lng2 - lng1) * (Math.PI / 180)
+  const dLat = (l2 - l1) * (Math.PI / 180)
+  const dLng = (g2 - g1) * (Math.PI / 180)
   const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(lat1 * (Math.PI / 180)) *
-      Math.cos(lat2 * (Math.PI / 180)) *
+    Math.cos(l1 * (Math.PI / 180)) *
+      Math.cos(l2 * (Math.PI / 180)) *
       Math.sin(dLng / 2) *
       Math.sin(dLng / 2)
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
   return R * c
 }
 
-function distanceLabel(km: number): string {
-  if (km === Infinity) return "Desconocida"
+export function distanceLabel(km: number): string {
+  if (km === Infinity || !Number.isFinite(km)) return "Desconocida"
   if (km < 1) return `~${Math.round(km * 1000)} m`
   if (km < 10) return `~${km.toFixed(1)} km`
   return `~${Math.round(km)} km`
 }
 
 /**
- * Adds slight deterministic jitter to coordinates to protect exact residential location
+ * Truncates coordinate to 2 decimals (~1.1 km grid) and adds area fuzzing
+ * so residential exact GPS can NEVER be derived or reverse engineered.
  */
-function getApproximatePoint(lat: number | null, lng: number | null, userId: string): { lat: number; lng: number } | null {
-  if (!lat || !lng) return null
-  // Simple hash of userId to generate consistent pseudo-random jitter within ~500m (0.0045 deg)
+export function getApproximatePoint(
+  lat: number | null | undefined,
+  lng: number | null | undefined,
+  userId: string
+): { lat: number; lng: number } | null {
+  if (lat === null || lat === undefined || lng === null || lng === undefined || !Number.isFinite(lat) || !Number.isFinite(lng)) {
+    return null
+  }
+
+  // Truncate to ~1.1km grid
+  const gridLat = Math.round(Number(lat) * 100) / 100
+  const gridLng = Math.round(Number(lng) * 100) / 100
+
+  // Deterministic neighborhood centroid offset
   let hash = 0
   for (let i = 0; i < userId.length; i++) {
     hash = (hash << 5) - hash + userId.charCodeAt(i)
     hash |= 0
   }
-  const jitterLat = ((hash % 100) / 100 - 0.5) * 0.008
-  const jitterLng = (((hash >> 4) % 100) / 100 - 0.5) * 0.008
+  const jitterLat = ((hash % 50) / 100 - 0.25) * 0.005
+  const jitterLng = (((hash >> 3) % 50) / 100 - 0.25) * 0.005
 
   return {
-    lat: Math.round((lat + jitterLat) * 10000) / 10000,
-    lng: Math.round((lng + jitterLng) * 10000) / 10000,
+    lat: Math.round((gridLat + jitterLat) * 1000) / 1000,
+    lng: Math.round((gridLng + jitterLng) * 1000) / 1000,
   }
 }
 
 // ── Component Scorers ─────────────────────────────────────
-
 function scoreCompatibility(
   theyCanGiveMe: number[],
   iCanGiveThem: number[],
@@ -79,7 +97,7 @@ function scoreMutuality(theyCanGiveMe: number[], iCanGiveThem: number[]): number
 }
 
 function scoreDistance(km: number): number {
-  if (km === Infinity) return 0
+  if (km === Infinity || !Number.isFinite(km)) return 0
   if (km <= 1) return 15
   if (km <= 3) return 13
   if (km <= 5) return 10
@@ -93,8 +111,6 @@ function scoreRanking(rankData: any): number {
   if (!rankData) return 50
   return rankData.final_user_rank || 50
 }
-
-// ── Plan-gated Limits ─────────────────────────────────────
 
 function getMaxDistance(isPremium: boolean, planName: string): number {
   if (!isPremium) return 30          // gratis: 30 km
@@ -112,12 +128,10 @@ function getMaxResults(isPremium: boolean, planName: string): number {
   return 3
 }
 
-// ── Quality Thresholds ────────────────────────────────────
 const SCORE_FLOOR = 5
 const MAX_STALE_DAYS = 45
 const MIN_CANDIDATE_POOL = 500
 
-// ── Main Handler ──────────────────────────────────────────
 serve(async (req: Request) => {
   const options = handleOptions(req)
   if (options) return options
@@ -144,7 +158,6 @@ serve(async (req: Request) => {
     } = await supabaseUserClient.auth.getUser()
     if (userError || !user) throw new Error("Invalid user token")
 
-    // Admin client for cross-user private data access
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
 
     // 2. Validate album is active
@@ -235,11 +248,11 @@ serve(async (req: Request) => {
         ? new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
         : new Date(0).toISOString()
 
-    // 5. Batch fetch all candidate data + private locations internally (no N+1)
+    // 5. Batch fetch candidate data + private locations internally (no N+1)
     const [profilesRes, locsRes, otherMissingRes, otherDupRes, rankingsRes] = await Promise.all([
       supabaseAdmin
         .from("profiles")
-        .select("id, name, avatar_url, is_premium, plan_name, department, city, neighborhood, last_active, location_visibility, location_precision")
+        .select("id, name, username, avatar_url, is_premium, plan_name, department, city, neighborhood, last_active, location_visibility, location_precision")
         .in("id", candidateIds)
         .gte("last_active", performanceCutoffDate),
       supabaseAdmin
@@ -289,13 +302,12 @@ serve(async (req: Request) => {
       const totalCoincidences = theyCanGiveMe.length + iCanGiveThem.length
       if (totalCoincidences === 0) continue
 
-      // Calculate distance securely using private coords
       const pLoc = candidateLocs.get(p.id)
       const distKm = haversineDistance(
-        currentUserLoc?.latitude ?? null,
-        currentUserLoc?.longitude ?? null,
-        pLoc?.latitude ?? null,
-        pLoc?.longitude ?? null
+        currentUserLoc?.latitude,
+        currentUserLoc?.longitude,
+        pLoc?.latitude,
+        pLoc?.longitude
       )
 
       if (maxDistance !== Infinity && distKm > maxDistance) continue
@@ -328,13 +340,14 @@ serve(async (req: Request) => {
 
       const isMutual = theyCanGiveMe.length > 0 && iCanGiveThem.length > 0
 
-      // APPROXIMATE point for map view (NEVER raw lat/lng)
-      const approxPoint = getApproximatePoint(pLoc?.latitude ?? null, pLoc?.longitude ?? null, p.id)
+      // Approximate neighborhood centroid for map view
+      const approxPoint = getApproximatePoint(pLoc?.latitude, pLoc?.longitude, p.id)
 
-      // Safe profile with NO raw lat/lng or sensitive columns
+      // Strict safe profile (NEVER lat, lng, latitude, longitude, email)
       const safeProfile = {
         id: p.id,
         name: p.name,
+        username: p.username,
         avatar_url: p.avatar_url,
         is_premium: p.is_premium,
         plan_name: p.plan_name,

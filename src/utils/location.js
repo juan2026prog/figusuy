@@ -1,6 +1,5 @@
 /**
  * Helper to securely and gracefully handle geolocation on explicit user action.
- * Resolves to { lat, lng, accuracy } or throws a user-friendly string error.
  * NOTE: Continuous watchPosition is intentionally omitted for privacy and battery preservation.
  */
 export async function getUserLocation(timeoutMs = 10000) {
@@ -52,14 +51,24 @@ export const URUGUAY_DEPARTMENTS = [
 
 /**
  * Calculates Haversine distance in kilometers between two coordinates.
+ * Validates with null / undefined / finite check (including 0 degree coordinates).
  */
 export function calculateDistance(lat1, lon1, lat2, lon2) {
-  if (!lat1 || !lon1 || !lat2 || !lon2) return Infinity;
+  const isValid = [lat1, lon1, lat2, lon2].every(
+    (v) => v !== null && v !== undefined && Number.isFinite(Number(v))
+  );
+  if (!isValid) return Infinity;
+
+  const l1 = Number(lat1);
+  const g1 = Number(lon1);
+  const l2 = Number(lat2);
+  const g2 = Number(lon2);
+
   const R = 6371; // km
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const dLat = (l2 - l1) * Math.PI / 180;
+  const dLon = (g2 - g1) * Math.PI / 180;
   const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.cos(l1 * Math.PI / 180) * Math.cos(l2 * Math.PI / 180) *
             Math.sin(dLon/2) * Math.sin(dLon/2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
   return R * c;
@@ -69,8 +78,11 @@ export function calculateDistance(lat1, lon1, lat2, lon2) {
  * Formats a distance in km to user-friendly text
  */
 export function formatDistance(km) {
-  if (km === null || km === undefined || km === Infinity) return 'Distancia no disponible';
-  if (km < 1) return `~${Math.round(km * 1000)} m`;
-  if (km < 10) return `~${km.toFixed(1)} km`;
-  return `~${Math.round(km)} km`;
+  if (km === null || km === undefined || !Number.isFinite(Number(km)) || km === Infinity) {
+    return 'Distancia no disponible';
+  }
+  const n = Number(km);
+  if (n < 1) return `~${Math.round(n * 1000)} m`;
+  if (n < 10) return `~${n.toFixed(1)} km`;
+  return `~${Math.round(n)} km`;
 }

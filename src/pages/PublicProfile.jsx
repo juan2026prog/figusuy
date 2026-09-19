@@ -18,13 +18,13 @@ export default function PublicProfile() {
 
   useEffect(() => {
     if (username) {
-      fetchPublicProfile(username, user?.id)
+      fetchPublicProfile(username)
       
-      if (user?.id) {
+      if (user?.id && typeof trackEvent === 'function') {
         trackEvent(user.id, 'profile_visit', { visited_username: username })
       }
     }
-  }, [username, user?.id])
+  }, [username, user?.id, trackEvent])
 
   if (loading) {
     return (
@@ -146,7 +146,7 @@ export default function PublicProfile() {
         <h2 style={{ fontSize: '1.5rem', fontWeight: 800 }}>Colecciones Públicas</h2>
       </div>
 
-      {albums.length === 0 ? (
+      {(!albums || albums.length === 0) ? (
         <div className="glass-panel" style={{ padding: '3rem 2rem', textAlign: 'center', borderRadius: '16px' }}>
           <span className="material-symbols-outlined" style={{ fontSize: '3rem', color: 'var(--color-text-muted)', marginBottom: '1rem' }}>collections_bookmark</span>
           <p style={{ color: 'var(--color-text-muted)', fontSize: '1.1rem' }}>No hay colecciones públicas visibles.</p>

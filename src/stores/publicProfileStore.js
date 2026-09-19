@@ -1,4 +1,4 @@
-﻿import { create } from 'zustand'
+import { create } from 'zustand'
 import { supabase } from '../lib/supabase'
 
 export const usePublicProfileStore = create((set, get) => ({
@@ -7,12 +7,11 @@ export const usePublicProfileStore = create((set, get) => ({
   loading: false,
   error: null,
 
-  fetchPublicProfile: async (username, visitorId) => {
+  fetchPublicProfile: async (username) => {
     set({ loading: true, error: null, publicProfile: null })
     try {
       const { data, error } = await supabase.rpc('get_public_profile', {
-        p_username: username,
-        p_visitor_id: visitorId || null
+        p_username: username
       })
 
       if (error) throw error

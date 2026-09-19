@@ -1,4 +1,4 @@
-﻿import React, { useEffect } from 'react'
+import React, { useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { usePublicProfileStore } from '../stores/publicProfileStore'
 import { useAuthStore } from '../stores/authStore'
@@ -13,9 +13,9 @@ export default function PublicAlbum() {
 
   useEffect(() => {
     if (username && albumId) {
-      fetchPublicAlbum(username, albumId, user?.id)
+      fetchPublicAlbum(username, albumId)
     }
-  }, [username, albumId, user?.id])
+  }, [username, albumId])
 
   if (loading) {
     return (

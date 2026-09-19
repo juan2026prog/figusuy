@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect } from 'react'
 import 'leaflet/dist/leaflet.css'
 import { MapContainer, TileLayer, Marker, Popup, Circle, useMap } from 'react-leaflet'
 import L from 'leaflet'
@@ -31,14 +31,25 @@ const safePointIcon = new L.Icon({
   shadowSize: [41, 41]
 })
 
-// Custom User / Person Icon
-const personIcon = new L.Icon({
-  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41]
+// Custom Neighborhood Centroid Badge Icon (not pinpoint)
+const personAreaIcon = L.divIcon({
+  className: 'person-area-marker',
+  html: `<div style="
+    background: #3b82f6;
+    color: white;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.5);
+    border: 2px solid #ffffff;
+  "><span class="material-symbols-outlined" style="font-size: 16px;">person</span></div>`,
+  iconSize: [28, 28],
+  iconAnchor: [14, 14],
+  popupAnchor: [0, -14]
 })
 
 function MapViewController({ center, zoom = 13 }) {
@@ -53,12 +64,12 @@ function MapViewController({ center, zoom = 13 }) {
 
 /**
  * Reusable Map Component for FigusUY
- * Supports STORES (exact pins), SAFE_POINTS (exact pins) and PEOPLE/MATCHES (approximate areas)
+ * Supports STORES (exact pins), SAFE_POINTS (exact pins) and PEOPLE/MATCHES (approximate neighborhood areas)
  */
 export default function FigusMap({
-  center = [-34.9011, -56.1645], // Default Montevideo
+  center = [-34.9011, -56.1645],
   zoom = 13,
-  items = [], // Array of points { id, lat, lng, title, subtitle, type: 'store' | 'safe_point' | 'person', raw: any }
+  items = [],
   selectedItemId = null,
   onItemSelect,
   height = '400px',
@@ -99,7 +110,7 @@ export default function FigusMap({
           const isSafePoint = item.type === 'safe_point' || item.type === 'safe_exchange_zone'
 
           let markerIcon = storeIcon
-          if (isPerson) markerIcon = personIcon
+          if (isPerson) markerIcon = personAreaIcon
           else if (isSafePoint) markerIcon = safePointIcon
 
           return (
@@ -107,13 +118,13 @@ export default function FigusMap({
               {isPerson && (
                 <Circle
                   center={[item.lat, item.lng]}
-                  radius={800} // Approximate 800m neighborhood radius
+                  radius={1000} // Approximate 1km neighborhood zone
                   pathOptions={{
                     color: '#3b82f6',
                     fillColor: '#3b82f6',
-                    fillOpacity: 0.15,
-                    weight: 1,
-                    dashArray: '4, 4'
+                    fillOpacity: 0.12,
+                    weight: 1.5,
+                    dashArray: '5, 5'
                   }}
                 />
               )}
@@ -132,6 +143,11 @@ export default function FigusMap({
                     <div style={{ fontWeight: 'bold', fontSize: '0.9rem', marginBottom: '4px' }}>
                       {item.title}
                     </div>
+                    {isPerson && (
+                      <div style={{ fontSize: '0.7rem', color: '#3b82f6', fontWeight: 600, marginBottom: '4px' }}>
+                        📍 Centro aproximado de zona (Privacidad protegida)
+                      </div>
+                    )}
                     {item.subtitle && (
                       <div style={{ fontSize: '0.75rem', color: '#475569', marginBottom: '6px' }}>
                         {item.subtitle}

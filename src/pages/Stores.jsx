@@ -691,7 +691,9 @@ export default function Stores() {
                    Cerrar
                 </button>
                 <button className="sf-btn sf-orange" onClick={() => {
-                   const dest = selectedLoc.address || selectedLoc.name;
+                   const dest = (selectedLoc.lat && selectedLoc.lng) 
+                     ? `${selectedLoc.lat},${selectedLoc.lng}`
+                     : (selectedLoc.address || selectedLoc.name);
                    window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(dest)}`, '_blank');
                 }}>
                    📍 Iniciar navegación en Maps

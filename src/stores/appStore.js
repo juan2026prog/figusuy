@@ -428,6 +428,17 @@ export const useAppStore = create((set, get) => ({
   },
 
   createOrGetChat: async (userId, otherUserId, albumId) => {
+    // Check bilateral blocks before creating or fetching chat
+    const { data: blockData } = await supabase
+      .from('user_blocks')
+      .select('id')
+      .or(`and(blocker_id.eq.${userId},blocked_id.eq.${otherUserId}),and(blocker_id.eq.${otherUserId},blocked_id.eq.${userId})`)
+      .limit(1)
+
+    if (blockData && blockData.length > 0) {
+      throw new Error('No puedes iniciar un chat con este usuario.')
+    }
+
     const { data: existing } = await supabase
       .from('chats')
       .select('*')

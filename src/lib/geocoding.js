@@ -1,7 +1,8 @@
+import { supabase } from './supabase'
+
 /**
  * Geocoding Service Adapter for FigusUY
- * Provides cached, debounced, normalized geocoding and reverse geocoding
- * Supports area mode (for collectors/privacy) and address mode (for stores/hubs).
+ * Proxies geocoding requests through Supabase Edge Functions with local caching & fallback
  */
 
 const geocodeCache = new Map();
@@ -13,9 +14,6 @@ export const URUGUAY_DEPARTMENTS = [
   'Rivera', 'Rocha', 'Salto', 'San José', 'Soriano', 'Tacuarembó', 'Treinta y Tres'
 ];
 
-/**
- * Normalizes department string from various formats
- */
 export function normalizeDepartment(dept) {
   if (!dept) return '';
   let clean = String(dept)
@@ -28,9 +26,6 @@ export function normalizeDepartment(dept) {
   return match || clean;
 }
 
-/**
- * Normalizes neighborhood and city names
- */
 export function normalizeLocationParts(addressObj = {}) {
   const neighborhood = addressObj.neighbourhood || addressObj.suburb || addressObj.residential || addressObj.village || addressObj.quarter || '';
   const city = addressObj.city || addressObj.town || addressObj.municipality || addressObj.county || '';
@@ -46,11 +41,11 @@ export function normalizeLocationParts(addressObj = {}) {
 
 /**
  * Geocode a query string with caching and area/address mode filtering
- * @param {string} query 
- * @param {Object} options { mode: 'area' | 'address', countryCode: 'uy', limit: number }
  */
 export async function geocode(query, options = {}) {
   const { mode = 'area', countryCode = 'uy', limit = 5 } = options;
+  if (!query || typeof query !== 'string' || query.trim().length < 2) return [];
+
   const cleanQuery = query.trim().toLowerCase();
   const cacheKey = `${mode}:${countryCode}:${cleanQuery}`;
 
@@ -58,6 +53,21 @@ export async function geocode(query, options = {}) {
     return geocodeCache.get(cacheKey);
   }
 
+  try {
+    // 1. Try secure Supabase Edge Function first
+    const { data, error } = await supabase.functions.invoke('geocode-location', {
+      body: { query: cleanQuery, mode, countryCode, limit }
+    });
+
+    if (!error && data?.results && Array.isArray(data.results)) {
+      geocodeCache.set(cacheKey, data.results);
+      return data.results;
+    }
+  } catch (err) {
+    console.warn('Edge function geocode error, falling back:', err);
+  }
+
+  // 2. Client-side fallback if edge function is unreachable
   try {
     const url = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=${limit}&countrycodes=${countryCode}&q=${encodeURIComponent(query)}`;
     const res = await fetch(url, {
@@ -89,30 +99,24 @@ export async function geocode(query, options = {}) {
       };
     });
 
-    // In area mode, prioritize or filter to administrative/neighborhood boundaries
-    let filtered = normalizedResults;
-    if (mode === 'area') {
-      filtered = normalizedResults.filter(item => item.isArea || item.neighborhood || item.department);
-      if (filtered.length === 0) filtered = normalizedResults; // fallback
-    }
-
-    geocodeCache.set(cacheKey, filtered);
-    return filtered;
-  } catch (error) {
-    console.warn('Geocode error:', error);
+    geocodeCache.set(cacheKey, normalizedResults);
+    return normalizedResults;
+  } catch (fallbackError) {
+    console.warn('Geocode fallback error:', fallbackError);
     return [];
   }
 }
 
 /**
  * Reverse geocode coordinates to obtain administrative area details
- * @param {number} lat 
- * @param {number} lng 
  */
 export async function reverseGeocode(lat, lng) {
-  if (!lat || !lng) return null;
-  const roundedLat = Number(lat).toFixed(4);
-  const roundedLng = Number(lng).toFixed(4);
+  const numLat = Number(lat);
+  const numLng = Number(lng);
+  if (!Number.isFinite(numLat) || !Number.isFinite(numLng)) return null;
+
+  const roundedLat = numLat.toFixed(4);
+  const roundedLng = numLng.toFixed(4);
   const cacheKey = `${roundedLat},${roundedLng}`;
 
   if (reverseCache.has(cacheKey)) {
@@ -120,7 +124,22 @@ export async function reverseGeocode(lat, lng) {
   }
 
   try {
-    const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`;
+    // 1. Try secure Supabase Edge Function
+    const { data, error } = await supabase.functions.invoke('reverse-geocode-location', {
+      body: { lat: numLat, lng: numLng }
+    });
+
+    if (!error && data?.data) {
+      reverseCache.set(cacheKey, data.data);
+      return data.data;
+    }
+  } catch (err) {
+    console.warn('Edge function reverse geocode error, falling back:', err);
+  }
+
+  // 2. Client fallback
+  try {
+    const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${numLat}&lon=${numLng}&zoom=18&addressdetails=1`;
     const res = await fetch(url, {
       headers: {
         'Accept-Language': 'es',
@@ -142,14 +161,11 @@ export async function reverseGeocode(lat, lng) {
     reverseCache.set(cacheKey, result);
     return result;
   } catch (err) {
-    console.warn('Reverse Geocoding Error:', err);
+    console.warn('Reverse Geocoding Fallback Error:', err);
     return null;
   }
 }
 
-/**
- * Clear geocoding in-memory caches
- */
 export function clearGeocodeCache() {
   geocodeCache.clear();
   reverseCache.clear();

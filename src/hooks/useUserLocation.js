@@ -2,13 +2,13 @@ import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../stores/authStore'
 import { getUserLocation } from '../utils/location'
-import { reverseGeocode } from '../lib/geocoding'
+import { reverseGeocode, geocode } from '../lib/geocoding'
 
 /**
  * Custom hook for managing private user location securely.
  * States:
  * - 'none': No location configured
- * - 'manual': Manual department/neighborhood selected
+ * - 'manual': Manual department/neighborhood selected + centroid geocoded internally
  * - 'gps': Private GPS coordinates enabled in user_locations_private
  */
 export function useUserLocation() {
@@ -60,7 +60,7 @@ export function useUserLocation() {
       })
 
       if (rpcError) {
-        console.warn('RPC update_my_location failed, falling back to direct table update:', rpcError)
+        console.warn('RPC update_my_location fallback to direct table update:', rpcError)
         await supabase
           .from('user_locations_private')
           .upsert({
@@ -104,22 +104,52 @@ export function useUserLocation() {
   }, [profile?.id, profile?.department, profile?.city, profile?.neighborhood, updateProfile])
 
   /**
-   * Set manual location (zone / department / neighborhood) without storing exact GPS
+   * Set manual location (department/neighborhood) AND geocode internal area centroid
+   * for distance matching in Free/Plus plans.
    */
   const setManualLocation = useCallback(async ({ department, city = '', neighborhood = '' }) => {
     setLoading(true)
     setError(null)
     try {
-      // 1. Invalidate/delete any private GPS coordinates
-      try {
-        await supabase.rpc('delete_my_location')
-      } catch (rpcErr) {
-        if (profile?.id) {
-          await supabase.from('user_locations_private').delete().eq('user_id', profile.id)
+      const queryArea = [neighborhood, city, department, 'Uruguay'].filter(Boolean).join(', ')
+      const geocodedAreas = await geocode(queryArea, { mode: 'area', countryCode: 'uy', limit: 1 })
+      const areaCentroid = geocodedAreas?.[0] || null
+
+      if (areaCentroid && Number.isFinite(areaCentroid.lat) && Number.isFinite(areaCentroid.lng)) {
+        // Save area centroid as manual_approx in user_locations_private
+        try {
+          await supabase.rpc('update_my_location', {
+            p_latitude: areaCentroid.lat,
+            p_longitude: areaCentroid.lng,
+            p_accuracy_m: 1000,
+            p_source: 'manual_approx',
+            p_precision_level: neighborhood ? 'neighborhood' : 'city'
+          })
+        } catch (rpcErr) {
+          if (profile?.id) {
+            await supabase.from('user_locations_private').upsert({
+              user_id: profile.id,
+              latitude: areaCentroid.lat,
+              longitude: areaCentroid.lng,
+              accuracy_m: 1000,
+              source: 'manual_approx',
+              precision_level: neighborhood ? 'neighborhood' : 'city',
+              updated_at: new Date().toISOString()
+            })
+          }
+        }
+      } else {
+        // Fallback: clear private coords if geocode fails
+        try {
+          await supabase.rpc('delete_my_location')
+        } catch (delErr) {
+          if (profile?.id) {
+            await supabase.from('user_locations_private').delete().eq('user_id', profile.id)
+          }
         }
       }
 
-      // 2. Save manual approximate metadata
+      // Save public approximate metadata
       const profilePayload = {
         location_source: 'manual',
         department: department || '',
@@ -134,7 +164,7 @@ export function useUserLocation() {
       setLocationState('manual')
       setAreaDetails({ department, city, neighborhood })
 
-      return { success: true }
+      return { success: true, centroid: areaCentroid }
     } catch (err) {
       const msg = typeof err === 'string' ? err : err.message || 'Error al guardar zona'
       setError(msg)
