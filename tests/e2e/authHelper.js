@@ -151,6 +151,28 @@ export async function setupAuthenticatedState(page) {
         contentType: 'application/json',
         body: JSON.stringify(5)
       });
+    } else if (url.includes('/premium_plans')) {
+      const plans = [
+        { id: 'plan-plus-1', name: 'Plus', plan_name: 'plus', price: '2.49', interval: 'month', is_active: true },
+        { id: 'plan-pro-1', name: 'Pro', plan_name: 'pro', price: '4.85', interval: 'month', is_active: true }
+      ];
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(isSingle ? plans[0] : plans)
+      });
+    } else if (url.includes('/business_plans')) {
+      const bplans = [
+        { id: 'bp-1', name: 'Plan Boost', plan_name: 'gratis', monthly_price: 590, is_active: true, max_photos: 1, max_active_promos: 1 },
+        { id: 'bp-2', name: 'Plan Radar', plan_name: 'turbo', monthly_price: 990, is_active: true, max_photos: 3, max_active_promos: 3, can_have_featured_badge: true },
+        { id: 'bp-3', name: 'Plan Conversion', plan_name: 'dominio', monthly_price: 1490, is_active: true, max_photos: 10, max_active_promos: 10, can_have_featured_badge: true, can_have_featured_cta: true },
+        { id: 'bp-4', name: 'Plan Collector Hub', plan_name: 'partner_store', monthly_price: 1490, is_active: true, max_photos: 10, max_active_promos: 10, can_have_featured_badge: true, can_have_featured_cta: true }
+      ];
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(isSingle ? bplans[0] : bplans)
+      });
     } else if (url.includes('/albums')) {
       const albumData = {
         id: 'album-1',

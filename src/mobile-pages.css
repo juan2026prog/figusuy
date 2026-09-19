@@ -126,7 +126,7 @@
   .chat-page-root .bubble { max-width: 88%; padding: 10px 12px; }
   .chat-page-root .msg-text { font-size: 0.88rem; }
   .chat-page-root .chat-footer { padding: 8px 10px; padding-bottom: max(10px, env(safe-area-inset-bottom)); }
-  .chat-page-root .send-btn { height: 44px; padding: 0 14px; font-size: 0.78rem; }
+  .chat-page-root .send-btn { min-width: 44px; min-height: 44px; height: 44px; padding: 0 14px; font-size: 0.78rem; }
   .chat-page-root .hero-strip { grid-template-columns: 1fr; }
   .chat-page-root .exchange-grid { grid-template-columns: 1fr; }
   .chat-page-root .completion-card { margin: 8px; padding: 12px; }
