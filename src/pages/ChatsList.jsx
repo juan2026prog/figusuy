@@ -68,6 +68,16 @@ export default function ChatsListPage() {
     return chat.user_1 === profile?.id ? chat.profile2 : chat.profile1
   }
 
+  const isChatUnanswered = (chat) => {
+    const hasMessage = Boolean(chat.last_message_preview || chat.last_message_at || chat.last_sender_id)
+    if (!hasMessage) return false
+    const other = getOtherUser(chat)
+    if (chat.last_sender_id) {
+      return chat.last_sender_id === other?.id && chat.last_sender_id !== profile?.id
+    }
+    return false
+  }
+
   const filteredChats = chats.filter((chat) => {
     const other = getOtherUser(chat)
     if (searchQuery.trim()) {
@@ -84,7 +94,7 @@ export default function ChatsListPage() {
     if (activeTab === 'cerca') {
       return other?.city === profile?.city || other?.department === profile?.department
     }
-    if (activeTab === 'sin responder') return !chat.last_message_preview
+    if (activeTab === 'sin responder') return isChatUnanswered(chat)
     return true
   })
 

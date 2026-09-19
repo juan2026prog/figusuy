@@ -20,7 +20,8 @@ export default function ChatPage() {
   const navigate = useNavigate()
   const { profile } = useAuthStore()
   const { messages, fetchMessages, sendMessage, subscribeToMessages } = useAppStore()
-  const { completion, trigger } = useExchangeStore((state) => state.getChatCompletionState(chatId))
+  const completion = useExchangeStore((state) => state.completions[chatId] || null)
+  const trigger = useExchangeStore((state) => state.triggers[chatId] || null)
   const fetchCompletionState = useExchangeStore((state) => state.fetchCompletionState)
   const submitExchangeResponse = useExchangeStore((state) => state.submitResponse)
   const exchangeLoading = useExchangeStore((state) => state.loading)
@@ -255,11 +256,11 @@ export default function ChatPage() {
                     flexDirection: 'column'
                   }}
                 >
-                  {otherUser?.username && (
+                  {(otherUser?.username || otherUser?.id) && (
                     <button
                       onClick={() => {
                         setShowMenu(false)
-                        navigate(`/u/${otherUser.username}`)
+                        navigate(otherUser?.username ? `/u/${otherUser.username}` : `/u/${otherUser.id}`)
                       }}
                       style={{
                         padding: '10px 14px',

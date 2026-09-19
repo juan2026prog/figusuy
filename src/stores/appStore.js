@@ -384,7 +384,41 @@ export const useAppStore = create((set, get) => ({
       `)
       .or(`user_1.eq.${userId},user_2.eq.${userId}`)
 
-    const sortedData = (data || []).sort((a, b) => {
+    const chatList = data || []
+    const chatIds = chatList.map(c => c.id).filter(Boolean)
+    let lastMessagesByChat = {}
+
+    if (chatIds.length > 0) {
+      try {
+        const { data: latestMsgs } = await supabase
+          .from('messages')
+          .select('chat_id, sender_id, created_at, text')
+          .in('chat_id', chatIds)
+          .order('created_at', { ascending: false })
+
+        if (latestMsgs) {
+          for (const msg of latestMsgs) {
+            if (!lastMessagesByChat[msg.chat_id]) {
+              lastMessagesByChat[msg.chat_id] = msg
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('Could not fetch auxiliary latest messages:', err)
+      }
+    }
+
+    const enhancedData = chatList.map(chat => {
+      const latestMsg = lastMessagesByChat[chat.id]
+      return {
+        ...chat,
+        last_sender_id: chat.last_sender_id || latestMsg?.sender_id || null,
+        last_message_preview: chat.last_message_preview || latestMsg?.text || null,
+        last_message_at: chat.last_message_at || latestMsg?.created_at || chat.last_message_at || chat.created_at
+      }
+    })
+
+    const sortedData = enhancedData.sort((a, b) => {
       const timeA = new Date(a.last_message_at || a.created_at).getTime()
       const timeB = new Date(b.last_message_at || b.created_at).getTime()
       return timeB - timeA
@@ -435,6 +469,20 @@ export const useAppStore = create((set, get) => ({
       .insert({ chat_id: chatId, sender_id: senderId, text })
 
     if (!error) {
+      const currentChats = get().chats || []
+      const nowIso = new Date().toISOString()
+      const updatedChats = currentChats.map(c => {
+        if (c.id === chatId) {
+          return {
+            ...c,
+            last_message_preview: text,
+            last_message_at: nowIso,
+            last_sender_id: senderId
+          }
+        }
+        return c
+      })
+      set({ chats: updatedChats })
       await get().fetchMessages(chatId)
     }
   },

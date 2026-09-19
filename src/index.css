@@ -8474,7 +8474,7 @@ textarea:focus-visible {
   display: block;
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 1023.98px) {
   .app-sidebar-wrapper {
     display: none;
   }
