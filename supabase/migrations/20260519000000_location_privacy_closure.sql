@@ -1,54 +1,73 @@
 -- Migration: 20260519000000_location_privacy_closure.sql
 -- Description: Idempotent location privacy hardening, server-side chat creation with block checks, auth.uid public profiles, and legacy coordinates protection
 
--- 0. Persistent Distributed Rate Limiting Table & Function for Edge Functions & API
-CREATE TABLE IF NOT EXISTS public.rate_limits (
+-- 0. Persistent Distributed Rate Limiting Table & Function (Private schema, atomic upsert, backend-only)
+CREATE SCHEMA IF NOT EXISTS private;
+REVOKE ALL ON SCHEMA private FROM PUBLIC;
+REVOKE ALL ON SCHEMA private FROM anon, authenticated;
+GRANT USAGE ON SCHEMA private TO service_role;
+
+CREATE TABLE IF NOT EXISTS private.rate_limits (
   key TEXT PRIMARY KEY,
   count INT NOT NULL DEFAULT 1,
   reset_at TIMESTAMPTZ NOT NULL
 );
 
-CREATE OR REPLACE FUNCTION public.check_rate_limit(
-  p_key TEXT,
-  p_max_req INT,
-  p_window_seconds INT
+ALTER TABLE private.rate_limits ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON TABLE private.rate_limits FROM PUBLIC;
+REVOKE ALL ON TABLE private.rate_limits FROM anon, authenticated;
+GRANT ALL ON TABLE private.rate_limits TO service_role;
+
+-- Atomic distributed rate limiter with server-side enforced window/max limits
+CREATE OR REPLACE FUNCTION private.check_geocode_rate_limit(
+  p_key TEXT
 )
 RETURNS BOOLEAN
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public, pg_temp
+SET search_path = private, pg_temp
 AS $$
 DECLARE
   v_now TIMESTAMPTZ := NOW();
-  v_record RECORD;
+  v_window INTERVAL := INTERVAL '60 seconds';
+  v_max_req INT := 30; -- Maximum 30 requests per 60 seconds (strictly enforced server-side)
+  v_count INT;
+  v_reset_at TIMESTAMPTZ;
 BEGIN
-  -- Clean up expired keys periodically or on match
-  DELETE FROM public.rate_limits WHERE reset_at < v_now;
-
-  SELECT count, reset_at INTO v_record
-  FROM public.rate_limits
-  WHERE key = p_key;
-
-  IF v_record IS NULL THEN
-    INSERT INTO public.rate_limits (key, count, reset_at)
-    VALUES (p_key, 1, v_now + (p_window_seconds || ' seconds')::INTERVAL);
-    RETURN TRUE;
+  IF p_key IS NULL OR length(p_key) < 1 OR length(p_key) > 120 THEN
+    RETURN FALSE;
   END IF;
 
-  IF v_record.count >= p_max_req THEN
-    RETURN FALSE; -- Limit exceeded
-  END IF;
+  -- Atomic INSERT ... ON CONFLICT with row lock and slot verification
+  INSERT INTO private.rate_limits AS rl (key, count, reset_at)
+  VALUES (p_key, 1, v_now + v_window)
+  ON CONFLICT (key) DO UPDATE
+  SET
+    count = CASE 
+      WHEN rl.reset_at < v_now THEN 1
+      ELSE rl.count + 1
+    END,
+    reset_at = CASE 
+      WHEN rl.reset_at < v_now THEN v_now + v_window
+      ELSE rl.reset_at
+    END
+  RETURNING rl.count, rl.reset_at INTO v_count, v_reset_at;
 
-  UPDATE public.rate_limits
-  SET count = count + 1
-  WHERE key = p_key;
+  IF v_count > v_max_req THEN
+    RETURN FALSE; -- Rate limit exceeded
+  END IF;
 
   RETURN TRUE;
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.check_rate_limit(TEXT, INT, INT) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.check_rate_limit(TEXT, INT, INT) TO anon, authenticated, service_role;
+-- Drop obsolete signature if existing
+DROP FUNCTION IF EXISTS public.check_rate_limit(TEXT, INT, INT);
+
+-- Strictly restrict execution to service_role (Edge Functions only; anon/authenticated completely blocked)
+REVOKE ALL ON FUNCTION private.check_geocode_rate_limit(TEXT) FROM PUBLIC;
+REVOKE ALL ON FUNCTION private.check_geocode_rate_limit(TEXT) FROM anon, authenticated;
+GRANT EXECUTE ON FUNCTION private.check_geocode_rate_limit(TEXT) TO service_role;
 
 -- 1. Ensure user_locations_private exists with all constraints
 CREATE TABLE IF NOT EXISTS public.user_locations_private (

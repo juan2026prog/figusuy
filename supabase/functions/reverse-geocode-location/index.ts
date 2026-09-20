@@ -3,54 +3,72 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 import { getCorsHeaders, handleOptions } from "../_shared/cors.ts"
 
 const serverReverseCache = new Map<string, any>()
-const ipRateLimits = new Map<string, { count: number; resetAt: number }>()
-
-const RATE_LIMIT_MAX = 30
-const RATE_LIMIT_WINDOW = 60 * 1000
 const UPSTREAM_TIMEOUT_MS = 6000
 
-async function verifyRateLimit(clientIp: string): Promise<boolean> {
-  const supabaseUrl = Deno.env.get("SUPABASE_URL")
-  const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")
-
-  if (supabaseUrl && supabaseServiceKey) {
+async function getClientRateKey(req: Request, supabaseAdmin: any): Promise<string> {
+  // 1. If authenticated JWT header exists, verify and extract user ID server-side
+  const authHeader = req.headers.get("Authorization")
+  if (authHeader && supabaseAdmin) {
     try {
-      const supabase = createClient(supabaseUrl, supabaseServiceKey)
-      const { data: allowed, error } = await supabase.rpc("check_rate_limit", {
-        p_key: `revgeo:${clientIp}`,
-        p_max_req: RATE_LIMIT_MAX,
-        p_window_seconds: 60
-      })
-      if (!error && typeof allowed === "boolean") {
-        return allowed
+      const token = authHeader.replace(/Bearer /i, "")
+      const { data: { user }, error } = await supabaseAdmin.auth.getUser(token)
+      if (!error && user?.id) {
+        return `revgeo:user:${user.id}`
       }
     } catch {
-      // fallback to memory
+      // Fallback to IP
     }
   }
 
-  const now = Date.now()
-  const record = ipRateLimits.get(clientIp)
-  if (!record || now > record.resetAt) {
-    ipRateLimits.set(clientIp, { count: 1, resetAt: now + RATE_LIMIT_WINDOW })
-    return true
+  // 2. Derive trusted IP from proxy/load balancer headers
+  const cfIp = req.headers.get("cf-connecting-ip")
+  const xRealIp = req.headers.get("x-real-ip")
+  const forwardedFor = req.headers.get("x-forwarded-for")
+  const clientIp = (cfIp || xRealIp || (forwardedFor ? forwardedFor.split(",")[0].trim() : null) || "anonymous").slice(0, 45)
+
+  return `revgeo:ip:${clientIp}`
+}
+
+async function verifyRateLimit(rateKey: string, supabaseAdmin: any): Promise<{ allowed: boolean; status?: number; error?: string }> {
+  if (!supabaseAdmin) {
+    return { allowed: false, status: 503, error: "RATE_LIMIT_SERVICE_UNAVAILABLE" }
   }
-  if (record.count >= RATE_LIMIT_MAX) {
-    return false
+
+  try {
+    const { data: allowed, error } = await supabaseAdmin.rpc("check_geocode_rate_limit", {
+      p_key: rateKey
+    })
+
+    if (error) {
+      console.error("Rate limiter RPC error:", error)
+      return { allowed: false, status: 503, error: "RATE_LIMIT_SERVICE_UNAVAILABLE" }
+    }
+
+    if (allowed === false) {
+      return { allowed: false, status: 429, error: "Rate limit exceeded" }
+    }
+
+    return { allowed: true }
+  } catch (err) {
+    console.error("Rate limiter network error:", err)
+    return { allowed: false, status: 503, error: "RATE_LIMIT_SERVICE_UNAVAILABLE" }
   }
-  record.count++
-  return true
 }
 
 serve(async (req: Request) => {
   const options = handleOptions(req)
   if (options) return options
 
-  const clientIp = req.headers.get("x-real-ip") || req.headers.get("x-forwarded-for") || "anonymous"
-  const isAllowed = await verifyRateLimit(clientIp)
-  if (!isAllowed) {
-    return new Response(JSON.stringify({ error: "Rate limit exceeded", data: null }), {
-      status: 429,
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")
+  const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")
+  const supabaseAdmin = (supabaseUrl && supabaseServiceKey) ? createClient(supabaseUrl, supabaseServiceKey) : null
+
+  const rateKey = await getClientRateKey(req, supabaseAdmin)
+  const rateResult = await verifyRateLimit(rateKey, supabaseAdmin)
+
+  if (!rateResult.allowed) {
+    return new Response(JSON.stringify({ error: rateResult.error || "Rate limit error", data: null }), {
+      status: rateResult.status || 429,
       headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
     })
   }
