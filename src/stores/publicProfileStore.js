@@ -27,23 +27,18 @@ export const usePublicProfileStore = create((set, get) => ({
     }
   },
 
-  fetchPublicAlbum: async (username, albumId, visitorId) => {
-    // Para simplificar, obtenemos todo el perfil y filtramos el álbum.
-    // Podríamos hacer un RPC específico si fuera más pesado.
+  fetchPublicAlbum: async (username, albumId) => {
     set({ loading: true, error: null, publicAlbum: null })
     try {
-      const profile = await get().fetchPublicProfile(username, visitorId)
+      const profile = await get().fetchPublicProfile(username)
       if (!profile) return null
 
       const albumInfo = profile.albums.find(a => a.album_id === albumId)
-      if (!albumInfo) throw new Error('́lbum no encontrado o privado')
+      if (!albumInfo) throw new Error('Álbum no encontrado o privado')
 
-      // Ahora obtenemos las faltantes y repetidas de ese usuario si están visibles.
-      // Necesitamos el user_id.
       const userId = profile.id
       let missing = []
       let duplicate = []
-      let checklist = []
 
       if (albumInfo.show_missing) {
         const { data } = await supabase.from('stickers_missing').select('sticker_number').eq('user_id', userId).eq('album_id', albumId).order('sticker_number')
@@ -55,39 +50,33 @@ export const usePublicProfileStore = create((set, get) => ({
         duplicate = (data || []).map(d => d.sticker_number)
       }
 
-      // Si queremos un checklist visible, podríamos traer todos los stickers o owned.
       let owned = []
       if (albumInfo.show_progress) {
         const { data } = await supabase.from('stickers_owned').select('sticker_number').eq('user_id', userId).eq('album_id', albumId).order('sticker_number')
         owned = (data || []).map(d => d.sticker_number)
       }
 
-      // Match computation (only if visitor is logged in)
+      // Match computation via secure server-side RPC (derives caller via auth.uid())
       let matchInfo = {
         canGiveVisitor: [],
         visitorCanGive: [],
         mutual: false
       }
 
-      if (visitorId && visitorId !== userId) {
-        // Find what the profile owner has duplicate that visitor is missing
-        const { data: duplicateData } = await supabase.from('stickers_duplicate').select('sticker_number').eq('user_id', userId).eq('album_id', albumId)
-        const ownerDups = (duplicateData || []).map(d => d.sticker_number)
-
-        const { data: missingDataVisitor } = await supabase.from('stickers_missing').select('sticker_number').eq('user_id', visitorId).eq('album_id', albumId)
-        const visitorMissing = (missingDataVisitor || []).map(d => d.sticker_number)
-
-        matchInfo.canGiveVisitor = ownerDups.filter(n => visitorMissing.includes(n))
-
-        // Find what visitor has duplicate that profile owner is missing
-        const { data: missingDataOwner } = await supabase.from('stickers_missing').select('sticker_number').eq('user_id', userId).eq('album_id', albumId)
-        const ownerMissing = (missingDataOwner || []).map(d => d.sticker_number)
-
-        const { data: duplicateDataVisitor } = await supabase.from('stickers_duplicate').select('sticker_number').eq('user_id', visitorId).eq('album_id', albumId)
-        const visitorDups = (duplicateDataVisitor || []).map(d => d.sticker_number)
-
-        matchInfo.visitorCanGive = visitorDups.filter(n => ownerMissing.includes(n))
-        matchInfo.mutual = matchInfo.canGiveVisitor.length > 0 && matchInfo.visitorCanGive.length > 0
+      try {
+        const { data: serverMatch } = await supabase.rpc('get_public_album_match', {
+          p_username: username,
+          p_album_id: albumId
+        })
+        if (serverMatch && !serverMatch.error) {
+          matchInfo = {
+            canGiveVisitor: serverMatch.canGiveVisitor || [],
+            visitorCanGive: serverMatch.visitorCanGive || [],
+            mutual: Boolean(serverMatch.mutual)
+          }
+        }
+      } catch (matchErr) {
+        console.warn('Could not load server-side match info for public album:', matchErr)
       }
 
       const publicAlbumData = {

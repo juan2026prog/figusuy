@@ -1,6 +1,55 @@
 -- Migration: 20260519000000_location_privacy_closure.sql
 -- Description: Idempotent location privacy hardening, server-side chat creation with block checks, auth.uid public profiles, and legacy coordinates protection
 
+-- 0. Persistent Distributed Rate Limiting Table & Function for Edge Functions & API
+CREATE TABLE IF NOT EXISTS public.rate_limits (
+  key TEXT PRIMARY KEY,
+  count INT NOT NULL DEFAULT 1,
+  reset_at TIMESTAMPTZ NOT NULL
+);
+
+CREATE OR REPLACE FUNCTION public.check_rate_limit(
+  p_key TEXT,
+  p_max_req INT,
+  p_window_seconds INT
+)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+DECLARE
+  v_now TIMESTAMPTZ := NOW();
+  v_record RECORD;
+BEGIN
+  -- Clean up expired keys periodically or on match
+  DELETE FROM public.rate_limits WHERE reset_at < v_now;
+
+  SELECT count, reset_at INTO v_record
+  FROM public.rate_limits
+  WHERE key = p_key;
+
+  IF v_record IS NULL THEN
+    INSERT INTO public.rate_limits (key, count, reset_at)
+    VALUES (p_key, 1, v_now + (p_window_seconds || ' seconds')::INTERVAL);
+    RETURN TRUE;
+  END IF;
+
+  IF v_record.count >= p_max_req THEN
+    RETURN FALSE; -- Limit exceeded
+  END IF;
+
+  UPDATE public.rate_limits
+  SET count = count + 1
+  WHERE key = p_key;
+
+  RETURN TRUE;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.check_rate_limit(TEXT, INT, INT) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.check_rate_limit(TEXT, INT, INT) TO anon, authenticated, service_role;
+
 -- 1. Ensure user_locations_private exists with all constraints
 CREATE TABLE IF NOT EXISTS public.user_locations_private (
   user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -335,7 +384,7 @@ $$;
 REVOKE ALL ON FUNCTION public.get_public_profile(text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.get_public_profile(text) TO anon, authenticated;
 
--- 8. Server-side Chat Creation RPC with Bilateral Blocking Check
+-- 8. Server-side Chat Creation RPC with Bilateral Blocking Check & Album Validation
 CREATE OR REPLACE FUNCTION public.create_or_get_chat_secure(
   p_other_user_id UUID,
   p_album_id UUID
@@ -348,6 +397,9 @@ AS $$
 DECLARE
   v_caller_id UUID;
   v_is_blocked BOOLEAN := false;
+  v_album RECORD;
+  v_caller_has_album BOOLEAN := false;
+  v_other_has_album BOOLEAN := false;
   v_chat RECORD;
 BEGIN
   v_caller_id := auth.uid();
@@ -359,7 +411,37 @@ BEGIN
     RAISE EXCEPTION 'Invalid destination user';
   END IF;
 
-  -- Bilateral block verification
+  IF p_album_id IS NULL THEN
+    RAISE EXCEPTION 'Album ID required';
+  END IF;
+
+  -- 1. Validate album exists and is active
+  SELECT id, is_active INTO v_album
+  FROM public.albums
+  WHERE id = p_album_id;
+
+  IF v_album IS NULL THEN
+    RAISE EXCEPTION 'Album not found';
+  END IF;
+
+  IF v_album.is_active = false THEN
+    RAISE EXCEPTION 'Album is inactive';
+  END IF;
+
+  -- 2. Validate bilateral album ownership/participation
+  SELECT EXISTS (
+    SELECT 1 FROM public.user_albums WHERE user_id = v_caller_id AND album_id = p_album_id
+  ) INTO v_caller_has_album;
+
+  SELECT EXISTS (
+    SELECT 1 FROM public.user_albums WHERE user_id = p_other_user_id AND album_id = p_album_id
+  ) INTO v_other_has_album;
+
+  IF NOT v_caller_has_album OR NOT v_other_has_album THEN
+    RAISE EXCEPTION 'Both users must participate in the album to chat';
+  END IF;
+
+  -- 3. Bilateral block verification
   SELECT EXISTS (
     SELECT 1 FROM public.user_blocks
     WHERE (blocker_id = v_caller_id AND blocked_id = p_other_user_id)
@@ -370,7 +452,7 @@ BEGIN
     RAISE EXCEPTION 'Cannot initiate chat with this user';
   END IF;
 
-  -- Check existing chat
+  -- 4. Check existing chat
   SELECT * INTO v_chat
   FROM public.chats
   WHERE album_id = p_album_id
@@ -381,7 +463,7 @@ BEGIN
     RETURN to_jsonb(v_chat);
   END IF;
 
-  -- Insert new chat
+  -- 5. Insert new chat
   INSERT INTO public.chats (user_1, user_2, album_id)
   VALUES (v_caller_id, p_other_user_id, p_album_id)
   RETURNING * INTO v_chat;
@@ -392,3 +474,100 @@ $$;
 
 REVOKE ALL ON FUNCTION public.create_or_get_chat_secure(UUID, UUID) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.create_or_get_chat_secure(UUID, UUID) TO authenticated;
+
+-- 9. Server-side Match Social RPC for Public Album Detail (Caller derived via auth.uid())
+CREATE OR REPLACE FUNCTION public.get_public_album_match(
+  p_username TEXT,
+  p_album_id UUID
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+DECLARE
+  v_visitor_id UUID;
+  v_owner_id UUID;
+  v_is_blocked BOOLEAN := false;
+  v_owner_dups TEXT[];
+  v_owner_missing TEXT[];
+  v_visitor_dups TEXT[];
+  v_visitor_missing TEXT[];
+  v_can_give_visitor TEXT[];
+  v_visitor_can_give TEXT[];
+BEGIN
+  v_visitor_id := auth.uid();
+  IF v_visitor_id IS NULL THEN
+    RETURN jsonb_build_object(
+      'canGiveVisitor', '[]'::jsonb,
+      'visitorCanGive', '[]'::jsonb,
+      'mutual', false
+    );
+  END IF;
+
+  -- Find album owner by username
+  SELECT id INTO v_owner_id
+  FROM public.profiles
+  WHERE username = p_username;
+
+  IF v_owner_id IS NULL OR v_owner_id = v_visitor_id THEN
+    RETURN jsonb_build_object(
+      'canGiveVisitor', '[]'::jsonb,
+      'visitorCanGive', '[]'::jsonb,
+      'mutual', false
+    );
+  END IF;
+
+  -- Bilateral block check
+  SELECT EXISTS (
+    SELECT 1 FROM public.user_blocks
+    WHERE (blocker_id = v_visitor_id AND blocked_id = v_owner_id)
+       OR (blocker_id = v_owner_id AND blocked_id = v_visitor_id)
+  ) INTO v_is_blocked;
+
+  IF v_is_blocked THEN
+    RETURN jsonb_build_object(
+      'error', 'Match unavailable',
+      'canGiveVisitor', '[]'::jsonb,
+      'visitorCanGive', '[]'::jsonb,
+      'mutual', false
+    );
+  END IF;
+
+  -- Get owner duplicates and missing
+  SELECT COALESCE(array_agg(sticker_number::text), ARRAY[]::TEXT[]) INTO v_owner_dups
+  FROM public.stickers_duplicate
+  WHERE user_id = v_owner_id AND album_id = p_album_id;
+
+  SELECT COALESCE(array_agg(sticker_number::text), ARRAY[]::TEXT[]) INTO v_owner_missing
+  FROM public.stickers_missing
+  WHERE user_id = v_owner_id AND album_id = p_album_id;
+
+  -- Get visitor duplicates and missing
+  SELECT COALESCE(array_agg(sticker_number::text), ARRAY[]::TEXT[]) INTO v_visitor_dups
+  FROM public.stickers_duplicate
+  WHERE user_id = v_visitor_id AND album_id = p_album_id;
+
+  SELECT COALESCE(array_agg(sticker_number::text), ARRAY[]::TEXT[]) INTO v_visitor_missing
+  FROM public.stickers_missing
+  WHERE user_id = v_visitor_id AND album_id = p_album_id;
+
+  -- Compute overlap
+  SELECT COALESCE(array_agg(elem), ARRAY[]::TEXT[]) INTO v_can_give_visitor
+  FROM unnest(v_owner_dups) elem
+  WHERE elem = ANY(v_visitor_missing);
+
+  SELECT COALESCE(array_agg(elem), ARRAY[]::TEXT[]) INTO v_visitor_can_give
+  FROM unnest(v_visitor_dups) elem
+  WHERE elem = ANY(v_owner_missing);
+
+  RETURN jsonb_build_object(
+    'canGiveVisitor', COALESCE(to_jsonb(v_can_give_visitor), '[]'::jsonb),
+    'visitorCanGive', COALESCE(to_jsonb(v_visitor_can_give), '[]'::jsonb),
+    'mutual', (array_length(v_can_give_visitor, 1) > 0 AND array_length(v_visitor_can_give, 1) > 0)
+  );
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.get_public_album_match(TEXT, UUID) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.get_public_album_match(TEXT, UUID) TO authenticated, anon;

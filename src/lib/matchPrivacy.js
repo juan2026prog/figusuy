@@ -33,6 +33,39 @@ export function distanceLabel(km) {
   return `~${Math.round(km)} km`;
 }
 
+export const URUGUAY_DEPARTMENT_CENTROIDS = {
+  'Montevideo': { lat: -34.9011, lng: -56.1645 },
+  'Canelones': { lat: -34.5228, lng: -56.2778 },
+  'Maldonado': { lat: -34.9000, lng: -54.9500 },
+  'Rocha': { lat: -34.4833, lng: -54.3333 },
+  'Treinta y Tres': { lat: -33.2333, lng: -54.3833 },
+  'Cerro Largo': { lat: -32.3667, lng: -54.1833 },
+  'Rivera': { lat: -30.9025, lng: -55.5506 },
+  'Artigas': { lat: -30.4000, lng: -56.4667 },
+  'Salto': { lat: -31.3833, lng: -57.9667 },
+  'Paysandú': { lat: -32.3214, lng: -58.0756 },
+  'Río Negro': { lat: -32.7500, lng: -57.3000 },
+  'Soriano': { lat: -33.5333, lng: -58.3000 },
+  'Colonia': { lat: -34.4626, lng: -57.8398 },
+  'San José': { lat: -34.3375, lng: -56.7136 },
+  'Flores': { lat: -33.5167, lng: -56.9000 },
+  'Florida': { lat: -34.1000, lng: -56.2167 },
+  'Lavalleja': { lat: -34.3759, lng: -55.2378 },
+  'Durazno': { lat: -33.3833, lng: -56.5333 },
+  'Tacuarembó': { lat: -31.7333, lng: -55.9833 }
+};
+
+export function getDepartmentCentroid(department) {
+  if (!department || typeof department !== 'string') return null;
+  const clean = department.trim().toLowerCase();
+  for (const [dept, coords] of Object.entries(URUGUAY_DEPARTMENT_CENTROIDS)) {
+    if (dept.toLowerCase() === clean) {
+      return coords;
+    }
+  }
+  return null;
+}
+
 export function getApproximatePoint(lat, lng, userId) {
   if (
     lat === null ||
@@ -62,3 +95,4 @@ export function getApproximatePoint(lat, lng, userId) {
     lng: Math.round((gridLng + jitterLng) * 1000) / 1000,
   };
 }
+

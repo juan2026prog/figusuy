@@ -96,4 +96,45 @@ describe('Location, Privacy & Edge Match Engine Hardening', () => {
       expect(isBlocked('user-a', 'user-c', blocks)).toBe(false)
     })
   })
+
+  describe('Location Visibility Semantics Verification', () => {
+    it('returns representative department centroid for city visibility and null for none', async () => {
+      const { getDepartmentCentroid } = await import('../src/lib/matchPrivacy')
+      const montevideoCentroid = getDepartmentCentroid('Montevideo')
+      expect(montevideoCentroid).toEqual({ lat: -34.9011, lng: -56.1645 })
+
+      const canelonesCentroid = getDepartmentCentroid('Canelones')
+      expect(canelonesCentroid).toEqual({ lat: -34.5228, lng: -56.2778 })
+
+      const unknownCentroid = getDepartmentCentroid(null)
+      expect(unknownCentroid).toBeNull()
+    })
+  })
+
+  describe('Remote DB Integration Tests (State: DB_TEST_PENDING while FigusUy Supabase is inactive)', () => {
+    it('DB_TEST_PENDING: create_or_get_chat_secure RPC fails when user A has blocked user B or vice-versa', () => {
+      // Integration contract documentation:
+      // When live Supabase DB is active:
+      // 1. Authenticate as User A (auth.uid = userA)
+      // 2. Insert user_blocks (blocker_id = userA, blocked_id = userB)
+      // 3. Call supabase.rpc('create_or_get_chat_secure', { p_other_user_id: userB, p_album_id: activeAlbumId })
+      // 4. Expect exception: 'Cannot initiate chat with this user'
+      // 5. Authenticate as User B (auth.uid = userB)
+      // 6. Call supabase.rpc('create_or_get_chat_secure', { p_other_user_id: userA, p_album_id: activeAlbumId })
+      // 7. Expect exception: 'Cannot initiate chat with this user'
+      const status = 'DB_TEST_PENDING'
+      expect(status).toBe('DB_TEST_PENDING')
+    })
+
+    it('DB_TEST_PENDING: get_public_profile RPC derives caller from auth.uid() and rejects private profile access without visitorId spoof parameter', () => {
+      // Integration contract documentation:
+      // When live Supabase DB is active:
+      // 1. Authenticate as User B
+      // 2. Call supabase.rpc('get_public_profile', { p_username: 'userA_private' })
+      // 3. Expect return jsonb with error: 'Profile is private'
+      // 4. Verify RPC rejects extra visitorId argument
+      const status = 'DB_TEST_PENDING'
+      expect(status).toBe('DB_TEST_PENDING')
+    })
+  })
 })

@@ -44,6 +44,39 @@ export function distanceLabel(km: number): string {
   return `~${Math.round(km)} km`
 }
 
+export const URUGUAY_DEPARTMENT_CENTROIDS: Record<string, { lat: number; lng: number }> = {
+  'Montevideo': { lat: -34.9011, lng: -56.1645 },
+  'Canelones': { lat: -34.5228, lng: -56.2778 },
+  'Maldonado': { lat: -34.9000, lng: -54.9500 },
+  'Rocha': { lat: -34.4833, lng: -54.3333 },
+  'Treinta y Tres': { lat: -33.2333, lng: -54.3833 },
+  'Cerro Largo': { lat: -32.3667, lng: -54.1833 },
+  'Rivera': { lat: -30.9025, lng: -55.5506 },
+  'Artigas': { lat: -30.4000, lng: -56.4667 },
+  'Salto': { lat: -31.3833, lng: -57.9667 },
+  'Paysandú': { lat: -32.3214, lng: -58.0756 },
+  'Río Negro': { lat: -32.7500, lng: -57.3000 },
+  'Soriano': { lat: -33.5333, lng: -58.3000 },
+  'Colonia': { lat: -34.4626, lng: -57.8398 },
+  'San José': { lat: -34.3375, lng: -56.7136 },
+  'Flores': { lat: -33.5167, lng: -56.9000 },
+  'Florida': { lat: -34.1000, lng: -56.2167 },
+  'Lavalleja': { lat: -34.3759, lng: -55.2378 },
+  'Durazno': { lat: -33.3833, lng: -56.5333 },
+  'Tacuarembó': { lat: -31.7333, lng: -55.9833 }
+}
+
+export function getDepartmentCentroid(department: string | null | undefined): { lat: number; lng: number } | null {
+  if (!department || typeof department !== 'string') return null
+  const clean = department.trim().toLowerCase()
+  for (const [dept, coords] of Object.entries(URUGUAY_DEPARTMENT_CENTROIDS)) {
+    if (dept.toLowerCase() === clean) {
+      return coords
+    }
+  }
+  return null
+}
+
 /**
  * Truncates coordinate to 2 decimals (~1.1 km grid) and adds area fuzzing
  * so residential exact GPS can NEVER be derived or reverse engineered.
@@ -339,14 +372,22 @@ serve(async (req: Request) => {
       if (finalScore < SCORE_FLOOR) continue
 
       // Apply candidate location_visibility preferences:
-      // 'full' -> department, city, neighborhood + approx_point
-      // 'city' -> department, city (neighborhood hidden) + approx_point
+      // 'full' -> department, city, neighborhood + approx_point (fuzzy neighborhood centroid)
+      // 'city' -> department, city (neighborhood hidden) + city representative point (NOT ~1km residential GPS derived point)
       // 'none' -> no geographic labels + NO approx_point (distance calculated server-side only)
       const locVis = p.location_visibility || 'full'
       const safeNeighborhood = locVis === 'full' ? p.neighborhood : null
       const safeCity = locVis === 'none' ? null : p.city
       const safeDept = locVis === 'none' ? null : p.department
-      const approxPoint = locVis === 'none' ? null : getApproximatePoint(pLoc?.latitude, pLoc?.longitude, p.id)
+
+      let approxPoint = null
+      if (locVis === 'full') {
+        approxPoint = getApproximatePoint(pLoc?.latitude, pLoc?.longitude, p.id)
+      } else if (locVis === 'city') {
+        approxPoint = getDepartmentCentroid(p.department || p.city)
+      } else {
+        approxPoint = null
+      }
 
       // Strict safe profile (NEVER lat, lng, latitude, longitude, email)
       const safeProfile = {

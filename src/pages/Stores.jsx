@@ -35,15 +35,9 @@ export default function Stores() {
   const [selectedDepartment, setSelectedDepartment] = useState('Todos')
   const [selectedRadar, setSelectedRadar] = useState('Todos')
   const { profile } = useAuthStore()
-  const [userCoords, setUserCoords] = useState(profile?.lat ? { lat: profile.lat, lng: profile.lng } : null)
+  const [userCoords, setUserCoords] = useState(null)
   const { summary, feed } = useLiveMomentum()
   const [reloadKey, setReloadKey] = useState(0)
-
-  useEffect(() => {
-    if (profile?.lat && profile?.lng) {
-      setUserCoords({ lat: profile.lat, lng: profile.lng })
-    }
-  }, [profile?.lat, profile?.lng])
 
   useEffect(() => {
     let active = true
@@ -234,10 +228,6 @@ export default function Stores() {
   }
 
   const handleCercaMio = async () => {
-    if (profile?.lat && profile?.lng) {
-      setUserCoords({ lat: profile.lat, lng: profile.lng })
-      return
-    }
     try {
       const coords = await getUserLocation(10000);
       setUserCoords(coords);

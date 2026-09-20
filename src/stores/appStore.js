@@ -428,59 +428,31 @@ export const useAppStore = create((set, get) => ({
   },
 
   createOrGetChat: async (userId, otherUserId, albumId) => {
-    // 1. Attempt secure server-side RPC with bilateral block check
-    try {
-      const { data: rpcChat, error: rpcError } = await supabase.rpc('create_or_get_chat_secure', {
-        p_other_user_id: otherUserId,
-        p_album_id: albumId
-      })
-      if (!rpcError && rpcChat) {
-        return rpcChat
-      }
-      if (rpcError && rpcError.message && rpcError.message.includes('Cannot initiate chat')) {
+    // FAIL-CLOSED: Secure server-side RPC is the only authorized path for chat creation.
+    // It verifies authentication, non-empty album, bilateral album participation and bilateral blocks.
+    const { data: rpcChat, error: rpcError } = await supabase.rpc('create_or_get_chat_secure', {
+      p_other_user_id: otherUserId,
+      p_album_id: albumId
+    })
+
+    if (rpcError) {
+      if (rpcError.message?.includes('Cannot initiate chat')) {
         throw new Error('No puedes iniciar un chat con este usuario.')
       }
-    } catch (rpcErr) {
-      if (rpcErr.message && rpcErr.message.includes('No puedes iniciar un chat')) {
-        throw rpcErr
+      if (rpcError.message?.includes('Both users must participate')) {
+        throw new Error('Ambos usuarios deben tener este álbum para poder chatear.')
       }
-      console.warn('RPC create_or_get_chat_secure fallback:', rpcErr)
+      if (rpcError.message?.includes('Album is inactive') || rpcError.message?.includes('Album not found')) {
+        throw new Error('El álbum no está disponible.')
+      }
+      throw new Error(rpcError.message || 'Error al iniciar la conversación.')
     }
 
-    // 2. Client-side fallback check
-    const { data: blockData } = await supabase
-      .from('user_blocks')
-      .select('id')
-      .or(`and(blocker_id.eq.${userId},blocked_id.eq.${otherUserId}),and(blocker_id.eq.${otherUserId},blocked_id.eq.${userId})`)
-      .limit(1)
-
-    if (blockData && blockData.length > 0) {
-      throw new Error('No puedes iniciar un chat con este usuario.')
+    if (!rpcChat) {
+      throw new Error('No se pudo recuperar la conversación.')
     }
 
-    const { data: existing } = await supabase
-      .from('chats')
-      .select('*')
-      .or(
-        `and(user_1.eq.${userId},user_2.eq.${otherUserId}),and(user_1.eq.${otherUserId},user_2.eq.${userId})`
-      )
-      .eq('album_id', albumId)
-      .maybeSingle()
-
-    if (existing) return existing
-
-    const { data: newChat, error } = await supabase
-      .from('chats')
-      .insert({
-        user_1: userId,
-        user_2: otherUserId,
-        album_id: albumId,
-      })
-      .select()
-      .single()
-
-    if (error) throw error
-    return newChat
+    return rpcChat
   },
 
   fetchMessages: async (chatId) => {

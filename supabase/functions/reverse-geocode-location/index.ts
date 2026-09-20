@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 import { getCorsHeaders, handleOptions } from "../_shared/cors.ts"
 
 const serverReverseCache = new Map<string, any>()
@@ -6,19 +7,39 @@ const ipRateLimits = new Map<string, { count: number; resetAt: number }>()
 
 const RATE_LIMIT_MAX = 30
 const RATE_LIMIT_WINDOW = 60 * 1000
+const UPSTREAM_TIMEOUT_MS = 6000
 
-function isRateLimited(clientIp: string): boolean {
+async function verifyRateLimit(clientIp: string): Promise<boolean> {
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")
+  const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")
+
+  if (supabaseUrl && supabaseServiceKey) {
+    try {
+      const supabase = createClient(supabaseUrl, supabaseServiceKey)
+      const { data: allowed, error } = await supabase.rpc("check_rate_limit", {
+        p_key: `revgeo:${clientIp}`,
+        p_max_req: RATE_LIMIT_MAX,
+        p_window_seconds: 60
+      })
+      if (!error && typeof allowed === "boolean") {
+        return allowed
+      }
+    } catch {
+      // fallback to memory
+    }
+  }
+
   const now = Date.now()
   const record = ipRateLimits.get(clientIp)
   if (!record || now > record.resetAt) {
     ipRateLimits.set(clientIp, { count: 1, resetAt: now + RATE_LIMIT_WINDOW })
-    return false
-  }
-  if (record.count >= RATE_LIMIT_MAX) {
     return true
   }
+  if (record.count >= RATE_LIMIT_MAX) {
+    return false
+  }
   record.count++
-  return false
+  return true
 }
 
 serve(async (req: Request) => {
@@ -26,7 +47,8 @@ serve(async (req: Request) => {
   if (options) return options
 
   const clientIp = req.headers.get("x-real-ip") || req.headers.get("x-forwarded-for") || "anonymous"
-  if (isRateLimited(clientIp)) {
+  const isAllowed = await verifyRateLimit(clientIp)
+  if (!isAllowed) {
     return new Response(JSON.stringify({ error: "Rate limit exceeded", data: null }), {
       status: 429,
       headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
@@ -54,12 +76,18 @@ serve(async (req: Request) => {
     }
 
     const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${numLat}&lon=${numLng}&zoom=18&addressdetails=1`
+    
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), UPSTREAM_TIMEOUT_MS)
+
     const res = await fetch(url, {
+      signal: controller.signal,
       headers: {
         "Accept-Language": "es",
         "User-Agent": "FigusUY-App/2.0 (contact@figusuy.app)"
       }
     })
+    clearTimeout(timeoutId)
 
     if (!res.ok) {
       throw new Error(`Upstream reverse geocoding failed: ${res.statusText}`)

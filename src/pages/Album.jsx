@@ -827,11 +827,6 @@ export default function AlbumPage() {
     setLoadingPartnerStores(true)
 
     let coords = userCoords
-    if (!coords && profile?.lat) {
-      coords = { lat: profile.lat, lng: profile.lng }
-      setUserCoords(coords)
-    }
-
     if (!coords) {
       try {
         coords = await getUserLocation(5000)
