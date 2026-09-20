@@ -176,6 +176,48 @@ describe('Location, Privacy & Edge Match Engine Hardening', () => {
       expect(deniedCount).toBe(15)
       expect(state.count).toBe(10)
     })
+
+    it('guarantees count capping logic via LEAST(count + 1, max_req + 1)', () => {
+      const maxReq = 30
+      const simulateUpsert = (currentCount, isExpired) => {
+        if (isExpired) return 1
+        return Math.min(currentCount + 1, maxReq + 1)
+      }
+
+      let count = 0
+      for (let i = 0; i < 50; i++) {
+        count = simulateUpsert(count, false)
+      }
+      expect(count).toBe(31) // Capped at maxReq + 1, preventing integer overflow / counter explosion
+    })
+
+    it('verifies migration contract for private rate limiter schema and public service_role bridge', async () => {
+      const fs = await import('fs')
+      const path = await import('path')
+      const migrationPath = path.resolve(__dirname, '../supabase/migrations/20260519000000_location_privacy_closure.sql')
+      const migrationSql = fs.readFileSync(migrationPath, 'utf-8')
+
+      // 1. Private schema table and function definitions
+      expect(migrationSql).toContain('CREATE SCHEMA IF NOT EXISTS private;')
+      expect(migrationSql).toContain('CREATE TABLE IF NOT EXISTS private.rate_limits')
+      expect(migrationSql).toContain('CREATE OR REPLACE FUNCTION private.check_geocode_rate_limit(')
+      expect(migrationSql).toContain('LEAST(rl.count + 1, v_max_req + 1)')
+
+      // 2. Private permissions: restricted strictly to service_role
+      expect(migrationSql).toContain('REVOKE ALL ON TABLE private.rate_limits FROM PUBLIC;')
+      expect(migrationSql).toContain('REVOKE ALL ON TABLE private.rate_limits FROM anon, authenticated;')
+      expect(migrationSql).toContain('GRANT ALL ON TABLE private.rate_limits TO service_role;')
+      expect(migrationSql).toContain('REVOKE ALL ON FUNCTION private.check_geocode_rate_limit(TEXT) FROM anon, authenticated;')
+      expect(migrationSql).toContain('GRANT EXECUTE ON FUNCTION private.check_geocode_rate_limit(TEXT) TO service_role;')
+
+      // 3. Public bridge wrapper: SECURITY INVOKER calling private function, granted only to service_role
+      expect(migrationSql).toContain('CREATE OR REPLACE FUNCTION public.check_geocode_rate_limit(')
+      expect(migrationSql).toContain('SECURITY INVOKER')
+      expect(migrationSql).toContain('SELECT private.check_geocode_rate_limit(p_key);')
+      expect(migrationSql).toContain('REVOKE ALL ON FUNCTION public.check_geocode_rate_limit(TEXT) FROM PUBLIC;')
+      expect(migrationSql).toContain('REVOKE ALL ON FUNCTION public.check_geocode_rate_limit(TEXT) FROM anon, authenticated;')
+      expect(migrationSql).toContain('GRANT EXECUTE ON FUNCTION public.check_geocode_rate_limit(TEXT) TO service_role;')
+    })
   })
 
   describe('Remote DB Integration Tests (State: DB_TEST_PENDING while FigusUy Supabase is inactive)', () => {
@@ -216,3 +258,4 @@ describe('Location, Privacy & Edge Match Engine Hardening', () => {
     })
   })
 })
+

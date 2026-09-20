@@ -38,14 +38,14 @@ BEGIN
     RETURN FALSE;
   END IF;
 
-  -- Atomic INSERT ... ON CONFLICT with row lock and slot verification
+  -- Atomic INSERT ... ON CONFLICT with row lock, slot verification and count capping
   INSERT INTO private.rate_limits AS rl (key, count, reset_at)
   VALUES (p_key, 1, v_now + v_window)
   ON CONFLICT (key) DO UPDATE
   SET
     count = CASE 
       WHEN rl.reset_at < v_now THEN 1
-      ELSE rl.count + 1
+      ELSE LEAST(rl.count + 1, v_max_req + 1)
     END,
     reset_at = CASE 
       WHEN rl.reset_at < v_now THEN v_now + v_window
@@ -61,13 +61,30 @@ BEGIN
 END;
 $$;
 
--- Drop obsolete signature if existing
+-- Drop obsolete legacy signatures if existing
 DROP FUNCTION IF EXISTS public.check_rate_limit(TEXT, INT, INT);
+DROP FUNCTION IF EXISTS public.check_geocode_rate_limit(TEXT);
 
--- Strictly restrict execution to service_role (Edge Functions only; anon/authenticated completely blocked)
+-- Strictly restrict execution of private helper to service_role
 REVOKE ALL ON FUNCTION private.check_geocode_rate_limit(TEXT) FROM PUBLIC;
 REVOKE ALL ON FUNCTION private.check_geocode_rate_limit(TEXT) FROM anon, authenticated;
 GRANT EXECUTE ON FUNCTION private.check_geocode_rate_limit(TEXT) TO service_role;
+
+-- Public bridge wrapper for Data API / Edge Functions (Security Invoker, backend only)
+CREATE OR REPLACE FUNCTION public.check_geocode_rate_limit(
+  p_key TEXT
+)
+RETURNS BOOLEAN
+LANGUAGE sql
+SECURITY INVOKER
+SET search_path = ''
+AS $$
+  SELECT private.check_geocode_rate_limit(p_key);
+$$;
+
+REVOKE ALL ON FUNCTION public.check_geocode_rate_limit(TEXT) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.check_geocode_rate_limit(TEXT) FROM anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.check_geocode_rate_limit(TEXT) TO service_role;
 
 -- 1. Ensure user_locations_private exists with all constraints
 CREATE TABLE IF NOT EXISTS public.user_locations_private (
